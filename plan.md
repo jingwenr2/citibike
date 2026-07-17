@@ -70,6 +70,12 @@ These stay as cited sources in the report/slides, not tables in the data pipelin
 4. **Layer 2 analysis:** compile the cost-savings table (fare collection, enforcement, turnstile maintenance) from public MTA budget documents — cite each figure's source individually, don't reuse the deck's numbers without verifying against current MTA financials.
 5. **Correlation layer:** station density vs. DCA business density and pedestrian-count trend, controlling for population — present as correlation, explicitly not causation.
 6. **Layer 3 synthesis:** build the "decision engine" dashboard (optimal expansion stations, ROI timeline framing, borough-level impact) as the capstone deliverable.
+### 3b. Demand Forecasting (XGBoost)
+- Target: daily trip count per station
+- Features: calendar (day/month/weekend/holiday) + 1-day and 7-day lag + rolling mean
+- Split: chronological (train on earlier months, test on most recent 60 days)
+- Output: predicted demand vs. dock capacity → ranked expansion candidate list
+- Metrics reported: MAE, RMSE, feature importance plot
 
 ---
 
