@@ -39,14 +39,16 @@ plan.md            # full project plan
 ```
 
 ## Status
-
 🚧 In progress — capstone project.
 
 - [x] Project plan
-- [x] Demand forecasting model scaffold
-- [ ] Data ingestion pipeline
-- [ ] Cost-savings model (Layer 2)
-- [ ] Interactive dashboard
+- [x] Layer 1 EDA
+- [x] Reform analysis notebook (8 visuals)
+- [x] Demand forecast scaffold
+- [x] Interactive decision-engine prototype
+- [ ] MTA × CitiBike neighborhood join
+- [ ] Reproducible data pipeline (off Google Drive)
+- [ ] Streamlit web app
 - [ ] Final report + slides
 
 ## Team
