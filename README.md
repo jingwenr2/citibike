@@ -72,6 +72,25 @@ The dashboard runs with labeled demonstration data until
 `data/processed/bike_share_daily.parquet` is available. The expected columns
 are documented on the app's **Data & methods** tab.
 
+Build the official MTA opportunity table with:
+
+```bash
+python scripts/build_mta_opportunity.py
+```
+
+Until the processed Citi Bike station table exists, the importer can join the
+official MTA data to the app's demonstration station locations:
+
+```bash
+python scripts/build_mta_opportunity.py --allow-demo-stations
+```
+
+The importer uses MTA Subway Hourly Ridership (`5wq4-mkjj`) and MTA Subway
+Wait Assessment (`s666-h6b7`) from New York State Open Data. It aggregates
+recent station entries, estimates a line-based reliability gap, spatially
+matches subway complexes to Citi Bike stations, and writes
+`data/processed/mta_bike_opportunity.parquet`.
+
 The **Government & Transportation Investment Planner** converts projected
 demand into new trips, capital cost, operating support, fiscal sustainability,
 public-benefit NPV, benefit-cost ratio, and cost per new trip. These are

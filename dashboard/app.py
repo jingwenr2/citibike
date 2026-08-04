@@ -179,7 +179,9 @@ def load_mta_signal() -> pd.DataFrame:
                 + ", ".join(sorted(missing))
             )
             st.stop()
-        frame["mta_is_demo"] = False
+        if "mta_is_demo" not in frame.columns:
+            frame["mta_is_demo"] = False
+        frame["mta_is_demo"] = frame["mta_is_demo"].astype(bool)
         return frame
 
     return pd.DataFrame(
