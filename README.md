@@ -1,39 +1,41 @@
-[README.md](https://github.com/user-attachments/files/30131630/README.md)
-# NYC Zero-Friction Mobility 🚲🚇
+# Citi Bike × Bay Wheels Demand Intelligence 🚲
 
-**A data-driven case for unified, affordable urban transportation as economic infrastructure — with CitiBike as the analytics core.**
+**A two-city bike-share analytics and forecasting web app for New York City and San Francisco.**
 
-> What if NYC treated getting around the same way it treats turning on a light — as essential infrastructure that pays for itself through economic growth, not fares?
+The project compares Citi Bike and Bay Wheels trip patterns, forecasts station-level demand, and identifies capacity constraints and possible expansion opportunities.
 
 ## The Idea
 
-We're using CitiBike's public trip data as a proof-of-concept to build the case for a broader "zero-friction mobility" vision for NYC — free/expanded transit paying for itself through induced economic demand, not fares.
+We're building a shared data pipeline and Streamlit app for exploring how bike-share usage differs between NYC and San Francisco. NYC's transit-access and pricing work remains a focused case study within the broader comparison.
 
 ## Three-Layer Architecture
 
 | Layer | Focus |
 |---|---|
-| **1. CitiBike Data Core** | Trip volume, e-bike vs. classic adoption, member vs. casual behavior, station deserts, demand forecasting |
-| **2. MTA Free Fare Analysis** | Cost/savings case for fare elimination — collection costs, enforcement, comparative case studies (Kansas City, Tallinn, Luxembourg) |
-| **3. Unified Mobility Vision** | Zero-friction mobility stack narrative + interactive decision-engine dashboard |
+| **1. Shared Data Core** | Normalize Citi Bike and Bay Wheels trips into one validated schema |
+| **2. City Comparison** | Demand, seasonality, rider/bike mix, station usage, and city-specific context |
+| **3. Forecast Web App** | Station explorer, demand forecasts, model metrics, and expansion rankings |
 
 Full plan: [`plan.md`](./plan.md)
 
 ## Tech Stack
 
-- **Data:** Citi Bike System Data, MTA Open Data (data.ny.gov), NYC Open Data
+- **Data:** Citi Bike System Data, Bay Wheels System Data, MTA/NYC Open Data, and selected Bay Area public data
 - **Analysis:** Python (pandas), SQL
 - **Modeling:** XGBoost — station-level demand forecasting → [`demand_forecast_xgboost.py`](./demand_forecast_xgboost.py)
-- **Dashboard:** Streamlit (planned)
+- **Dashboard:** Streamlit + Plotly (planned)
 
 ## Repo Structure
 
 ```
-data/raw/          # untouched downloads (gitignored)
-data/processed/    # cleaned parquet/csv
+data/raw/citibike/ # untouched NYC downloads (gitignored)
+data/raw/baywheels/# untouched Bay Wheels downloads
+data/processed/    # normalized parquet/csv
 notebooks/         # exploratory analysis
+src/               # reusable ingestion, validation, and modeling code
 sql/               # ingestion + transform scripts
 dashboard/         # Streamlit app
+models/            # model artifacts and metrics
 report/            # final write-up, slides, sources
 plan.md            # full project plan
 ```
@@ -46,9 +48,12 @@ plan.md            # full project plan
 - [x] Reform analysis notebook (8 visuals)
 - [x] Demand forecast scaffold
 - [x] Interactive decision-engine prototype
+- [ ] Bay Wheels ingestion and profiling
+- [ ] Shared two-city schema and validation pipeline
+- [ ] City-aware forecasting and baseline evaluation
 - [ ] MTA × CitiBike neighborhood join
 - [ ] Reproducible data pipeline (off Google Drive)
-- [ ] Streamlit web app
+- [ ] Streamlit comparison web app
 - [ ] Final report + slides
 
 ## Team
