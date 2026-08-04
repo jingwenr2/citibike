@@ -77,6 +77,17 @@ demand into new trips, capital cost, operating support, fiscal sustainability,
 public-benefit NPV, benefit-cost ratio, and cost per new trip. These are
 scenario assumptions for planning—not official cost or benefit estimates.
 
+## Shareable GitHub Pages Demo
+
+The static teammate-ready prototype is published from `docs/` through GitHub
+Pages:
+
+**https://jingwenr2.github.io/citibike/**
+
+This version demonstrates the interface with modeled data. The Streamlit app
+remains the full Python implementation for connecting processed datasets and
+trained model outputs.
+
 ## Team
 
 See [Contributors](../../graphs/contributors).
