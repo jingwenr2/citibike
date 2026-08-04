@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = ROOT / "data" / "processed" / "bike_share_daily.parquet"
 MTA_PATH = ROOT / "data" / "processed" / "mta_bike_opportunity.parquet"
 

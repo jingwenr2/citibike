@@ -32,7 +32,7 @@ import numpy as np
 import pandas as pd
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 BIKE_PATH = ROOT / "data" / "processed" / "bike_share_daily.parquet"
 OUTPUT_PATH = ROOT / "data" / "processed" / "mta_bike_opportunity.parquet"
 

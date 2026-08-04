@@ -27,22 +27,30 @@ Full plan: [`plan.md`](./plan.md)
 
 - **Data:** Citi Bike System Data, Bay Wheels System Data, MTA/NYC Open Data, and selected Bay Area public data
 - **Analysis:** Python (pandas), SQL
-- **Modeling:** XGBoost — station-level demand forecasting → [`demand_forecast_xgboost.py`](./demand_forecast_xgboost.py)
+- **Modeling:** XGBoost — station-level demand forecasting → [`backend/demand_forecast_xgboost.py`](./backend/demand_forecast_xgboost.py)
 - **Dashboard:** Streamlit + Plotly (planned)
 
 ## Repo Structure
 
 ```
-data/raw/citibike/ # untouched NYC downloads (gitignored)
-data/raw/baywheels/# untouched Bay Wheels downloads
-data/processed/    # normalized parquet/csv
-notebooks/         # exploratory analysis
-src/               # reusable ingestion, validation, and modeling code
-sql/               # ingestion + transform scripts
-dashboard/         # Streamlit app
-models/            # model artifacts and metrics
-report/            # final write-up, slides, sources
-plan.md            # full project plan
+frontend/
+  dashboard/         # Streamlit app
+docs/                # static GitHub Pages demo
+backend/
+  src/               # reusable ingestion, validation, and modeling code
+  scripts/           # data-build scripts (e.g. MTA opportunity table)
+  download_tripdata.py
+  demand_forecast_xgboost.py
+  requirements.txt
+notebooks/           # exploratory analysis
+tests/               # unit tests
+data/raw/citibike/   # untouched NYC downloads (gitignored)
+data/raw/baywheels/  # untouched Bay Wheels downloads
+data/processed/      # normalized parquet/csv
+sql/                 # ingestion + transform scripts
+models/              # model artifacts and metrics
+report/              # final write-up, slides, sources
+plan.md              # full project plan
 ```
 
 ## Status
@@ -66,17 +74,17 @@ plan.md            # full project plan
 You can pull the latest Citi Bike or Bay Wheels archives directly from the public S3 listings:
 
 ```bash
-python download_tripdata.py --provider citibike --months 6
-python download_tripdata.py --provider baywheels --months 6
+python backend/download_tripdata.py --provider citibike --months 6
+python backend/download_tripdata.py --provider baywheels --months 6
 ```
 
-The downloader saves files under `data/raw/` and exposes the same logic through the reusable module in [src/ingest_tripdata.py](src/ingest_tripdata.py).
+The downloader saves files under `data/raw/` and exposes the same logic through the reusable module in [backend/src/ingest_tripdata.py](backend/src/ingest_tripdata.py).
 
 ## Run the Web App
 
 ```bash
-python -m pip install -r requirements.txt
-streamlit run dashboard/app.py
+python -m pip install -r backend/requirements.txt
+streamlit run frontend/dashboard/app.py
 ```
 
 The dashboard runs with labeled demonstration data until
@@ -86,14 +94,14 @@ are documented on the app's **Data & methods** tab.
 Build the official MTA opportunity table with:
 
 ```bash
-python scripts/build_mta_opportunity.py
+python backend/scripts/build_mta_opportunity.py
 ```
 
 Until the processed Citi Bike station table exists, the importer can join the
 official MTA data to the app's demonstration station locations:
 
 ```bash
-python scripts/build_mta_opportunity.py --allow-demo-stations
+python backend/scripts/build_mta_opportunity.py --allow-demo-stations
 ```
 
 The importer uses MTA Subway Hourly Ridership (`5wq4-mkjj`) and MTA Subway

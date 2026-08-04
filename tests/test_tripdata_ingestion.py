@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys
 
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+sys.path.append(str(Path(__file__).resolve().parents[1] / "backend"))
 
 from src.ingest_tripdata import choose_files_in_range, choose_recent_files, parse_index_links
 
