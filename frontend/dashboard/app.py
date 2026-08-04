@@ -356,13 +356,14 @@ metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
 metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
 metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
 
-overview_tab, stations_tab, forecast_tab, mta_tab, investment_tab, methods_tab = st.tabs(
+overview_tab, stations_tab, forecast_tab, mta_tab, investment_tab, dot_tab, methods_tab = st.tabs(
     [
         "Overview",
         "Station explorer",
         "Forecast lab",
         "MTA connection",
         "Government investment",
+        "DOT support case",
         "Data & methods",
     ]
 )
@@ -957,6 +958,197 @@ with investment_tab:
         "**Public-sector decision rule:** prioritize positive public NPV and a benefit-cost "
         "ratio above 1.0, then confirm the annual operating support fits the agency budget. "
         "Fiscal return remains visible as a sustainability constraint—not the sole goal."
+    )
+
+with dot_tab:
+    st.subheader("Why city transportation departments should invest in bike-share")
+    st.markdown(
+        '<p class="section-note">Data-driven arguments for DOT support, '
+        "drawn from ridership trends, MTA reliability gaps, and cross-city benchmarks.</p>",
+        unsafe_allow_html=True,
+    )
+
+    # --- Argument 1: Ridership growth trajectory ---
+    st.markdown("### 1. Ridership is growing — and demand outpaces supply")
+    growth_col, gap_col = st.columns(2)
+
+    with growth_col:
+        # Monthly ridership trend
+        monthly_trend = (
+            filtered.assign(month=filtered["date"].dt.to_period("M").dt.to_timestamp())
+            .groupby(["month", "city"], as_index=False)["trips"]
+            .sum()
+            .sort_values("month")
+        )
+        monthly_chart = px.line(
+            monthly_trend,
+            x="month",
+            y="trips",
+            color="city",
+            color_discrete_map={city: meta["color"] for city, meta in CITY_META.items()},
+            labels={"trips": "Monthly trips", "month": "", "city": "System"},
+        )
+        monthly_chart.update_layout(
+            height=320,
+            margin=dict(l=10, r=10, t=15, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="white",
+            legend_title_text="",
+        )
+        st.plotly_chart(monthly_chart, use_container_width=True)
+
+    with gap_col:
+        # Capacity pressure distribution — stations running hot
+        station_pressure = (
+            nyc_filtered.groupby(["station_name", "capacity"], as_index=False)
+            .agg(total_trips=("trips", "sum"), days=("date", "nunique"))
+        )
+        station_pressure["daily_demand"] = station_pressure["total_trips"] / station_pressure["days"]
+        station_pressure["pressure"] = station_pressure["daily_demand"] / station_pressure["capacity"]
+        station_pressure["pressure_category"] = pd.cut(
+            station_pressure["pressure"],
+            bins=[0, 0.5, 1.0, 1.5, float("inf")],
+            labels=["Under-utilized (<0.5)", "Balanced (0.5–1.0)", "Strained (1.0–1.5)", "Critical (>1.5)"],
+        )
+        pressure_dist = station_pressure["pressure_category"].value_counts().reset_index()
+        pressure_dist.columns = ["Category", "Stations"]
+        pressure_chart = px.pie(
+            pressure_dist,
+            values="Stations",
+            names="Category",
+            color_discrete_sequence=["#94A3B8", "#7DD3FC", "#F59E0B", "#EF4444"],
+            hole=0.45,
+        )
+        pressure_chart.update_layout(
+            height=320,
+            margin=dict(l=10, r=10, t=15, b=10),
+        )
+        st.plotly_chart(pressure_chart, use_container_width=True)
+        strained = station_pressure[station_pressure["pressure"] >= 1.0]
+        st.metric(
+            "NYC stations at or above capacity",
+            f"{len(strained)} of {len(station_pressure)}",
+            f"{len(strained)/len(station_pressure)*100:.0f}% of network" if len(station_pressure) > 0 else "",
+        )
+
+    # --- Argument 2: Transit reliability gap ---
+    st.markdown("### 2. Bike-share fills transit reliability gaps")
+    st.markdown(
+        "When subway service is unreliable, bike-share provides a resilient alternative. "
+        "Neighborhoods with high MTA delay rates and high transit ridership are prime "
+        "candidates for DOT-supported bike-share investment."
+    )
+
+    if not mta_opportunity.empty:
+        reliability_col, resilience_col = st.columns(2)
+
+        with reliability_col:
+            delay_chart = px.bar(
+                mta_opportunity.sort_values("mta_delay_rate", ascending=False),
+                x="neighborhood",
+                y="mta_delay_rate",
+                color="bike_daily_trips",
+                color_continuous_scale=["#CBD5E1", "#2D7FF9"],
+                labels={
+                    "mta_delay_rate": "MTA delay rate",
+                    "neighborhood": "",
+                    "bike_daily_trips": "Bike trips/day",
+                },
+            )
+            delay_chart.update_layout(
+                height=350,
+                margin=dict(l=10, r=10, t=15, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="white",
+                yaxis_tickformat=".0%",
+            )
+            st.plotly_chart(delay_chart, use_container_width=True)
+
+        with resilience_col:
+            # Resilience score: high MTA riders + high delay = high need
+            mta_opportunity["resilience_need"] = (
+                mta_opportunity["mta_daily_riders"] * mta_opportunity["mta_delay_rate"]
+            )
+            resilience_chart = px.scatter(
+                mta_opportunity,
+                x="mta_delay_rate",
+                y="mta_daily_riders",
+                size="bike_daily_trips",
+                hover_name="neighborhood",
+                color="transit_opportunity_score",
+                color_continuous_scale=["#CBD5E1", "#F26B4A", "#0B1324"],
+                labels={
+                    "mta_delay_rate": "MTA delay rate",
+                    "mta_daily_riders": "MTA daily riders",
+                    "transit_opportunity_score": "Investment priority",
+                },
+            )
+            resilience_chart.update_layout(
+                height=350,
+                margin=dict(l=10, r=10, t=15, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="white",
+                xaxis_tickformat=".0%",
+            )
+            st.plotly_chart(resilience_chart, use_container_width=True)
+    else:
+        st.info("MTA opportunity data not available. Run build_mta_opportunity.py.")
+
+    # --- Argument 3: Cross-city benchmark ---
+    st.markdown("### 3. San Francisco benchmark — what peer support looks like")
+    if "San Francisco" in filtered["city"].unique():
+        benchmark_data = (
+            filtered.groupby("city", as_index=False)
+            .agg(
+                total_trips=("trips", "sum"),
+                stations=("station_name", "nunique"),
+                electric_trips=("electric_trips", "sum"),
+                days=("date", "nunique"),
+            )
+        )
+        benchmark_data["trips_per_station_day"] = (
+            benchmark_data["total_trips"] / benchmark_data["stations"] / benchmark_data["days"]
+        )
+        benchmark_data["electric_share"] = benchmark_data["electric_trips"] / benchmark_data["total_trips"]
+
+        bench_cols = st.columns(3)
+        for i, (_, row) in enumerate(benchmark_data.iterrows()):
+            with bench_cols[i % 3]:
+                st.markdown(f"**{row['city']}**")
+                st.metric("Trips/station/day", f"{row['trips_per_station_day']:.0f}")
+                st.metric("Electric share", f"{row['electric_share']:.0%}")
+                st.metric("Active stations", f"{int(row['stations']):,}")
+
+        st.markdown(
+            "> Bay Wheels operates in a metro area ~1/10th the size of NYC but achieves "
+            "competitive per-station utilization, partly due to SFMTA integration and "
+            "municipal support. NYC's scale advantage means DOT investment would unlock "
+            "proportionally larger mobility gains."
+        )
+    else:
+        st.info("Add San Francisco data to see the cross-city benchmark.")
+
+    # --- Argument 4: The DOT investment case summary ---
+    st.markdown("### 4. The case for DOT support")
+    st.markdown(
+        """
+        | Argument | Evidence | DOT action |
+        |---|---|---|
+        | **Demand exceeds supply** | Stations running above capacity across Manhattan and Brooklyn | Fund dock expansions at high-pressure stations |
+        | **Transit resilience** | Subway delays create unserved mobility demand | Co-locate bike-share expansions near unreliable subway lines |
+        | **Electric transition** | E-bike share growing; higher revenue per trip | Subsidize e-bike fleet expansion and charging infrastructure |
+        | **Equity gaps** | Outer-borough station deserts along IBX corridor | Prioritize new stations in underserved neighborhoods |
+        | **Proven peer model** | SF Bay Wheels operates with SFMTA municipal partnership | Adopt similar DOT integration for route planning and subsidies |
+        | **Positive public ROI** | Benefit-cost ratio above 1.0 for top expansion candidates | Allocate capital budget to highest-NPV station projects |
+        """
+    )
+
+    st.info(
+        "**Recommendation:** NYC DOT should allocate dedicated capital and operating "
+        "budget lines for bike-share expansion, prioritizing neighborhoods where "
+        "transit reliability is weakest, ridership demand is highest, and station "
+        "capacity is most constrained. The Government Investment tab provides "
+        "project-level NPV rankings to guide specific funding decisions."
     )
 
 with methods_tab:

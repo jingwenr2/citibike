@@ -1,6 +1,8 @@
 data/raw/
 *.csv
 *.parquet
+models/
+report/*.png
 __pycache__/
 .ipynb_checkpoints/
 .env

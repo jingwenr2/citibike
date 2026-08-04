@@ -2,27 +2,31 @@
 
 **Core question:** Where should NYC government and transportation teams invest more in Citi Bike capacity, based on predicted bike demand, MTA ridership, and transit reliability gaps? Bay Wheels provides a San Francisco benchmark, not a second investment geography.
 
-**Status:** in execution. NYC EDA and reform analysis are complete, the XGBoost demand-forecast scaffold is in place, and an interactive public-investment dashboard exists. Current focus: building the reproducible NYC pipeline, validating the forecast, and adding a high-level San Francisco benchmark.
+**Status:** data pipeline operational. 25M+ trips ingested (Citi Bike + Bay Wheels), XGBoost demand forecast trained and validated (+34% over baseline), MTA opportunity table built from live API data, and Streamlit dashboard running on real data with DOT support case tab.
 
 ---
 
-## 0. Progress Snapshot (updated August 2026)
+## 0. Progress Snapshot (updated August 4, 2026)
 
 **Done**
 - [x] Project plan
 - [x] Layer 1 EDA — `NYC_CitiBike_Analysis.ipynb`
-- [x] Reform-analysis notebook — `CitiBike_Reform_Analysis.ipynb` (8 visuals: price inflation, ridership divergence, revenue/trip, suppression chart, IBX station-desert map, IBX demographics, price optimization, ROI break-even)
+- [x] Reform-analysis notebook — `CitiBike_Reform_Analysis.ipynb` (8 visuals)
 - [x] Demand-forecast model scaffold — `demand_forecast_xgboost.py`
-- [x] Interactive decision-engine prototype — expansion profit calculator + subway×bike signal (HTML; ports to Streamlit)
+- [x] Interactive decision-engine prototype
+- [x] Download and profile Bay Wheels trip-history data (23 months, 8.1M trips)
+- [x] Download Citi Bike trip data (5 months so far, 16.6M trips — more downloading)
+- [x] Create one normalized Citi Bike/Bay Wheels trip schema → `bike_share_daily.parquet`
+- [x] Validate the XGBoost pipeline for NYC station demand (MAE 14.38, +34.3% vs naive)
+- [x] San Francisco XGBoost model (MAE 4.52, +31.6% vs naive)
+- [x] MTA × CitiBike ridership join at neighborhood level (300 stations, live MTA data)
+- [x] Reproducible data pipeline — `scripts/ingest_bike_data.py` + `scripts/build_mta_opportunity.py`
+- [x] Streamlit dashboard with real data, DOT support case tab, and 7 analysis views
+- [x] DOT transportation department investment insight analysis
 
 **In progress / next**
-- [ ] Download and profile Bay Wheels trip-history and station data
-- [ ] Create one normalized Citi Bike/Bay Wheels trip schema
-- [ ] Validate the XGBoost pipeline for NYC station demand
-- [ ] MTA × CitiBike ridership join at neighborhood level (the new relationship analysis)
-- [ ] Reproducible data pipeline — decouple `master` build from Google Drive/Colab paths
+- [ ] Download remaining Citi Bike months (2024-10 through 2026-03, 2026-05/06)
 - [ ] Source/verify the 3-city (NYC/DC/Chicago) comparison figures currently hand-entered in the reform notebook
-- [ ] Streamlit deployment of the NYC decision engine with SF benchmark
 - [ ] Final report + slides
 
 ---
