@@ -1,8 +1,8 @@
 # NYC × San Francisco Bike-Share Intelligence — Capstone Project Plan
 
-**Core question:** How do bike-share demand, access, and expansion opportunities differ between New York City's Citi Bike and the San Francisco Bay Area's Bay Wheels—and how can a shared forecasting web app help riders and planners make better decisions?
+**Core question:** Where should NYC government and transportation teams invest more in Citi Bike capacity, based on predicted bike demand, MTA ridership, and transit reliability gaps? Bay Wheels provides a San Francisco benchmark, not a second investment geography.
 
-**Status:** in execution. NYC EDA and reform analysis are complete, the XGBoost demand-forecast scaffold is in place, and an interactive decision-engine prototype exists. Current focus: generalizing the data/model pipeline for both cities and shipping the Streamlit comparison app.
+**Status:** in execution. NYC EDA and reform analysis are complete, the XGBoost demand-forecast scaffold is in place, and an interactive public-investment dashboard exists. Current focus: building the reproducible NYC pipeline, validating the forecast, and adding a high-level San Francisco benchmark.
 
 ---
 
@@ -18,11 +18,11 @@
 **In progress / next**
 - [ ] Download and profile Bay Wheels trip-history and station data
 - [ ] Create one normalized Citi Bike/Bay Wheels trip schema
-- [ ] Generalize the XGBoost pipeline to train and evaluate by city
+- [ ] Validate the XGBoost pipeline for NYC station demand
 - [ ] MTA × CitiBike ridership join at neighborhood level (the new relationship analysis)
 - [ ] Reproducible data pipeline — decouple `master` build from Google Drive/Colab paths
 - [ ] Source/verify the 3-city (NYC/DC/Chicago) comparison figures currently hand-entered in the reform notebook
-- [ ] Streamlit deployment of the two-city comparison and decision engine
+- [ ] Streamlit deployment of the NYC decision engine with SF benchmark
 - [ ] Final report + slides
 
 ---
@@ -31,11 +31,11 @@
 
 | Layer                      | Focus                                                                                | Primary tools                   | Status |
 | -------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- | ------ |
-| 1. Shared Bike-Share Core  | Normalize Citi Bike and Bay Wheels trips; compare demand, rider type, bike type, time, and station usage | Python, pandas, SQL/Parquet | NYC analysis exists; Bay Wheels ingestion next |
+| 1. Citi Bike Data Core     | Build the NYC trip, station, capacity, and forecast pipeline; normalize limited Bay Wheels aggregates for benchmarking | Python, pandas, SQL/Parquet | NYC analysis exists; reproducible pipeline next |
 | 2. City Context            | NYC subway↔bike relationship and Bay Area transit/geographic context                  | MTA, BART/SFMTA, Census/geospatial data | NYC join planned; Bay Area sources to validate |
-| 3. Forecast Web App        | Interactive city comparison, station explorer, demand forecast, and expansion ranking | Streamlit, Plotly, XGBoost      | architecture defined; implementation next |
+| 3. NYC Investment Web App  | NYC station explorer, demand forecast, public investment ranking, and SF benchmark | Streamlit, Plotly, XGBoost      | interactive prototype built |
 
-**Direction note:** the main deliverable is now the two-city web app. The NYC price/ridership and transit-access work remains an NYC case study inside the broader comparison, while the shared forecast and station-ranking workflow is the cross-city analytical spine.
+**Direction note:** the main deliverable is an NYC government and transportation investment tool. Bay Wheels supports the narrative as a benchmark only; it does not enter NYC station forecasts, maps, rankings, or funding recommendations.
 
 ---
 
@@ -63,7 +63,7 @@
 
 **Data-integrity note (reform notebook):** the 3-city pricing and ridership tables in `CitiBike_Reform_Analysis.ipynb` (Cell 3) are hand-entered published figures, not derived from trip data — the only cell reading real data is the `master` summary. Before the defense, either cite every figure in Cell 3 to a source or rebuild NYC's numbers from the trip CSVs. This is the first question a reviewer will ask.
 
-### 2.2 Bay Wheels (Layer 1 — primary)
+### 2.2 Bay Wheels (comparison benchmark only)
 
 | Dataset | Source | Notes |
 | --- | --- | --- |
@@ -71,7 +71,7 @@
 | Bay Wheels GBFS feeds | Bay Wheels GBFS endpoint | Current station information/status and dock capacity. Use for station metadata and current-capacity features, not as historical availability unless snapshots are collected. |
 | Bay Area geography | Census/official Bay Area geographic boundaries | Assign stations to San Francisco neighborhoods or consistent Census geographies for maps and expansion analysis. |
 
-**Scope rule:** label the system as **Bay Wheels / San Francisco Bay Area**, because Bay Wheels extends beyond the City of San Francisco. The first app release may filter to San Francisco stations for a clean NYC–SF comparison, but that filter must be explicit.
+**Scope rule:** label the system as **Bay Wheels / San Francisco Bay Area**, because Bay Wheels extends beyond the City of San Francisco. Use comparable aggregate indicators in the Overview only. Do not include Bay Wheels in forecasts, station recommendations, or the government investment planner.
 
 ### 2.3 MTA (NYC city context)
 
@@ -112,11 +112,11 @@ These stay as cited sources in the report/slides, not tables in the data pipelin
 2. **Normalize:** map both providers to a shared schema: `city, system, ride_id, started_at, ended_at, start/end_station_id, start/end_station_name, start/end_lat, start/end_lng, rideable_type, rider_type`.
 3. **Validate:** report row counts, date coverage, missing station IDs/coordinates, duplicates, invalid durations, and provider-specific category mappings before modeling.
 4. **Geo join:** assign stations to comparable neighborhood or Census geographies. Keep NYC-specific MTA joins and Bay Area-specific transit joins in separate context tables.
-5. **Cross-city analysis:** compare trips, seasonality, commute patterns, member/casual mix, e-bike share, trip duration, top stations, and demand per station. Use rates or normalized indexes when system sizes differ.
+5. **Benchmark analysis:** compare NYC with San Francisco/Bay Wheels using a small set of comparable aggregate indicators. Use rates or normalized indexes when system sizes differ.
 6. **NYC case study:** preserve the price→ridership, station-desert, and subway↔bike analyses as NYC-specific views.
-7. **Forecast:** train a reproducible station-day model by city, compare it against a seasonal-naive baseline, and expose test-period metrics in the app.
+7. **Forecast:** train a reproducible NYC station-day model, compare it against a seasonal-naive baseline, and expose test-period metrics in the app.
 8. **Decision engine:** rank high-demand/capacity-constrained stations and underserved areas. Avoid comparing raw scores across cities until features are normalized.
-9. **Web app:** deliver Streamlit pages for Overview, City Comparison, Station Explorer, Demand Forecast, Expansion Candidates, and Data/Methods.
+9. **Web app:** deliver Streamlit pages for Overview with SF benchmark, NYC Station Explorer, NYC Demand Forecast, Government Investment, and Data/Methods.
 
 ### 3b. Demand Forecasting (XGBoost)
 
@@ -138,7 +138,7 @@ These stay as cited sources in the report/slides, not tables in the data pipelin
 /data/processed/    # normalized trip/station parquet files
 /notebooks/         # EDA + reform analysis
 /sql/               # ingestion + transform scripts
-/dashboard/         # Streamlit two-city web app
+/dashboard/         # Streamlit NYC investment app with SF benchmark
 /src/               # shared ingestion, validation, features, and modeling modules
 /models/            # serialized model artifacts and metric summaries
 /report/            # final write-up, slides, sources.md
@@ -153,7 +153,7 @@ Current files in repo: `NYC_CitiBike_Analysis.ipynb`, `CitiBike_Reform_Analysis.
 ## 5. Open Decisions
 
 - Date range for CitiBike data (recommend last 2–3 years for relevance + file size)
-- Use full Bay Wheels coverage or San Francisco-only? (recommend an explicit SF-only first-release filter, with full-system support retained in the data)
+- Choose the small set of Bay Wheels measures that are genuinely comparable to NYC and useful as benchmarks
 - Include Jersey City Citi Bike stations or NYC-only? (recommend NYC-only for a cleaner NYC–SF comparison)
 - ~~Dashboard tool: Tableau vs. Power BI vs. web app~~ → **resolved: Streamlit web app**, built off the interactive decision-engine prototype
 - Comparable geography key across cities; retain local geography keys for city-specific transit analysis
@@ -166,9 +166,9 @@ Current files in repo: `NYC_CitiBike_Analysis.ipynb`, `CitiBike_Reform_Analysis.
 ## 6. Next Steps
 
 1. Acquire a matched date range of Citi Bike and Bay Wheels trip files and document their schemas.
-2. Build the normalized two-city Parquet dataset plus automated validation checks.
-3. Refactor `demand_forecast_xgboost.py` into reusable training code with a city argument, seasonal-naive baseline, saved metrics, and saved predictions.
-4. Build the Streamlit shell and complete the Overview, City Comparison, and Station Explorer pages using real processed data.
+2. Build the normalized NYC Parquet dataset plus automated validation checks; create a separate SF benchmark table.
+3. Refactor `demand_forecast_xgboost.py` into reusable NYC training code with a seasonal-naive baseline, saved metrics, and saved predictions.
+4. Wire the Streamlit Overview, NYC Station Explorer, and SF benchmark to real processed data.
 5. Add the Demand Forecast and Expansion Candidates pages, then verify all charts, filters, empty states, and app startup.
 6. Complete the NYC transit-access case study and add Bay Area context only when authoritative, comparable inputs are available.
 7. Update the README with local setup, data preparation, model training, app launch, and deployment instructions.
@@ -177,7 +177,8 @@ Current files in repo: `NYC_CitiBike_Analysis.ipynb`, `CitiBike_Reform_Analysis.
 ## 7. Web App Definition of Done
 
 - App starts locally with one documented command and no notebook dependency.
-- Users can switch between NYC, San Francisco, and side-by-side comparison views.
+- Users see San Francisco only in clearly labeled benchmark comparisons.
+- Station exploration, forecasting, and investment recommendations are restricted to NYC.
 - Filters include date range, bike type, rider type, and station/neighborhood where supported.
 - Every chart states its unit, date coverage, and active city/system scope.
 - Forecast pages show holdout metrics and a baseline comparison, not predictions alone.

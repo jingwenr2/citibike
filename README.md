@@ -1,8 +1,13 @@
-# Citi Bike × Bay Wheels Demand Intelligence 🚲
+# NYC Citi Bike Public Investment Intelligence 🚲
 
-**A two-city bike-share analytics and forecasting web app for New York City and San Francisco.**
+**A New York City bike-share forecasting and public-investment web app, with San Francisco as a comparison benchmark.**
 
-The project compares Citi Bike and Bay Wheels trip patterns, forecasts station-level demand, and identifies capacity constraints and possible expansion opportunities.
+The project makes the data-backed case that NYC should invest more in Citi
+Bike. It forecasts station demand, compares Citi Bike with MTA ridership and
+reliability to identify first/last-mile and disruption-resilience gaps, and
+ranks expansion opportunities for public investment. Bay Wheels is used for
+high-level comparison only; it is not included in the app's forecasts or
+funding recommendations.
 
 ## The Idea
 
@@ -55,6 +60,22 @@ plan.md            # full project plan
 - [ ] Reproducible data pipeline (off Google Drive)
 - [ ] Streamlit comparison web app
 - [ ] Final report + slides
+
+## Run the Web App
+
+```bash
+python -m pip install -r requirements.txt
+streamlit run dashboard/app.py
+```
+
+The dashboard runs with labeled demonstration data until
+`data/processed/bike_share_daily.parquet` is available. The expected columns
+are documented on the app's **Data & methods** tab.
+
+The **Government & Transportation Investment Planner** converts projected
+demand into new trips, capital cost, operating support, fiscal sustainability,
+public-benefit NPV, benefit-cost ratio, and cost per new trip. These are
+scenario assumptions for planning—not official cost or benefit estimates.
 
 ## Team
 
