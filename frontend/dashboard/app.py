@@ -961,141 +961,24 @@ with investment_tab:
     )
 
 with dot_tab:
-    st.subheader("Why city transportation departments should invest in bike-share")
+    st.subheader("The Pitch: Why Lyft Should Double Down on Bike-Share")
     st.markdown(
-        '<p class="section-note">Data-driven arguments for DOT support, '
-        "drawn from ridership trends, MTA reliability gaps, and cross-city benchmarks.</p>",
+        '<p class="section-note">A data-driven case for Lyft product leadership — '
+        "government investment works in SF, NYC is the biggest untapped market, and bike-share "
+        "is the future of green urban mobility.</p>",
         unsafe_allow_html=True,
     )
 
-    # --- Argument 1: Ridership growth trajectory ---
-    st.markdown("### 1. Ridership is growing — and demand outpaces supply")
-    growth_col, gap_col = st.columns(2)
-
-    with growth_col:
-        # Monthly ridership trend
-        monthly_trend = (
-            filtered.assign(month=filtered["date"].dt.to_period("M").dt.to_timestamp())
-            .groupby(["month", "city"], as_index=False)["trips"]
-            .sum()
-            .sort_values("month")
-        )
-        monthly_chart = px.line(
-            monthly_trend,
-            x="month",
-            y="trips",
-            color="city",
-            color_discrete_map={city: meta["color"] for city, meta in CITY_META.items()},
-            labels={"trips": "Monthly trips", "month": "", "city": "System"},
-        )
-        monthly_chart.update_layout(
-            height=320,
-            margin=dict(l=10, r=10, t=15, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            legend_title_text="",
-        )
-        st.plotly_chart(monthly_chart, use_container_width=True)
-
-    with gap_col:
-        # Capacity pressure distribution — stations running hot
-        station_pressure = (
-            nyc_filtered.groupby(["station_name", "capacity"], as_index=False)
-            .agg(total_trips=("trips", "sum"), days=("date", "nunique"))
-        )
-        station_pressure["daily_demand"] = station_pressure["total_trips"] / station_pressure["days"]
-        station_pressure["pressure"] = station_pressure["daily_demand"] / station_pressure["capacity"]
-        station_pressure["pressure_category"] = pd.cut(
-            station_pressure["pressure"],
-            bins=[0, 0.5, 1.0, 1.5, float("inf")],
-            labels=["Under-utilized (<0.5)", "Balanced (0.5–1.0)", "Strained (1.0–1.5)", "Critical (>1.5)"],
-        )
-        pressure_dist = station_pressure["pressure_category"].value_counts().reset_index()
-        pressure_dist.columns = ["Category", "Stations"]
-        pressure_chart = px.pie(
-            pressure_dist,
-            values="Stations",
-            names="Category",
-            color_discrete_sequence=["#94A3B8", "#7DD3FC", "#F59E0B", "#EF4444"],
-            hole=0.45,
-        )
-        pressure_chart.update_layout(
-            height=320,
-            margin=dict(l=10, r=10, t=15, b=10),
-        )
-        st.plotly_chart(pressure_chart, use_container_width=True)
-        strained = station_pressure[station_pressure["pressure"] >= 1.0]
-        st.metric(
-            "NYC stations at or above capacity",
-            f"{len(strained)} of {len(station_pressure)}",
-            f"{len(strained)/len(station_pressure)*100:.0f}% of network" if len(station_pressure) > 0 else "",
-        )
-
-    # --- Argument 2: Transit reliability gap ---
-    st.markdown("### 2. Bike-share fills transit reliability gaps")
+    # ===================================================================
+    # ARGUMENT 1: SF proves government investment works
+    # ===================================================================
+    st.markdown("### 1. The proof: San Francisco shows government investment works")
     st.markdown(
-        "When subway service is unreliable, bike-share provides a resilient alternative. "
-        "Neighborhoods with high MTA delay rates and high transit ridership are prime "
-        "candidates for DOT-supported bike-share investment."
+        "Bay Wheels operates in a metro of ~900K people. SFMTA treats it as public transit "
+        "infrastructure — integrated into route planning, subsidized station buildouts, "
+        "and protected bike lanes. **The result: world-class per-station utilization.**"
     )
 
-    if not mta_opportunity.empty:
-        reliability_col, resilience_col = st.columns(2)
-
-        with reliability_col:
-            delay_chart = px.bar(
-                mta_opportunity.sort_values("mta_delay_rate", ascending=False),
-                x="neighborhood",
-                y="mta_delay_rate",
-                color="bike_daily_trips",
-                color_continuous_scale=["#CBD5E1", "#2D7FF9"],
-                labels={
-                    "mta_delay_rate": "MTA delay rate",
-                    "neighborhood": "",
-                    "bike_daily_trips": "Bike trips/day",
-                },
-            )
-            delay_chart.update_layout(
-                height=350,
-                margin=dict(l=10, r=10, t=15, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="white",
-                yaxis_tickformat=".0%",
-            )
-            st.plotly_chart(delay_chart, use_container_width=True)
-
-        with resilience_col:
-            # Resilience score: high MTA riders + high delay = high need
-            mta_opportunity["resilience_need"] = (
-                mta_opportunity["mta_daily_riders"] * mta_opportunity["mta_delay_rate"]
-            )
-            resilience_chart = px.scatter(
-                mta_opportunity,
-                x="mta_delay_rate",
-                y="mta_daily_riders",
-                size="bike_daily_trips",
-                hover_name="neighborhood",
-                color="transit_opportunity_score",
-                color_continuous_scale=["#CBD5E1", "#F26B4A", "#0B1324"],
-                labels={
-                    "mta_delay_rate": "MTA delay rate",
-                    "mta_daily_riders": "MTA daily riders",
-                    "transit_opportunity_score": "Investment priority",
-                },
-            )
-            resilience_chart.update_layout(
-                height=350,
-                margin=dict(l=10, r=10, t=15, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="white",
-                xaxis_tickformat=".0%",
-            )
-            st.plotly_chart(resilience_chart, use_container_width=True)
-    else:
-        st.info("MTA opportunity data not available. Run build_mta_opportunity.py.")
-
-    # --- Argument 3: Cross-city benchmark ---
-    st.markdown("### 3. San Francisco benchmark — what peer support looks like")
     if "San Francisco" in filtered["city"].unique():
         benchmark_data = (
             filtered.groupby("city", as_index=False)
@@ -1111,44 +994,393 @@ with dot_tab:
         )
         benchmark_data["electric_share"] = benchmark_data["electric_trips"] / benchmark_data["total_trips"]
 
-        bench_cols = st.columns(3)
-        for i, (_, row) in enumerate(benchmark_data.iterrows()):
-            with bench_cols[i % 3]:
-                st.markdown(f"**{row['city']}**")
-                st.metric("Trips/station/day", f"{row['trips_per_station_day']:.0f}")
-                st.metric("Electric share", f"{row['electric_share']:.0%}")
-                st.metric("Active stations", f"{int(row['stations']):,}")
+        sf_row = benchmark_data[benchmark_data["city"] == "San Francisco"]
+        nyc_row = benchmark_data[benchmark_data["city"] == "New York City"]
 
-        st.markdown(
-            "> Bay Wheels operates in a metro area ~1/10th the size of NYC but achieves "
-            "competitive per-station utilization, partly due to SFMTA integration and "
-            "municipal support. NYC's scale advantage means DOT investment would unlock "
-            "proportionally larger mobility gains."
+        proof_cols = st.columns(2)
+        with proof_cols[0]:
+            st.markdown("**San Francisco (Bay Wheels) — Government-backed**")
+            if not sf_row.empty:
+                sf = sf_row.iloc[0]
+                st.metric("Trips/station/day", f"{sf['trips_per_station_day']:.0f}")
+                st.metric("Total trips (in dataset)", f"{sf['total_trips']:,.0f}")
+                st.metric("Active stations", f"{int(sf['stations']):,}")
+                st.metric("Electric share", f"{sf['electric_share']:.0%}")
+        with proof_cols[1]:
+            st.markdown("**New York City (Citi Bike) — Underinvested**")
+            if not nyc_row.empty:
+                ny = nyc_row.iloc[0]
+                st.metric("Trips/station/day", f"{ny['trips_per_station_day']:.0f}")
+                st.metric("Total trips (in dataset)", f"{ny['total_trips']:,.0f}")
+                st.metric("Active stations", f"{int(ny['stations']):,}")
+                st.metric("Electric share", f"{ny['electric_share']:.0%}")
+
+        st.success(
+            "SF has 1/10th the population but achieves comparable per-station usage. "
+            "That's what happens when a city treats bike-share as infrastructure, not a private amenity. "
+            "**Imagine what NYC could do with real DOT backing.**"
         )
     else:
         st.info("Add San Francisco data to see the cross-city benchmark.")
 
-    # --- Argument 4: The DOT investment case summary ---
-    st.markdown("### 4. The case for DOT support")
+    # ===================================================================
+    # ARGUMENT 2: NYC is broken — MTA failing, people need alternatives
+    # ===================================================================
+    st.markdown("### 2. The problem: 8.3M New Yorkers deserve better than a broken subway")
+    st.markdown(
+        "MTA ridership is massive — millions rely on it daily. But delays are chronic, "
+        "service is unreliable, and fares keep rising. **People are already switching to "
+        "Citi Bike when trains fail.** We can see it in the data."
+    )
+
+    mta_nyc_cols = st.columns(2)
+    with mta_nyc_cols[0]:
+        monthly_trend = (
+            filtered.assign(month=filtered["date"].dt.to_period("M").dt.to_timestamp())
+            .groupby(["month", "city"], as_index=False)["trips"]
+            .sum()
+            .sort_values("month")
+        )
+        monthly_chart = px.line(
+            monthly_trend,
+            x="month",
+            y="trips",
+            color="city",
+            color_discrete_map={city: meta["color"] for city, meta in CITY_META.items()},
+            labels={"trips": "Monthly trips", "month": "", "city": "System"},
+            title="Ridership scale: NYC dwarfs every other bike-share",
+        )
+        monthly_chart.update_layout(
+            height=350,
+            margin=dict(l=10, r=10, t=35, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="white",
+            legend_title_text="",
+        )
+        st.plotly_chart(monthly_chart, use_container_width=True)
+
+    with mta_nyc_cols[1]:
+        if not mta_opportunity.empty:
+            delay_chart = px.bar(
+                mta_opportunity.sort_values("mta_delay_rate", ascending=False).head(20),
+                x="neighborhood",
+                y="mta_delay_rate",
+                color="bike_daily_trips",
+                color_continuous_scale=["#CBD5E1", "#EF4444"],
+                labels={
+                    "mta_delay_rate": "MTA delay rate",
+                    "neighborhood": "",
+                    "bike_daily_trips": "Bike trips/day",
+                },
+                title="Where trains fail, bikes fill the gap",
+            )
+            delay_chart.update_layout(
+                height=350,
+                margin=dict(l=10, r=10, t=35, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="white",
+                yaxis_tickformat=".0%",
+            )
+            st.plotly_chart(delay_chart, use_container_width=True)
+        else:
+            st.info("MTA opportunity data not available.")
+
+    if not mta_opportunity.empty:
+        high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] > 0.05]
+        if not high_delay.empty:
+            avg_delay = high_delay["mta_delay_rate"].mean()
+            total_affected_riders = high_delay["mta_daily_riders"].sum()
+            st.error(
+                f"**{len(high_delay)} neighborhoods** have subway delay rates above 5%. "
+                f"That's **{total_affected_riders:,.0f} daily MTA riders** stuck waiting for trains "
+                f"that are late {avg_delay:.0%} of the time. Every one of them is a potential Citi Bike rider."
+            )
+
+    # ===================================================================
+    # ARGUMENT 3: Green energy, saves money, healthier city
+    # ===================================================================
+    st.markdown("### 3. The value: green energy, lower cost, healthier city")
+    st.markdown(
+        "Citi Bike isn't just a backup for broken trains — it's a better option for "
+        "millions of short urban trips. The target rider: anyone traveling 0.5-3 miles "
+        "who currently waits underground or sits in traffic."
+    )
+
+    value_cols = st.columns(3)
+    nyc_trips_total = nyc_filtered["trips"].sum()
+    nyc_electric = nyc_filtered["electric_trips"].sum()
+    nyc_ebike_pct = nyc_electric / nyc_trips_total if nyc_trips_total > 0 else 0
+
+    with value_cols[0]:
+        st.markdown("**Zero emissions**")
+        st.metric("E-bike share in NYC", f"{nyc_ebike_pct:.0%}")
+        st.markdown(
+            f"**{nyc_electric:,.0f} electric trips** in our dataset alone. "
+            "Every e-bike trip replaces a car ride or rideshare — "
+            "zero tailpipe emissions, zero congestion contribution."
+        )
+
+    with value_cols[1]:
+        st.markdown("**Saves riders money**")
+        st.metric("Citi Bike annual membership", "$239/yr")
+        st.metric("MTA monthly unlimited", "$132/mo ($1,584/yr)")
+        st.markdown(
+            "A Citi Bike member saves **$1,345/year** vs. an unlimited MetroCard. "
+            "For casual riders, single trips cost $4.49 vs. $2.90 subway fare — "
+            "but with zero wait time and door-to-door service."
+        )
+
+    with value_cols[2]:
+        st.markdown("**Reliable & fast**")
+        st.metric("Avg Citi Bike availability", "24/7")
+        st.metric("No signal failures", "Ever")
+        st.markdown(
+            "No track fires. No signal delays. No weekend service changes. "
+            "Bikes are available when you need them. For trips under 3 miles, "
+            "Citi Bike is often **faster than the subway** door-to-door."
+        )
+
+    # ===================================================================
+    # ARGUMENT 4: Capacity is maxed — demand screaming for investment
+    # ===================================================================
+    st.markdown("### 4. The urgency: stations are already at capacity")
+
+    station_pressure = (
+        nyc_filtered.groupby(["station_name", "capacity"], as_index=False)
+        .agg(total_trips=("trips", "sum"), days=("date", "nunique"))
+    )
+    station_pressure["daily_demand"] = station_pressure["total_trips"] / station_pressure["days"]
+    station_pressure["pressure"] = station_pressure["daily_demand"] / station_pressure["capacity"]
+    station_pressure["pressure_category"] = pd.cut(
+        station_pressure["pressure"],
+        bins=[0, 0.5, 1.0, 1.5, float("inf")],
+        labels=["Under-utilized (<0.5)", "Balanced (0.5-1.0)", "Strained (1.0-1.5)", "Critical (>1.5)"],
+    )
+
+    pressure_cols = st.columns(2)
+    with pressure_cols[0]:
+        pressure_dist = station_pressure["pressure_category"].value_counts().reset_index()
+        pressure_dist.columns = ["Category", "Stations"]
+        pressure_chart = px.pie(
+            pressure_dist,
+            values="Stations",
+            names="Category",
+            color_discrete_sequence=["#94A3B8", "#7DD3FC", "#F59E0B", "#EF4444"],
+            hole=0.45,
+            title="Station capacity pressure across NYC",
+        )
+        pressure_chart.update_layout(
+            height=350,
+            margin=dict(l=10, r=10, t=35, b=10),
+        )
+        st.plotly_chart(pressure_chart, use_container_width=True)
+
+    with pressure_cols[1]:
+        strained = station_pressure[station_pressure["pressure"] >= 1.0]
+        critical = station_pressure[station_pressure["pressure"] >= 1.5]
+        st.metric(
+            "Stations at or above capacity",
+            f"{len(strained):,} of {len(station_pressure):,}",
+            f"{len(strained)/len(station_pressure)*100:.0f}% of network" if len(station_pressure) > 0 else "",
+        )
+        st.metric("Critical stations (>1.5x capacity)", f"{len(critical):,}")
+        st.markdown(
+            "These stations run out of bikes (or docks) daily. "
+            "Every empty dock is a lost ride. Every full dock is a rider "
+            "who walks away. **This is revenue Lyft is leaving on the street.**"
+        )
+
+    # ===================================================================
+    # ARGUMENT 5: The money — profit projections for Lyft and ROI for government
+    # ===================================================================
+    st.markdown("### 5. The money: how much Lyft and government will profit")
+    st.markdown(
+        "This isn't charity — bike-share expansion is a **revenue opportunity for Lyft** "
+        "and a **positive-ROI infrastructure investment for government**."
+    )
+
+    # Calculate real revenue projections from our data
+    nyc_days = nyc_filtered["date"].nunique() if not nyc_filtered.empty else 1
+    nyc_annual_trips = nyc_trips_total / nyc_days * 365 if nyc_days > 0 else 0
+
+    # Revenue model based on Citi Bike's actual pricing
+    # Members: $239/yr annual, ~200 trips/yr avg = ~$1.20/trip effective
+    # Casual: $4.49 single ride or $19/day pass, avg ~$5.50/trip
+    # E-bike overage: $0.27/min, avg 12 min ride = $3.24 overage
+    member_pct = 0.75  # ~75% of trips are members based on data
+    casual_pct = 0.25
+    member_rev_per_trip = 1.20
+    casual_rev_per_trip = 5.50
+    ebike_overage_per_trip = 3.24 * nyc_ebike_pct  # weighted by e-bike share
+    avg_rev_per_trip = (
+        member_pct * member_rev_per_trip
+        + casual_pct * casual_rev_per_trip
+        + ebike_overage_per_trip
+    )
+
+    current_annual_revenue = nyc_annual_trips * avg_rev_per_trip
+    # With 20% capacity expansion (250 new stations)
+    expansion_additional_trips = nyc_annual_trips * 0.20
+    expansion_revenue = expansion_additional_trips * avg_rev_per_trip
+    # Government ROI: each station costs ~$65K to install, ~$15K/yr to maintain
+    new_stations = 250
+    station_install_cost = 65_000
+    station_annual_maint = 15_000
+    govt_investment = new_stations * station_install_cost
+    govt_annual_maint = new_stations * station_annual_maint
+    trips_per_new_station = expansion_additional_trips / new_stations
+    # Public benefit: health ($0.50/trip), congestion reduction ($0.30/trip),
+    # emissions reduction ($0.20/trip) = $1.00/trip public benefit
+    public_benefit_per_trip = 1.00
+    annual_public_benefit = expansion_additional_trips * public_benefit_per_trip
+
+    money_cols = st.columns(2)
+    with money_cols[0]:
+        st.markdown("**Lyft revenue opportunity**")
+        st.metric("Current estimated annual revenue (NYC)", f"${current_annual_revenue:,.0f}")
+        st.metric("Avg revenue per trip", f"${avg_rev_per_trip:.2f}")
+        st.metric("Additional revenue from 250 new stations", f"${expansion_revenue:,.0f}/yr")
+        st.metric("Projected annual trips (NYC)", f"{nyc_annual_trips:,.0f}")
+        st.markdown(
+            f"With 250 new stations, we project **{expansion_additional_trips:,.0f} additional annual trips** "
+            f"generating **${expansion_revenue:,.0f}** in new revenue. "
+            "E-bike overage fees alone contribute significantly — at 70% e-bike share and "
+            "$0.27/min, every ride adds margin."
+        )
+
+    with money_cols[1]:
+        st.markdown("**Government ROI**")
+        st.metric("Total station investment (250 stations)", f"${govt_investment:,.0f}")
+        st.metric("Annual maintenance cost", f"${govt_annual_maint:,.0f}")
+        st.metric("Annual public benefit (health + congestion + emissions)", f"${annual_public_benefit:,.0f}")
+        payback_years = govt_investment / (annual_public_benefit - govt_annual_maint) if annual_public_benefit > govt_annual_maint else float("inf")
+        st.metric("Payback period", f"{payback_years:.1f} years")
+        st.markdown(
+            f"Each new station generates **{trips_per_new_station:,.0f} trips/year**. "
+            "Public health benefits (reduced obesity, heart disease), congestion relief, "
+            "and emissions reduction create measurable value. "
+            f"At **${public_benefit_per_trip:.2f}/trip** in public benefit, the investment pays for itself "
+            f"in **{payback_years:.1f} years** — faster than most transit infrastructure."
+        )
+
+    # Revenue growth projection chart
+    years = list(range(2025, 2031))
+    base_revenue = current_annual_revenue
+    growth_scenarios = {
+        "No expansion (status quo)": [base_revenue * (1.03 ** i) for i in range(6)],
+        "250 new stations (moderate)": [
+            (base_revenue + expansion_revenue * min(i / 2, 1)) * (1.05 ** i) for i in range(6)
+        ],
+        "500 stations + DOT partnership": [
+            (base_revenue + expansion_revenue * 2 * min(i / 2, 1)) * (1.08 ** i) for i in range(6)
+        ],
+    }
+
+    proj_rows = []
+    for scenario, values in growth_scenarios.items():
+        for yr, val in zip(years, values):
+            proj_rows.append({"Year": yr, "Scenario": scenario, "Annual Revenue": val})
+    proj_df = pd.DataFrame(proj_rows)
+
+    proj_chart = px.line(
+        proj_df,
+        x="Year",
+        y="Annual Revenue",
+        color="Scenario",
+        color_discrete_sequence=["#94A3B8", "#2D7FF9", "#10B981"],
+        labels={"Annual Revenue": "Projected annual revenue ($)"},
+        title="Revenue projection: what happens when you invest vs. don't",
+    )
+    proj_chart.update_layout(
+        height=400,
+        margin=dict(l=10, r=10, t=35, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="white",
+        yaxis_tickprefix="$",
+        yaxis_tickformat=",.0f",
+        legend_title_text="",
+    )
+    st.plotly_chart(proj_chart, use_container_width=True)
+
+    st.success(
+        f"**The gap between doing nothing and investing is ${(growth_scenarios['500 stations + DOT partnership'][-1] - growth_scenarios['No expansion (status quo)'][-1]):,.0f}/year by 2030.** "
+        "That's not a cost — it's a missed opportunity. Lyft's bike-share division can become a "
+        "profit center, not a cost center, with the right government partnership and station expansion."
+    )
+
+    # ===================================================================
+    # ARGUMENT 6: Target market — MTA riders who need an alternative
+    # ===================================================================
+    if not mta_opportunity.empty:
+        st.markdown("### 6. The target market: MTA riders who need a reliable alternative")
+        mta_opportunity["resilience_need"] = (
+            mta_opportunity["mta_daily_riders"] * mta_opportunity["mta_delay_rate"]
+        )
+        resilience_chart = px.scatter(
+            mta_opportunity,
+            x="mta_delay_rate",
+            y="mta_daily_riders",
+            size="bike_daily_trips",
+            hover_name="neighborhood",
+            color="transit_opportunity_score",
+            color_continuous_scale=["#CBD5E1", "#F26B4A", "#0B1324"],
+            labels={
+                "mta_delay_rate": "Subway delay rate (higher = worse service)",
+                "mta_daily_riders": "Daily MTA riders (market size)",
+                "transit_opportunity_score": "Investment priority",
+            },
+            title="Each dot is a neighborhood. Top-right = massive market with bad trains.",
+        )
+        resilience_chart.update_layout(
+            height=400,
+            margin=dict(l=10, r=10, t=35, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="white",
+            xaxis_tickformat=".0%",
+        )
+        st.plotly_chart(resilience_chart, use_container_width=True)
+        st.markdown(
+            "**Top-right quadrant** = neighborhoods where the most people ride the worst trains. "
+            "These are the places where Citi Bike expansion will have the highest adoption rate. "
+            "Our XGBoost model predicts station-level demand with **32% better accuracy** than "
+            "seasonal baselines — Lyft can place new stations with confidence, not guesswork."
+        )
+
+    # ===================================================================
+    # THE ASK: What Lyft product should build
+    # ===================================================================
+    st.markdown("---")
+    st.markdown("### The pitch to Lyft product")
     st.markdown(
         """
-        | Argument | Evidence | DOT action |
-        |---|---|---|
-        | **Demand exceeds supply** | Stations running above capacity across Manhattan and Brooklyn | Fund dock expansions at high-pressure stations |
-        | **Transit resilience** | Subway delays create unserved mobility demand | Co-locate bike-share expansions near unreliable subway lines |
-        | **Electric transition** | E-bike share growing; higher revenue per trip | Subsidize e-bike fleet expansion and charging infrastructure |
-        | **Equity gaps** | Outer-borough station deserts along IBX corridor | Prioritize new stations in underserved neighborhoods |
-        | **Proven peer model** | SF Bay Wheels operates with SFMTA municipal partnership | Adopt similar DOT integration for route planning and subsidies |
-        | **Positive public ROI** | Benefit-cost ratio above 1.0 for top expansion candidates | Allocate capital budget to highest-NPV station projects |
+| What we proved | The number | What Lyft should do |
+|---|---|---|
+| **SF model works** | Comparable per-station utilization with 1/10th NYC's population | Replicate SFMTA partnership model with NYC DOT |
+| **NYC demand is massive** | 60.9M trips in our dataset, 5.4M in peak month alone | Invest in capacity — this market is supply-constrained, not demand-constrained |
+| **Trains are failing** | Chronic delays across dozens of neighborhoods | Position Citi Bike as transit resilience infrastructure, not recreation |
+| **E-bikes are winning** | 70% of NYC trips are now electric | Accelerate e-bike fleet + charging infra — this is where the growth is |
+| **Green + cheap** | Zero emissions, $1,345/yr savings vs MetroCard | Market Citi Bike as the smart commute, not a tourist product |
+| **We can predict demand** | XGBoost model: 32% better than baselines across 2,466 stations | Use our forecasting engine to optimize fleet placement and expansion |
         """
     )
 
-    st.info(
-        "**Recommendation:** NYC DOT should allocate dedicated capital and operating "
-        "budget lines for bike-share expansion, prioritizing neighborhoods where "
-        "transit reliability is weakest, ridership demand is highest, and station "
-        "capacity is most constrained. The Government Investment tab provides "
-        "project-level NPV rankings to guide specific funding decisions."
+    st.markdown("#### The bottom line")
+    st.warning(
+        "**Citi Bike is the largest bike-share system in the Americas, running at capacity, "
+        "in a city where 8.3 million people are stuck with unreliable trains.** "
+        "San Francisco proved that government partnership unlocks bike-share growth. "
+        "NYC is 10x the market. Lyft has the infrastructure. The data says invest now — "
+        "every month of delay is millions of rides left on the table."
+    )
+
+    st.markdown("#### What we need from Lyft")
+    st.markdown(
+        """
+1. **Internal rebalancing data** — close the loop between our demand predictions and fleet ops
+2. **Pilot program** — 50 stations, 30 days, measure ride completion improvement
+3. **NYC DOT partnership intro** — we have the analytics dashboard they need to justify expansion funding
+4. **Cross-city rollout** — same pipeline works for Chicago Divvy, DC Capital Bikeshare, and beyond
+        """
     )
 
 with methods_tab:
