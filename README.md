@@ -61,6 +61,17 @@ plan.md            # full project plan
 - [ ] Streamlit comparison web app
 - [ ] Final report + slides
 
+## Download trip data from the public S3 indexes
+
+You can pull the latest Citi Bike or Bay Wheels archives directly from the public S3 listings:
+
+```bash
+python download_tripdata.py --provider citibike --months 6
+python download_tripdata.py --provider baywheels --months 6
+```
+
+The downloader saves files under `data/raw/` and exposes the same logic through the reusable module in [src/ingest_tripdata.py](src/ingest_tripdata.py).
+
 ## Run the Web App
 
 ```bash
