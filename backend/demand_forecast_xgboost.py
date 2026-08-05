@@ -1,8 +1,12 @@
 """
-CitiBike + Bay Wheels Station Demand Forecasting — XGBoost
-----------------------------------------------------------
-Predicts daily trip counts per station. Trains separate city models.
+Citi Bike Station Demand Forecasting — XGBoost
+-----------------------------------------------
+Predicts daily trip counts per NYC Citi Bike station.
 Compares against a seasonal-naive (lag-7) baseline.
+
+Bay Wheels/San Francisco is excluded from the decision model — it is used
+elsewhere in this project only as a benchmark for the DOT investment case,
+never as training data for NYC demand or investment decisions.
 
 Input:  data/processed/bike_share_daily.parquet
 Output: models/  (saved model + metrics)
@@ -10,7 +14,6 @@ Output: models/  (saved model + metrics)
 
 Run: python demand_forecast_xgboost.py
      python demand_forecast_xgboost.py --city "New York City"
-     python demand_forecast_xgboost.py --city "San Francisco"
 """
 
 from __future__ import annotations
@@ -219,7 +222,12 @@ def save_feature_importance(model: XGBRegressor, city: str) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=Path, default=DATA_PATH)
-    parser.add_argument("--city", type=str, default=None, help="Train for one city only")
+    parser.add_argument(
+        "--city",
+        type=str,
+        default="New York City",
+        help="City to train on (default: New York City — the decision model)",
+    )
     parser.add_argument("--test-days", type=int, default=60)
     return parser.parse_args()
 
@@ -232,7 +240,7 @@ def main() -> None:
         print("Run scripts/ingest_bike_data.py first.")
         return
 
-    cities = [args.city] if args.city else ["New York City", "San Francisco"]
+    cities = [args.city]
     all_results = []
 
     for city in cities:
