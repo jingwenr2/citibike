@@ -18,6 +18,84 @@ HOURLY_PATH = ROOT / "data" / "processed" / "bike_share_hourly.parquet"
 DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 PEAK_HOURS = {7, 8, 9, 17, 18, 19}
 
+# External case studies used as supporting evidence for the NYC investment case.
+# These are standalone facts about each system's own investment/PPP structure and
+# outcomes — deliberately not benchmarked against Citi Bike/NYC figures.
+SUCCESS_STORIES = [
+    {
+        "flag": "🚲",
+        "city": "San Francisco",
+        "system": "Bay Wheels",
+        "tagline": "A regional public-private buildout funded by sponsorship and operator capital, not tax dollars.",
+        "stats": {
+            "Investment model": "SFMTA and the Bay Area Air Quality Management District brought the system to San Francisco as a public partnership; Lyft now operates it under a contract managed by the Metropolitan Transportation Commission.",
+            "Ridership growth": "Grew from a 350-bike, 35-station pilot in 2013 into a regional network that now reaches San Mateo County.",
+            "Infrastructure expansion": "A 2017 buildout funded by Ford's title sponsorship expanded the system to 320 stations and 4,500 bikes; MTC has since approved a further \\$16M expansion, and SFMTA struck a new deal for 4,000 shared e-bikes.",
+            "Financial sustainability": "The 2017 expansion was delivered \"at no capital or operational expense to taxpayers\" — sponsorship and operator capital funded the buildout.",
+        },
+    },
+    {
+        "flag": "🚲",
+        "city": "Paris",
+        "system": "Vélib' Métropole",
+        "tagline": "The world's largest bike-share system, kept running and expanding by a sustained public subsidy.",
+        "stats": {
+            "Investment model": "A city-run public-private partnership: roughly 60-70% of operating costs are publicly subsidized, with operator Smovengo under contract to run the fleet.",
+            "Ridership growth": "About 48.5 million trips in 2025 — the highest-ridership public bike-share system in Europe — up from 173 million cumulative rides in its first six years.",
+            "Infrastructure expansion": "The world's largest bike-share system: 1,400+ stations and 16,000+ bikes across Paris and 66 surrounding municipalities, with a docking point roughly every 300 meters.",
+            "Financial sustainability": "Sustained public subsidy has kept the system running and expanding for nearly two decades.",
+        },
+    },
+    {
+        "flag": "🚲",
+        "city": "London",
+        "system": "Santander Cycles",
+        "tagline": "Over a decade of renewed corporate sponsorship funding continuous fleet and station growth.",
+        "stats": {
+            "Investment model": "Owned by Transport for London, funded through corporate sponsorship — Barclays, then Santander since 2015 — with a new £220M operating contract (Lyft Urban Solutions and Serco) beginning the scheme's next chapter.",
+            "Ridership growth": "106+ million hires since the 2015 sponsorship began; daily journeys hit 1.5 million in 2025, up 12.7% year-over-year.",
+            "Infrastructure expansion": "800+ docking stations citywide with 10,000 classic bikes and 2,000+ e-bikes; e-bikes (added 2022) have already logged 2.3 million rides.",
+            "Financial sustainability": "Decade-plus of renewed, expanding sponsorship — now backed by a new long-term £220M contract.",
+        },
+    },
+    {
+        "flag": "🚲",
+        "city": "Montreal",
+        "system": "BIXI",
+        "tagline": "A public bailout and non-profit restructuring turned a bankrupt operator into a growth story.",
+        "stats": {
+            "Investment model": "Launched with \\$15M in 2009; after the original operator's 2014 bankruptcy, the City of Montreal took over and restructured it as a non-profit funded roughly 50% by user fees, 25% sponsorship/advertising, and 25% public subsidy.",
+            "Ridership growth": "+146% unique users and +81% ridership since the 2014 restructuring, with 100+ million cumulative trips and record usage every summer month in 2025.",
+            "Infrastructure expansion": "Grew from 459 stations in 2014 to 1,080 stations and 12,600 bikes (3,200 electric) by 2025.",
+            "Financial sustainability": "The clearest turnaround here — after a public bailout and restructuring, BIXI reached full financial stability by 2018.",
+        },
+    },
+    {
+        "flag": "🚲",
+        "city": "Washington, D.C.",
+        "system": "Capital Bikeshare",
+        "tagline": "The largest municipally-owned bike-share system in the U.S. — and one of its fastest-growing.",
+        "stats": {
+            "Investment model": "Jointly owned by eight local governments — the largest municipally-owned bike-share system in the United States.",
+            "Ridership growth": "6+ million trips in 2024, up 36.9% year-over-year for a second consecutive annual record and up 79% since 2019 — enough to overtake Chicago's Divvy for the #2 spot nationally.",
+            "Infrastructure expansion": "Stations nearly doubled over the past decade, alongside 55 miles of new bike lanes (35 protected) and a 67-mile regional trail network.",
+            "Financial sustainability": "E-bikes, added in 2018, now drive 60%+ of rides after a 143% jump in e-bike ridership in a single year.",
+        },
+    },
+    {
+        "flag": "🚲",
+        "city": "Chicago",
+        "system": "Divvy",
+        "tagline": "A self-funding expansion model: the operator's capital investment is repaid with revenue-sharing back to the city.",
+        "stats": {
+            "Investment model": "Owned by the Chicago Department of Transportation, operated by Lyft since 2019 under a citywide-expansion partnership.",
+            "Ridership growth": "A record 6.8+ million trips in 2025, the highest in the system's history.",
+            "Infrastructure expansion": "Expanded to all 50 city wards by 2023, with 200 new or upgraded stations planned for 2026.",
+            "Financial sustainability": "Lyft's \\$50M capital investment in bikes, stations, and hardware is paired with \\$77M in direct revenue returned to the city over nine years — a self-funding expansion structure.",
+        },
+    },
+]
+
 CITY_META = {
     "New York City": {
         "system": "Citi Bike",
@@ -401,12 +479,22 @@ metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
 metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
 metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
 
-overview_tab, stations_tab, forecast_tab, mta_tab, investment_tab, dot_tab, methods_tab = st.tabs(
+(
+    overview_tab,
+    stations_tab,
+    forecast_tab,
+    mta_tab,
+    success_tab,
+    investment_tab,
+    dot_tab,
+    methods_tab,
+) = st.tabs(
     [
         "Overview",
         "Station explorer",
         "Forecast lab",
         "MTA connection",
+        "Success stories",
         "Government investment",
         "DOT support case",
         "Data & methods",
@@ -610,7 +698,11 @@ with stations_tab:
         nyc_filtered.groupby(["city", "system", "station_name", "lat", "lon", "capacity"], as_index=False)
         .agg(trips=("trips", "sum"), average_daily=("trips", "mean"))
     )
-    station_summary["pressure"] = station_summary["average_daily"] / station_summary["capacity"]
+    station_summary["pressure"] = np.where(
+        station_summary["capacity"] > 0,
+        station_summary["average_daily"] / station_summary["capacity"],
+        np.nan,
+    )
     station_summary["marker_size"] = (
         10 + 28 * station_summary["trips"] / station_summary["trips"].max()
     )
@@ -647,10 +739,13 @@ with stations_tab:
     st.plotly_chart(map_chart, use_container_width=True)
 
     ranking_col, detail_col = st.columns([1.05, 1])
-    ranked = station_summary.sort_values("pressure", ascending=False)
+    ranked = station_summary.dropna(subset=["pressure"]).sort_values("pressure", ascending=False)
     with ranking_col:
         st.subheader("Highest demand pressure")
-        st.caption("Average daily trips divided by stated dock capacity")
+        st.caption(
+            "Average daily trips divided by stated dock capacity. Stations with "
+            "unknown or zero recorded capacity are excluded from this ranking."
+        )
         display_ranked = ranked[
             ["city", "station_name", "average_daily", "capacity", "pressure"]
         ].head(10)
@@ -865,6 +960,53 @@ with mta_tab:
                 ),
             },
         )
+
+with success_tab:
+    st.subheader("Success stories: what public investment already did elsewhere")
+    st.markdown(
+        '<p class="section-note">Citi Bike is the target of this investment case, not a '
+        "success story — these six systems are independent, external evidence that "
+        "sustained public investment and public-private partnerships reliably grow "
+        "ridership, expand infrastructure, and put bike-share on stable financial "
+        "footing. None of the figures below are compared to NYC or Citi Bike.</p>",
+        unsafe_allow_html=True,
+    )
+
+    story_rows = [SUCCESS_STORIES[i : i + 3] for i in range(0, len(SUCCESS_STORIES), 3)]
+    for row in story_rows:
+        story_cols = st.columns(len(row))
+        for col, story in zip(story_cols, row):
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"#### {story['flag']} {story['city']}")
+                    st.caption(story["system"])
+                    st.markdown(f"*{story['tagline']}*")
+                    for label, text in story["stats"].items():
+                        st.markdown(f"**{label}**")
+                        st.markdown(text)
+
+    st.markdown("---")
+    st.markdown("#### What these systems have in common")
+    st.markdown(
+        """
+- **Public ownership or a formal public-private partnership** — every system here is
+  either government-owned (Capital Bikeshare, Divvy) or built on a long-term public
+  or sponsorship contract (Vélib' Métropole, Santander Cycles, Bay Wheels), not a
+  purely private, self-funded venture.
+- **Sustained, multi-year capital commitments** — buildouts and fleet upgrades are
+  funded in dedicated tranches (Bay Wheels' \\$16M expansion, Divvy's \\$50M citywide
+  investment, Santander Cycles' new £220M contract), not one-off grants.
+- **Investment shows up directly in ridership and infrastructure** — every system
+  posted double-digit ridership growth and station or fleet expansion in its most
+  recent reporting period.
+- **Financial sustainability follows, not precedes, investment** — BIXI's non-profit
+  restructuring and Divvy's revenue-sharing model show that public backing can turn
+  into self-sustaining or even net-positive economics over time.
+
+This is the evidence base for the investment strategy modeled in the
+**Government investment** tab that follows.
+        """
+    )
 
 with investment_tab:
     st.subheader("Government & transportation investment planner")
@@ -1126,58 +1268,30 @@ with dot_tab:
     )
 
     # ===================================================================
-    # ARGUMENT 1: SF proves government investment works
+    # ARGUMENT 1: government investment works elsewhere (external evidence only —
+    # see the Success stories tab; deliberately not benchmarked against NYC here)
     # ===================================================================
-    st.markdown("### 1. The proof: San Francisco shows government investment works")
+    st.markdown("### 1. The proof: government investment works elsewhere")
+    bay_wheels_story = next(s for s in SUCCESS_STORIES if s["system"] == "Bay Wheels")
     st.markdown(
-        "Bay Wheels operates in a metro of ~900K people. SFMTA treats it as public transit "
+        f"{bay_wheels_story['tagline']} SFMTA treats Bay Wheels as public transit "
         "infrastructure — integrated into route planning, subsidized station buildouts, "
-        "and protected bike lanes. **The result: world-class per-station utilization.**"
+        "and protected bike lanes."
     )
-
-    if "San Francisco" in filtered["city"].unique():
-        benchmark_data = (
-            filtered.groupby("city", as_index=False)
-            .agg(
-                total_trips=("trips", "sum"),
-                stations=("station_name", "nunique"),
-                electric_trips=("electric_trips", "sum"),
-                days=("date", "nunique"),
-            )
-        )
-        benchmark_data["trips_per_station_day"] = (
-            benchmark_data["total_trips"] / benchmark_data["stations"] / benchmark_data["days"]
-        )
-        benchmark_data["electric_share"] = benchmark_data["electric_trips"] / benchmark_data["total_trips"]
-
-        sf_row = benchmark_data[benchmark_data["city"] == "San Francisco"]
-        nyc_row = benchmark_data[benchmark_data["city"] == "New York City"]
-
-        proof_cols = st.columns(2)
-        with proof_cols[0]:
-            st.markdown("**San Francisco (Bay Wheels) — Government-backed**")
-            if not sf_row.empty:
-                sf = sf_row.iloc[0]
-                st.metric("Trips/station/day", f"{sf['trips_per_station_day']:.0f}")
-                st.metric("Total trips (in dataset)", f"{sf['total_trips']:,.0f}")
-                st.metric("Active stations", f"{int(sf['stations']):,}")
-                st.metric("Electric share", f"{sf['electric_share']:.0%}")
-        with proof_cols[1]:
-            st.markdown("**New York City (Citi Bike) — Underinvested**")
-            if not nyc_row.empty:
-                ny = nyc_row.iloc[0]
-                st.metric("Trips/station/day", f"{ny['trips_per_station_day']:.0f}")
-                st.metric("Total trips (in dataset)", f"{ny['total_trips']:,.0f}")
-                st.metric("Active stations", f"{int(ny['stations']):,}")
-                st.metric("Electric share", f"{ny['electric_share']:.0%}")
-
-        st.success(
-            "SF has 1/10th the population but achieves comparable per-station usage. "
-            "That's what happens when a city treats bike-share as infrastructure, not a private amenity. "
-            "**Imagine what NYC could do with real DOT backing.**"
-        )
-    else:
-        st.info("Add San Francisco data to see the cross-city benchmark.")
+    proof_cols = st.columns(2)
+    with proof_cols[0]:
+        st.markdown("**Infrastructure expansion**")
+        st.markdown(bay_wheels_story["stats"]["Infrastructure expansion"])
+    with proof_cols[1]:
+        st.markdown("**Financial sustainability**")
+        st.markdown(bay_wheels_story["stats"]["Financial sustainability"])
+    st.info(
+        "Bay Wheels is one of six external case studies — see the **Success stories** "
+        "tab for the full evidence base (also Paris, London, Montreal, Washington D.C., "
+        "and Chicago), each showing what sustained public investment or a formal "
+        "public-private partnership does for ridership, infrastructure, and financial "
+        "sustainability. **Imagine what NYC could do with the same backing.**"
+    )
 
     # ===================================================================
     # ARGUMENT 2: NYC is broken — MTA failing, people need alternatives
@@ -1305,6 +1419,7 @@ with dot_tab:
         nyc_filtered.groupby(["station_name", "capacity"], as_index=False)
         .agg(total_trips=("trips", "sum"), days=("date", "nunique"))
     )
+    station_pressure = station_pressure[station_pressure["capacity"] > 0].copy()
     station_pressure["daily_demand"] = station_pressure["total_trips"] / station_pressure["days"]
     station_pressure["pressure"] = station_pressure["daily_demand"] / station_pressure["capacity"]
     station_pressure["pressure_category"] = pd.cut(
