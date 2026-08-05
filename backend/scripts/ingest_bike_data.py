@@ -33,7 +33,7 @@ CITIBIKE_STATION_INFO = (
     "https://gbfs.citibikenyc.com/gbfs/en/station_information.json"
 )
 BAYWHEELS_STATION_INFO = (
-    "https://gbfs.baywheelsbike.com/gbfs/en/station_information.json"
+    "https://gbfs.baywheels.com/gbfs/en/station_information.json"
 )
 
 
@@ -199,18 +199,32 @@ def load_all_trips(raw_dir: Path, city: str, system: str) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def fetch_station_capacity(url: str) -> dict[str, int]:
-    """Fetch current station capacities from GBFS feed."""
+def fetch_station_capacity(url: str, city_label: str) -> dict[str, int]:
+    """Fetch current station capacities from GBFS feed.
+
+    Raises instead of returning {} on failure — a silent empty result here
+    used to make every station in a city fall back to capacity 0 (see the
+    all-zero capacity regression this was written to prevent).
+    """
+    req = Request(url, headers={"User-Agent": "citibike-capstone/1.0"})
+    import json
+
     try:
-        req = Request(url, headers={"User-Agent": "citibike-capstone/1.0"})
-        import json
         with urlopen(req, timeout=60) as resp:
             data = json.load(resp)
-        stations = data.get("data", {}).get("stations", [])
-        return {s["name"]: s.get("capacity", 0) for s in stations if "name" in s}
     except Exception as exc:
-        print(f"  Could not fetch station capacity: {exc}")
-        return {}
+        raise RuntimeError(
+            f"Could not fetch {city_label} GBFS station capacity from {url}: {exc}. "
+            "If this is a certificate error, set SSL_CERT_FILE to a valid CA bundle, e.g.:\n"
+            "  SSL_CERT_FILE=$(python3 -c 'import certifi; print(certifi.where())') "
+            "python backend/scripts/ingest_bike_data.py"
+        ) from exc
+
+    stations = data.get("data", {}).get("stations", [])
+    capacities = {s["name"]: s.get("capacity", 0) for s in stations if "name" in s}
+    if not capacities:
+        raise RuntimeError(f"GBFS feed for {city_label} returned zero stations from {url}.")
+    return capacities
 
 
 def aggregate_daily(trips: pd.DataFrame) -> pd.DataFrame:
@@ -244,8 +258,8 @@ def aggregate_daily(trips: pd.DataFrame) -> pd.DataFrame:
 def attach_capacity(daily: pd.DataFrame) -> pd.DataFrame:
     """Attach current dock capacity from GBFS feeds."""
     print("Fetching station capacities from GBFS...")
-    nyc_cap = fetch_station_capacity(CITIBIKE_STATION_INFO)
-    bw_cap = fetch_station_capacity(BAYWHEELS_STATION_INFO)
+    nyc_cap = fetch_station_capacity(CITIBIKE_STATION_INFO, "Citi Bike (NYC)")
+    bw_cap = fetch_station_capacity(BAYWHEELS_STATION_INFO, "Bay Wheels (SF)")
 
     all_cap = {}
     all_cap.update(bw_cap)
