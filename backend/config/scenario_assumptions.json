@@ -1,0 +1,46 @@
+{
+  "_description": "Default assumptions for investment scenario simulations. All projections are scenario-based estimates, not guaranteed outcomes.",
+
+  "conservative": {
+    "label": "Conservative",
+    "rides_per_new_bike_per_day": 2.0,
+    "revenue_per_ride": 3.50,
+    "station_install_cost": 75000,
+    "classic_bike_cost": 1200,
+    "ebike_cost": 3500,
+    "annual_operating_cost_per_bike": 600,
+    "annual_station_operating_cost": 18000,
+    "organic_growth_rate": 0.02,
+    "membership_growth_rate": 0.03,
+    "utilization_ramp_months": 12,
+    "scenario_multiplier": 0.75
+  },
+  "base": {
+    "label": "Base",
+    "rides_per_new_bike_per_day": 3.5,
+    "revenue_per_ride": 4.25,
+    "station_install_cost": 65000,
+    "classic_bike_cost": 1000,
+    "ebike_cost": 3000,
+    "annual_operating_cost_per_bike": 500,
+    "annual_station_operating_cost": 15000,
+    "organic_growth_rate": 0.03,
+    "membership_growth_rate": 0.05,
+    "utilization_ramp_months": 6,
+    "scenario_multiplier": 1.0
+  },
+  "optimistic": {
+    "label": "Optimistic",
+    "rides_per_new_bike_per_day": 5.0,
+    "revenue_per_ride": 5.00,
+    "station_install_cost": 55000,
+    "classic_bike_cost": 900,
+    "ebike_cost": 2500,
+    "annual_operating_cost_per_bike": 400,
+    "annual_station_operating_cost": 12000,
+    "organic_growth_rate": 0.05,
+    "membership_growth_rate": 0.08,
+    "utilization_ramp_months": 3,
+    "scenario_multiplier": 1.25
+  }
+}

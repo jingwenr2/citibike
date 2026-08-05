@@ -1,0 +1,27 @@
+{
+  "_description": "Weights for station investment opportunity scoring. Each factor is normalized to 0-100 before weighting. Weights must sum to 1.0.",
+
+  "weights": {
+    "demand_score": 0.25,
+    "capacity_pressure_score": 0.20,
+    "mta_connection_score": 0.20,
+    "coverage_gap_score": 0.15,
+    "revenue_potential_score": 0.10,
+    "electric_bike_score": 0.10
+  },
+
+  "factor_descriptions": {
+    "demand_score": "Historical average daily trip demand at this station",
+    "capacity_pressure_score": "Ratio of daily demand to dock capacity (higher = more constrained)",
+    "mta_connection_score": "Nearby MTA subway ridership and delay rate (transit opportunity)",
+    "coverage_gap_score": "Inverse of nearby station density (higher = fewer alternatives)",
+    "revenue_potential_score": "Estimated revenue contribution based on rider mix and trip volume",
+    "electric_bike_score": "Share of trips using e-bikes (indicates willingness to pay premium)"
+  },
+
+  "recommendation_thresholds": {
+    "high_opportunity": 70,
+    "moderate_opportunity": 40,
+    "low_opportunity": 0
+  }
+}

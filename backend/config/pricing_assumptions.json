@@ -1,0 +1,30 @@
+{
+  "_description": "Citi Bike pricing assumptions for revenue estimation. All values are estimates based on publicly available Citi Bike pricing as of January 2026. These must be verified before any formal presentation.",
+  "_last_verified": "2026-01-01",
+  "_source": "https://citibikenyc.com/pricing",
+
+  "annual_membership_price": 239.00,
+  "single_ride_price": 4.49,
+  "day_pass_price": 19.00,
+  "ebike_per_minute_member": 0.27,
+  "ebike_per_minute_nonmember": 0.27,
+  "included_ride_minutes_member": 45,
+  "included_ride_minutes_casual": 30,
+  "overage_per_minute_member": 0.23,
+  "average_ebike_ride_minutes": 12,
+  "average_ebike_overage_per_trip": 3.24,
+  "estimated_active_annual_members": 200000,
+  "casual_single_ride_share": 0.85,
+  "casual_day_pass_share": 0.15,
+  "sponsorship_revenue_annual": 17500000,
+  "sponsorship_source": "Citigroup title sponsorship (public contract)",
+
+  "station_install_cost": 65000,
+  "station_annual_operating_cost": 15000,
+  "new_members_per_new_station": 30,
+
+  "health_benefit_per_trip": 0.50,
+  "congestion_benefit_per_trip": 0.30,
+  "emissions_benefit_per_trip": 0.20,
+  "estimated_tax_rate": 0.08
+}

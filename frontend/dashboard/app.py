@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -9,14 +10,19 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-
 ROOT = Path(__file__).resolve().parents[2]
-DATA_PATH = ROOT / "data" / "processed" / "bike_share_daily.parquet"
-MTA_PATH = ROOT / "data" / "processed" / "mta_bike_opportunity.parquet"
-HOURLY_PATH = ROOT / "data" / "processed" / "bike_share_hourly.parquet"
+sys.path.insert(0, str(ROOT))
 
-DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-PEAK_HOURS = {7, 8, 9, 17, 18, 19}
+from backend.services import data_service, demand_service, revenue_service
+from backend.services.opportunity_service import compute_mta_transit_scores
+from backend.utils.paths import DAILY_DATA_PATH, HOURLY_DATA_PATH, MTA_DATA_PATH
+
+DATA_PATH = DAILY_DATA_PATH
+MTA_PATH = MTA_DATA_PATH
+HOURLY_PATH = HOURLY_DATA_PATH
+
+DAY_ORDER = demand_service.DAY_ORDER
+PEAK_HOURS = demand_service.PEAK_HOURS
 
 # External case studies used as supporting evidence for the NYC investment case.
 # These are standalone facts about each system's own investment/PPP structure and
@@ -219,70 +225,40 @@ def make_demo_data() -> pd.DataFrame:
 def load_data() -> pd.DataFrame:
     if not DATA_PATH.exists():
         return make_demo_data()
-
-    frame = pd.read_parquet(DATA_PATH)
-    required = {
-        "date",
-        "city",
-        "system",
-        "station_name",
-        "lat",
-        "lon",
-        "rider_type",
-        "trips",
-        "electric_trips",
-        "capacity",
-    }
-    missing = required.difference(frame.columns)
-    if missing:
-        st.error(
-            "The processed dataset is missing required columns: "
-            + ", ".join(sorted(missing))
-        )
+    try:
+        frame = data_service.load_daily_data()
+    except Exception as exc:
+        st.error(str(exc))
         st.stop()
-    frame["date"] = pd.to_datetime(frame["date"])
     frame["is_demo"] = False
     return frame
 
 
 @st.cache_data
 def load_mta_signal() -> pd.DataFrame:
-    if MTA_PATH.exists():
-        frame = pd.read_parquet(MTA_PATH)
-        required = {
-            "station_name",
-            "neighborhood",
-            "mta_daily_riders",
-            "mta_delay_rate",
-        }
-        missing = required.difference(frame.columns)
-        if missing:
-            st.error(
-                "The MTA opportunity dataset is missing required columns: "
-                + ", ".join(sorted(missing))
-            )
-            st.stop()
-        if "mta_is_demo" not in frame.columns:
-            frame["mta_is_demo"] = False
-        frame["mta_is_demo"] = frame["mta_is_demo"].astype(bool)
-        return frame
-
-    return pd.DataFrame(
-        [
-            ("Broadway & W 25 St", "Chelsea", 58_000, 0.12),
-            ("West St & Chambers St", "Lower Manhattan", 72_000, 0.09),
-            ("E 17 St & Broadway", "Union Square", 95_000, 0.14),
-            ("1 Ave & E 68 St", "Upper East Side", 82_000, 0.11),
-            ("Bedford Ave & Nassau Ave", "Greenpoint", 41_000, 0.18),
-            ("Crescent St & 30 Ave", "Astoria", 63_000, 0.21),
-        ],
-        columns=[
-            "station_name",
-            "neighborhood",
-            "mta_daily_riders",
-            "mta_delay_rate",
-        ],
-    ).assign(mta_is_demo=True)
+    try:
+        frame = data_service.load_mta_opportunity_data()
+    except Exception as exc:
+        st.error(str(exc))
+        st.stop()
+    if frame.empty:
+        return pd.DataFrame(
+            [
+                ("Broadway & W 25 St", "Chelsea", 58_000, 0.12),
+                ("West St & Chambers St", "Lower Manhattan", 72_000, 0.09),
+                ("E 17 St & Broadway", "Union Square", 95_000, 0.14),
+                ("1 Ave & E 68 St", "Upper East Side", 82_000, 0.11),
+                ("Bedford Ave & Nassau Ave", "Greenpoint", 41_000, 0.18),
+                ("Crescent St & 30 Ave", "Astoria", 63_000, 0.21),
+            ],
+            columns=[
+                "station_name",
+                "neighborhood",
+                "mta_daily_riders",
+                "mta_delay_rate",
+            ],
+        ).assign(mta_is_demo=True)
+    return frame
 
 
 @st.cache_data
@@ -311,15 +287,10 @@ def make_demo_hourly() -> pd.DataFrame:
 def load_hourly_demand() -> pd.DataFrame:
     if not HOURLY_PATH.exists():
         return make_demo_hourly()
-
-    frame = pd.read_parquet(HOURLY_PATH)
-    required = {"date", "hour", "day_name", "rider_type", "trips"}
-    missing = required.difference(frame.columns)
-    if missing:
-        st.error(
-            "The hourly demand dataset is missing required columns: "
-            + ", ".join(sorted(missing))
-        )
+    try:
+        frame = data_service.load_hourly_data()
+    except Exception as exc:
+        st.error(str(exc))
         st.stop()
     frame["hourly_is_demo"] = False
     return frame
@@ -334,18 +305,7 @@ def compact_number(value: float) -> str:
 
 
 def prior_period_delta(frame: pd.DataFrame) -> float:
-    days = max(1, (frame["date"].max() - frame["date"].min()).days + 1)
-    cutoff = frame["date"].min() - pd.Timedelta(days=1)
-    prior_start = cutoff - pd.Timedelta(days=days - 1)
-    all_data = load_data()
-    prior = all_data[
-        all_data["city"].isin(frame["city"].unique())
-        & all_data["rider_type"].isin(frame["rider_type"].unique())
-        & all_data["date"].between(prior_start, cutoff)
-    ]
-    current_total = frame["trips"].sum()
-    prior_total = prior["trips"].sum()
-    return (current_total / prior_total - 1) if prior_total else 0
+    return demand_service.prior_period_delta(frame, load_data())
 
 
 data = load_data()
@@ -407,44 +367,7 @@ nyc_station_daily = (
 nyc_station_daily["bike_daily_trips"] = (
     nyc_station_daily["trips"] / nyc_station_daily["observed_days"]
 )
-mta_opportunity = mta_signal.merge(
-    nyc_station_daily[["station_name", "bike_daily_trips"]],
-    on="station_name",
-    how="inner",
-)
-if not mta_opportunity.empty:
-    mta_range = (
-        mta_opportunity["mta_daily_riders"].max()
-        - mta_opportunity["mta_daily_riders"].min()
-    )
-    bike_range = (
-        mta_opportunity["bike_daily_trips"].max()
-        - mta_opportunity["bike_daily_trips"].min()
-    )
-    mta_opportunity["mta_score"] = (
-        100
-        * (mta_opportunity["mta_daily_riders"] - mta_opportunity["mta_daily_riders"].min())
-        / (mta_range if mta_range else 1)
-    )
-    mta_opportunity["bike_score"] = (
-        100
-        * (mta_opportunity["bike_daily_trips"] - mta_opportunity["bike_daily_trips"].min())
-        / (bike_range if bike_range else 1)
-    )
-    delay_range = (
-        mta_opportunity["mta_delay_rate"].max()
-        - mta_opportunity["mta_delay_rate"].min()
-    )
-    mta_opportunity["delay_score"] = (
-        100
-        * (mta_opportunity["mta_delay_rate"] - mta_opportunity["mta_delay_rate"].min())
-        / (delay_range if delay_range else 1)
-    )
-    mta_opportunity["transit_opportunity_score"] = (
-        0.45 * mta_opportunity["mta_score"]
-        + 0.35 * (100 - mta_opportunity["bike_score"])
-        + 0.20 * mta_opportunity["delay_score"]
-    )
+mta_opportunity = compute_mta_transit_scores(mta_signal, nyc_station_daily)
 
 st.markdown(
     """
@@ -466,11 +389,10 @@ if is_demo:
         unsafe_allow_html=True,
     )
 
-total_trips = nyc_filtered["trips"].sum()
+total_trips = demand_service.total_trips(nyc_filtered)
 active_stations = nyc_filtered["station_name"].nunique()
-electric_share = nyc_filtered["electric_trips"].sum() / total_trips
-daily = nyc_filtered.groupby("date", as_index=False)["trips"].sum()
-avg_daily = daily["trips"].mean()
+electric_share = demand_service.electric_bike_share(nyc_filtered)
+avg_daily = demand_service.average_daily_trips(nyc_filtered)
 delta = prior_period_delta(nyc_filtered)
 
 metric_cols = st.columns(4)
@@ -504,14 +426,7 @@ metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
 with overview_tab:
     st.subheader("NYC demand over time")
     st.caption("Member vs. casual ridership, New York City only.")
-    trend = (
-        nyc_filtered.groupby(["date", "rider_type"], as_index=False)["trips"]
-        .sum()
-        .sort_values("date")
-    )
-    trend["smoothed_trips"] = trend.groupby("rider_type")["trips"].transform(
-        lambda values: values.rolling(smoothing, min_periods=1).mean()
-    )
+    trend = demand_service.daily_demand_trend(nyc_filtered, smoothing=smoothing)
     trend_chart = px.line(
         trend,
         x="date",
@@ -533,16 +448,8 @@ with overview_tab:
     st.subheader("Ridership")
     st.caption("Share of NYC trips by rider type and bike type, for the selected date range.")
 
-    rider_mix = nyc_filtered.groupby("rider_type", as_index=False)["trips"].sum()
-    bike_mix = pd.DataFrame(
-        {
-            "bike_type": ["Electric", "Classic"],
-            "trips": [
-                nyc_filtered["electric_trips"].sum(),
-                nyc_filtered["trips"].sum() - nyc_filtered["electric_trips"].sum(),
-            ],
-        }
-    )
+    rider_mix = demand_service.member_casual_split(nyc_filtered)
+    bike_mix = demand_service.bike_type_split(nyc_filtered)
     rider_colors = {"Member": "#17233D", "Casual": "#7DD3FC"}
     bike_colors = {"Electric": "#2D7FF9", "Classic": "#94A3B8"}
 
@@ -585,25 +492,7 @@ with overview_tab:
 
     st.subheader("Weekly rhythm by bike type")
     st.caption("Average NYC daily trips by weekday, electric vs. classic bikes.")
-    weekday = nyc_filtered.assign(
-        weekday=nyc_filtered["date"].dt.day_name(),
-        weekday_index=nyc_filtered["date"].dt.dayofweek,
-        classic_trips=nyc_filtered["trips"] - nyc_filtered["electric_trips"],
-    )[["weekday", "weekday_index", "date", "electric_trips", "classic_trips"]]
-    weekday_long = weekday.melt(
-        id_vars=["weekday", "weekday_index", "date"],
-        value_vars=["electric_trips", "classic_trips"],
-        var_name="bike_type",
-        value_name="trips",
-    )
-    weekday_long["bike_type"] = weekday_long["bike_type"].map(
-        {"electric_trips": "Electric", "classic_trips": "Classic"}
-    )
-    weekday_summary = (
-        weekday_long.groupby(["weekday", "weekday_index", "bike_type"], as_index=False)["trips"]
-        .mean()
-        .sort_values("weekday_index")
-    )
+    weekday_summary = demand_service.weekday_bike_type_demand(nyc_filtered)
     weekday_chart = px.bar(
         weekday_summary,
         x="weekday",
@@ -623,10 +512,7 @@ with overview_tab:
     st.plotly_chart(weekday_chart, use_container_width=True)
 
     hourly = load_hourly_demand()
-
-    peak_total = hourly[hourly["hour"].isin(PEAK_HOURS)]["trips"].sum()
-    hourly_total = hourly["trips"].sum()
-    peak_share = peak_total / hourly_total if hourly_total else 0
+    peak_share = demand_service.peak_hour_share(hourly)
 
     st.subheader(f"{peak_share:.1%} of trips happen during the six peak rush hours")
     st.caption(
@@ -664,24 +550,42 @@ with overview_tab:
             z=hourly_wide.values,
             x=hourly_wide.columns.tolist(),
             y=hourly_wide.index.tolist(),
-            colorscale=[[0, "#EFF6FF"], [0.5, "#2D7FF9"], [1, "#0B1324"]],
-            colorbar=dict(title="Avg trips"),
+            colorscale=[
+                [0, "#0D1117"],
+                [0.15, "#162447"],
+                [0.35, "#1F4287"],
+                [0.55, "#2D7FF9"],
+                [0.75, "#5CA8FF"],
+                [0.9, "#A5D8FF"],
+                [1, "#E7F5FF"],
+            ],
+            colorbar=dict(
+                title="Avg trips",
+                tickfont=dict(color="#94A3B8"),
+                titlefont=dict(color="#94A3B8"),
+            ),
             hovertemplate="%{x}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
         )
     )
     for hour_line in [6.5, 9.5, 16.5, 19.5]:
-        heatmap_chart.add_hline(y=hour_line, line_dash="dash", line_color="#EA580C", opacity=0.6)
+        heatmap_chart.add_hline(y=hour_line, line_dash="dash", line_color="#F59E0B", opacity=0.7)
     heatmap_chart.update_yaxes(
         title="Hour of day",
         autorange="reversed",
         tickmode="array",
         tickvals=list(range(0, 24, 2)),
+        tickfont=dict(color="#94A3B8"),
+        titlefont=dict(color="#94A3B8"),
+        gridcolor="#1E293B",
+    )
+    heatmap_chart.update_xaxes(
+        tickfont=dict(color="#94A3B8"),
     )
     heatmap_chart.update_layout(
         height=520,
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white",
+        plot_bgcolor="#0D1117",
     )
     st.plotly_chart(heatmap_chart, use_container_width=True)
 
@@ -694,21 +598,10 @@ with overview_tab:
 with stations_tab:
     st.subheader("NYC station demand map")
     st.caption("Bay Wheels is excluded from station-level investment decisions.")
-    station_summary = (
-        nyc_filtered.groupby(["city", "system", "station_name", "lat", "lon", "capacity"], as_index=False)
-        .agg(trips=("trips", "sum"), average_daily=("trips", "mean"))
-    )
-    station_summary["pressure"] = np.where(
-        station_summary["capacity"] > 0,
-        station_summary["average_daily"] / station_summary["capacity"],
-        np.nan,
-    )
-    station_summary["marker_size"] = (
-        10 + 28 * station_summary["trips"] / station_summary["trips"].max()
-    )
+    station_summary_df = demand_service.station_summary(nyc_filtered)
 
     map_chart = px.scatter_map(
-        station_summary,
+        station_summary_df,
         lat="lat",
         lon="lon",
         color="city",
@@ -739,7 +632,7 @@ with stations_tab:
     st.plotly_chart(map_chart, use_container_width=True)
 
     ranking_col, detail_col = st.columns([1.05, 1])
-    ranked = station_summary.dropna(subset=["pressure"]).sort_values("pressure", ascending=False)
+    ranked = station_summary_df.sort_values("pressure", ascending=False)
     with ranking_col:
         st.subheader("Highest demand pressure")
         st.caption(
@@ -1305,12 +1198,7 @@ with dot_tab:
 
     mta_nyc_cols = st.columns(2)
     with mta_nyc_cols[0]:
-        monthly_trend = (
-            filtered.assign(month=filtered["date"].dt.to_period("M").dt.to_timestamp())
-            .groupby(["month", "city"], as_index=False)["trips"]
-            .sum()
-            .sort_values("month")
-        )
+        monthly_trend = demand_service.monthly_demand(filtered)
         monthly_chart = px.line(
             monthly_trend,
             x="month",
@@ -1415,18 +1303,7 @@ with dot_tab:
     # ===================================================================
     st.markdown("### 4. The urgency: stations are already at capacity")
 
-    station_pressure = (
-        nyc_filtered.groupby(["station_name", "capacity"], as_index=False)
-        .agg(total_trips=("trips", "sum"), days=("date", "nunique"))
-    )
-    station_pressure = station_pressure[station_pressure["capacity"] > 0].copy()
-    station_pressure["daily_demand"] = station_pressure["total_trips"] / station_pressure["days"]
-    station_pressure["pressure"] = station_pressure["daily_demand"] / station_pressure["capacity"]
-    station_pressure["pressure_category"] = pd.cut(
-        station_pressure["pressure"],
-        bins=[0, 0.5, 1.0, 1.5, float("inf")],
-        labels=["Under-utilized (<0.5)", "Balanced (0.5-1.0)", "Strained (1.0-1.5)", "Critical (>1.5)"],
-    )
+    station_pressure = demand_service.station_pressure_categories(nyc_filtered)
 
     pressure_cols = st.columns(2)
     with pressure_cols[0]:
@@ -1470,27 +1347,19 @@ with dot_tab:
         "Expansion doesn't cost Lyft money — it **makes** Lyft money. Here's the math."
     )
 
-    # ---------- Revenue model from REAL data ----------
-    nyc_days = nyc_filtered["date"].nunique() if not nyc_filtered.empty else 1
-    nyc_annual_trips = nyc_trips_total / nyc_days * 365 if nyc_days > 0 else 0
-
-    # Real member/casual split from our data
-    nyc_member = nyc_filtered[nyc_filtered["rider_type"] == "Member"]["trips"].sum() if "rider_type" in nyc_filtered.columns else nyc_trips_total * 0.827
-    nyc_casual = nyc_trips_total - nyc_member
-    real_member_pct = nyc_member / nyc_trips_total if nyc_trips_total > 0 else 0.827
-    real_casual_pct = 1 - real_member_pct
-
-    annual_member_trips = nyc_annual_trips * real_member_pct
-    annual_casual_trips = nyc_annual_trips * real_casual_pct
-    annual_ebike_trips = nyc_annual_trips * nyc_ebike_pct
-
-    # 4 revenue streams (Citi Bike actual pricing as of Jan 2026)
-    active_members = 200_000  # industry estimate for NYC
-    membership_revenue = active_members * 239  # $239/yr
-    casual_ride_revenue = annual_casual_trips * 4.49  # $4.49 single ride
-    ebike_overage_revenue = annual_ebike_trips * 3.24  # $0.27/min * avg 12 min ride
-    sponsorship_revenue = 17_500_000  # Citigroup title sponsorship (public)
-    total_current_revenue = membership_revenue + casual_ride_revenue + ebike_overage_revenue + sponsorship_revenue
+    # ---------- Revenue model from REAL data (via revenue_service) ----------
+    rev = revenue_service.estimate_annual_revenue(nyc_filtered)
+    nyc_annual_trips = rev["annual_trips"]
+    annual_casual_trips = rev["annual_casual_trips"]
+    annual_ebike_trips = rev["annual_ebike_trips"]
+    real_member_pct = rev["member_pct"]
+    real_casual_pct = rev["casual_pct"]
+    active_members = rev["active_members"]
+    membership_revenue = rev["membership_revenue"]
+    casual_ride_revenue = rev["casual_ride_revenue"]
+    ebike_overage_revenue = rev["ebike_overage_revenue"]
+    sponsorship_revenue = rev["sponsorship_revenue"]
+    total_current_revenue = rev["total_estimated_revenue"]
 
     st.markdown("#### Current Citi Bike revenue (estimated from our data)")
 
@@ -1523,28 +1392,19 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### What 250 new stations would make Lyft")
 
-    trips_per_station_day = (
-        nyc_trips_total / active_stations / nyc_days
-        if active_stations > 0 and nyc_days > 0
-        else 48
-    )
+    rev["active_stations"] = active_stations
     new_stations = 250
-    new_annual_trips = new_stations * trips_per_station_day * 365
-    new_casual_trips = new_annual_trips * real_casual_pct
-    new_ebike_trips = new_annual_trips * nyc_ebike_pct
-    new_members_per_station = 30  # conservative: 30 new annual members per station
-    new_member_revenue = new_stations * new_members_per_station * 239
-    new_casual_revenue = new_casual_trips * 4.49
-    new_ebike_revenue = new_ebike_trips * 3.24
-    new_total_revenue = new_member_revenue + new_casual_revenue + new_ebike_revenue
-
-    # Costs
-    install_per_station = 65_000
-    total_install = new_stations * install_per_station
-    ops_per_station_year = 15_000  # maintenance, rebalancing
-    total_annual_ops = new_stations * ops_per_station_year
-    net_annual_profit = new_total_revenue - total_annual_ops
-    payback_months = total_install / (net_annual_profit / 12) if net_annual_profit > 0 else float("inf")
+    exp = revenue_service.estimate_expansion_revenue(rev, new_stations=new_stations)
+    trips_per_station_day = exp["trips_per_station_day"]
+    new_annual_trips = exp["new_annual_trips"]
+    new_member_revenue = exp["new_member_revenue"]
+    new_casual_revenue = exp["new_casual_revenue"]
+    new_ebike_revenue = exp["new_ebike_revenue"]
+    new_total_revenue = exp["new_total_revenue"]
+    total_install = exp["install_cost"]
+    total_annual_ops = exp["annual_operating_cost"]
+    net_annual_profit = exp["net_annual_profit"]
+    payback_months = exp["payback_months"]
 
     expand_cols = st.columns(2)
     with expand_cols[0]:
@@ -1575,26 +1435,10 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### 5-year revenue projection: invest vs. don't")
 
+    proj_df, scenarios = revenue_service.revenue_projection(
+        total_current_revenue, new_total_revenue
+    )
     years = list(range(2026, 2032))
-    scenarios = {
-        "Do nothing (3% organic growth)": [
-            total_current_revenue * (1.03 ** i) for i in range(6)
-        ],
-        "250 stations — Lyft self-funded": [
-            (total_current_revenue + new_total_revenue * min(i / 2, 1)) * (1.05 ** i)
-            for i in range(6)
-        ],
-        "500 stations + DOT partnership": [
-            (total_current_revenue + new_total_revenue * 2 * min(i / 2, 1)) * (1.08 ** i)
-            for i in range(6)
-        ],
-    }
-
-    proj_rows = []
-    for scenario, values in scenarios.items():
-        for yr, val in zip(years, values):
-            proj_rows.append({"Year": yr, "Scenario": scenario, "Annual Revenue": val})
-    proj_df = pd.DataFrame(proj_rows)
 
     proj_chart = px.line(
         proj_df,
@@ -1636,34 +1480,31 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### Why government should co-invest")
 
+    pub = revenue_service.estimate_public_benefits(
+        new_annual_trips, new_total_revenue, total_install
+    )
     govt_cols = st.columns(3)
     with govt_cols[0]:
         st.markdown("**Public health**")
-        health_benefit = new_annual_trips * 0.50  # $0.50/trip health benefit
-        st.metric("Annual health benefit", f"${health_benefit:,.0f}")
+        st.metric("Annual health benefit", f"${pub['health_benefit']:,.0f}")
         st.markdown(
             "Each bike trip reduces obesity, heart disease, and diabetes risk. "
             "NYC DOH estimates cycling saves the city \\$0.50/trip in healthcare costs."
         )
     with govt_cols[1]:
         st.markdown("**Congestion & emissions**")
-        congestion_benefit = new_annual_trips * 0.30
-        emissions_benefit = new_annual_trips * 0.20
-        st.metric("Congestion reduction", f"${congestion_benefit:,.0f}/yr")
-        st.metric("Emissions reduction", f"${emissions_benefit:,.0f}/yr")
+        st.metric("Congestion reduction", f"${pub['congestion_benefit']:,.0f}/yr")
+        st.metric("Emissions reduction", f"${pub['emissions_benefit']:,.0f}/yr")
         st.markdown(
             "Every bike trip replaces a car trip or rideshare. "
             "Less traffic, less pollution, less road damage."
         )
     with govt_cols[2]:
         st.markdown("**Tax revenue**")
-        tax_benefit = new_total_revenue * 0.08  # rough sales/business tax
-        st.metric("Additional tax revenue", f"${tax_benefit:,.0f}/yr")
-        total_public_benefit = health_benefit + congestion_benefit + emissions_benefit + tax_benefit
-        govt_payback = total_install / total_public_benefit if total_public_benefit > 0 else 0
-        st.metric("Total annual public benefit", f"${total_public_benefit:,.0f}")
+        st.metric("Additional tax revenue", f"${pub['tax_benefit']:,.0f}/yr")
+        st.metric("Total annual public benefit", f"${pub['total_public_benefit']:,.0f}")
         st.markdown(
-            f"Government payback: **{govt_payback:.1f} years**. "
+            f"Government payback: **{pub['govt_payback_years']:.1f} years**. "
             "Faster than any highway or subway project."
         )
 

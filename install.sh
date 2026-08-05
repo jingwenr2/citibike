@@ -1,4 +1,4 @@
-#!/bin/bash
+1111#!/bin/bash
 
 set -e
 
@@ -66,7 +66,7 @@ download_file() {
         else
             curl -fsSL "$url"
         fi
-    elif [ "$DOWNLOADER" = "wget" ]; then
+   11 elif [ "$DOWNLOADER" = "wget" ]; then
         if [ -n "$output" ]; then
             wget -q -O "$output" "$url"
         else

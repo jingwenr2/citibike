@@ -1,19 +1,28 @@
 """
-Citi Bike Station Demand Forecasting — XGBoost
------------------------------------------------
+Citi Bike Station Demand Forecasting — XGBoost (v2)
+----------------------------------------------------
 Predicts daily trip counts per NYC Citi Bike station.
 Compares against a seasonal-naive (lag-7) baseline.
 
-Bay Wheels/San Francisco is excluded from the decision model — it is used
-elsewhere in this project only as a benchmark for the DOT investment case,
-never as training data for NYC demand or investment decisions.
+Features:
+  - Station: lat, lon, capacity
+  - Calendar: day_of_week, month, is_weekend, is_holiday
+  - Lag / rolling: lag_1d, lag_7d, roll_mean_7d, roll_mean_28d, roll_std_7d
+  - Composition: electric_share, member_share
+  - Transit (MTA): mta_daily_riders, mta_delay_rate, nearest_mta_distance_km
+  - Hourly pattern: peak_hour_share (share of trips in rush hours)
+
+Bay Wheels/San Francisco is excluded — used only as a benchmark for the
+DOT investment case, never as training data for NYC decisions.
 
 Input:  data/processed/bike_share_daily.parquet
+        data/processed/bike_share_hourly.parquet  (optional — peak hour feature)
+        data/processed/mta_bike_opportunity.parquet (optional — MTA features)
 Output: models/  (saved model + metrics)
         report/  (feature importance plots)
 
-Run: python demand_forecast_xgboost.py
-     python demand_forecast_xgboost.py --city "New York City"
+Run: python backend/demand_forecast_xgboost.py
+     python backend/demand_forecast_xgboost.py --city "New York City" --test-days 60
 """
 
 from __future__ import annotations
@@ -28,22 +37,36 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from xgboost import XGBRegressor
 
 DATA_PATH = Path("data/processed/bike_share_daily.parquet")
+HOURLY_PATH = Path("data/processed/bike_share_hourly.parquet")
+MTA_PATH = Path("data/processed/mta_bike_opportunity.parquet")
 MODELS_DIR = Path("models")
 REPORT_DIR = Path("report")
 
 FEATURES = [
+    # Station location & infrastructure
     "lat",
     "lon",
+    "capacity",
+    # Calendar
     "day_of_week",
     "month",
     "is_weekend",
     "is_holiday",
+    # Lag / rolling window
     "lag_1d",
     "lag_7d",
     "roll_mean_7d",
     "roll_mean_28d",
+    "roll_std_7d",
+    # Ridership composition
     "electric_share",
     "member_share",
+    # Transit proximity (MTA)
+    "mta_daily_riders",
+    "mta_delay_rate",
+    "nearest_mta_distance_km",
+    # Hourly demand pattern
+    "peak_hour_share",
 ]
 TARGET = "trips"
 
@@ -51,47 +74,9 @@ TARGET = "trips"
 # ---------------------------------------------------------------
 # 1. Load and prepare
 # ---------------------------------------------------------------
-def load_daily(path: Path, city: str | None = None) -> pd.DataFrame:
-    df = pd.read_parquet(path)
-    df["date"] = pd.to_datetime(df["date"])
-    if city:
-        df = df[df["city"] == city].copy()
-
-    # Aggregate rider types into a single row per station-day
-    agg = (
-        df.groupby(["date", "city", "system", "station_name", "lat", "lon", "capacity"],
-                    as_index=False)
-        .agg(
-            trips=("trips", "sum"),
-            electric_trips=("electric_trips", "sum"),
-            member_trips=("trips", lambda x: x.iloc[0] if df.loc[x.index, "rider_type"].iloc[0] == "Member" else 0),
-        )
-    )
-    # Recompute member/electric shares properly
-    station_rider = df.groupby(["date", "station_name", "rider_type"], as_index=False)["trips"].sum()
-    member = station_rider[station_rider["rider_type"] == "Member"].rename(columns={"trips": "member_trips_actual"})
-    agg2 = (
-        df.groupby(["date", "city", "system", "station_name", "lat", "lon", "capacity"],
-                    as_index=False)
-        .agg(trips=("trips", "sum"), electric_trips=("electric_trips", "sum"))
-    )
-    agg2 = agg2.merge(
-        member[["date", "station_name", "member_trips_actual"]],
-        on=["date", "station_name"],
-        how="left",
-    )
-    agg2["member_trips_actual"] = agg2["member_trips_actual"].fillna(0)
-    agg2["electric_share"] = (agg2["electric_trips"] / agg2["trips"]).fillna(0)
-    agg2["member_share"] = (agg2["member_trips_actual"] / agg2["trips"]).fillna(0)
-
-    return agg2.sort_values(["station_name", "date"]).reset_index(drop=True)
-
-
-# ---------------------------------------------------------------
-# 2. Feature engineering
-# ---------------------------------------------------------------
 US_HOLIDAYS = {
-    # Major US federal holidays (approximate — add more as needed)
+    "2023-01-01", "2023-01-16", "2023-02-20", "2023-05-29",
+    "2023-07-04", "2023-09-04", "2023-10-09", "2023-11-23", "2023-12-25",
     "2024-01-01", "2024-01-15", "2024-02-19", "2024-05-27",
     "2024-07-04", "2024-09-02", "2024-10-14", "2024-11-28", "2024-12-25",
     "2025-01-01", "2025-01-20", "2025-02-17", "2025-05-26",
@@ -100,21 +85,149 @@ US_HOLIDAYS = {
     "2026-07-04", "2026-09-07", "2026-10-12", "2026-11-26", "2026-12-25",
 }
 
+PEAK_HOURS = {7, 8, 9, 17, 18, 19}
 
-def add_features(df: pd.DataFrame) -> pd.DataFrame:
+
+def load_daily(path: Path, city: str | None = None) -> pd.DataFrame:
+    df = pd.read_parquet(path)
+    df["date"] = pd.to_datetime(df["date"])
+    if city:
+        df = df[df["city"] == city].copy()
+
+    # Aggregate rider types into one row per station-day
+    station_rider = df.groupby(
+        ["date", "station_name", "rider_type"], as_index=False
+    )["trips"].sum()
+    member = station_rider[station_rider["rider_type"] == "Member"].rename(
+        columns={"trips": "member_trips"}
+    )
+
+    agg = (
+        df.groupby(
+            ["date", "city", "system", "station_name", "lat", "lon", "capacity"],
+            as_index=False,
+        )
+        .agg(trips=("trips", "sum"), electric_trips=("electric_trips", "sum"))
+    )
+    agg = agg.merge(
+        member[["date", "station_name", "member_trips"]],
+        on=["date", "station_name"],
+        how="left",
+    )
+    agg["member_trips"] = agg["member_trips"].fillna(0)
+    agg["electric_share"] = (agg["electric_trips"] / agg["trips"]).replace(
+        [np.inf, -np.inf], 0
+    ).fillna(0)
+    agg["member_share"] = (agg["member_trips"] / agg["trips"]).replace(
+        [np.inf, -np.inf], 0
+    ).fillna(0)
+
+    return agg.sort_values(["station_name", "date"]).reset_index(drop=True)
+
+
+def load_mta_features(path: Path) -> pd.DataFrame:
+    """Load MTA transit proximity features per station."""
+    if not path.exists():
+        print("  MTA data not found — skipping transit features")
+        return pd.DataFrame()
+    mta = pd.read_parquet(path)
+    return mta[["station_name", "mta_daily_riders", "mta_delay_rate",
+                "nearest_mta_distance_km"]].copy()
+
+
+def load_peak_hour_share(path: Path) -> pd.DataFrame:
+    """Compute per-date peak-hour share from hourly data."""
+    if not path.exists():
+        print("  Hourly data not found — skipping peak_hour_share feature")
+        return pd.DataFrame()
+    hourly = pd.read_parquet(path)
+    hourly["date"] = pd.to_datetime(hourly["date"])
+
+    daily_total = hourly.groupby("date", as_index=False)["trips"].sum().rename(
+        columns={"trips": "total_trips"}
+    )
+    peak = (
+        hourly[hourly["hour"].isin(PEAK_HOURS)]
+        .groupby("date", as_index=False)["trips"]
+        .sum()
+        .rename(columns={"trips": "peak_trips"})
+    )
+    merged = daily_total.merge(peak, on="date", how="left")
+    merged["peak_trips"] = merged["peak_trips"].fillna(0)
+    merged["peak_hour_share"] = (
+        merged["peak_trips"] / merged["total_trips"]
+    ).replace([np.inf, -np.inf], 0).fillna(0)
+
+    return merged[["date", "peak_hour_share"]]
+
+
+# ---------------------------------------------------------------
+# 2. Feature engineering
+# ---------------------------------------------------------------
+def add_features(
+    df: pd.DataFrame,
+    mta_df: pd.DataFrame | None = None,
+    peak_df: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     df = df.copy()
+
+    # Calendar features
     df["day_of_week"] = df["date"].dt.dayofweek
     df["month"] = df["date"].dt.month
     df["is_weekend"] = df["day_of_week"].isin([5, 6]).astype(int)
-    df["is_holiday"] = df["date"].dt.strftime("%Y-%m-%d").isin(US_HOLIDAYS).astype(int)
+    df["is_holiday"] = (
+        df["date"].dt.strftime("%Y-%m-%d").isin(US_HOLIDAYS).astype(int)
+    )
 
-    # Lag features per station
+    # Capacity — fill missing with median
+    df["capacity"] = df["capacity"].replace(0, np.nan)
+    median_cap = df["capacity"].median()
+    df["capacity"] = df["capacity"].fillna(median_cap)
+
+    # Lag / rolling features per station
     df = df.sort_values(["station_name", "date"])
     grp = df.groupby("station_name")["trips"]
     df["lag_1d"] = grp.shift(1)
     df["lag_7d"] = grp.shift(7)
-    df["roll_mean_7d"] = grp.shift(1).rolling(7, min_periods=3).mean().reset_index(level=0, drop=True)
-    df["roll_mean_28d"] = grp.shift(1).rolling(28, min_periods=7).mean().reset_index(level=0, drop=True)
+    df["roll_mean_7d"] = (
+        grp.shift(1).rolling(7, min_periods=3).mean()
+        .reset_index(level=0, drop=True)
+    )
+    df["roll_mean_28d"] = (
+        grp.shift(1).rolling(28, min_periods=7).mean()
+        .reset_index(level=0, drop=True)
+    )
+    df["roll_std_7d"] = (
+        grp.shift(1).rolling(7, min_periods=3).std()
+        .reset_index(level=0, drop=True)
+    )
+    df["roll_std_7d"] = df["roll_std_7d"].fillna(0)
+
+    # MTA transit features
+    if mta_df is not None and not mta_df.empty:
+        df = df.merge(mta_df, on="station_name", how="left")
+        df["mta_daily_riders"] = df["mta_daily_riders"].fillna(0)
+        df["mta_delay_rate"] = df["mta_delay_rate"].fillna(
+            df["mta_delay_rate"].median()
+        )
+        df["nearest_mta_distance_km"] = df["nearest_mta_distance_km"].fillna(
+            df["nearest_mta_distance_km"].max()
+        )
+        print(f"  MTA features merged — {df['mta_daily_riders'].gt(0).sum():,} rows with MTA data")
+    else:
+        df["mta_daily_riders"] = 0.0
+        df["mta_delay_rate"] = 0.0
+        df["nearest_mta_distance_km"] = 0.0
+
+    # Peak hour share
+    if peak_df is not None and not peak_df.empty:
+        df = df.merge(peak_df, on="date", how="left")
+        df["peak_hour_share"] = df["peak_hour_share"].fillna(
+            df["peak_hour_share"].median()
+        )
+        print(f"  Peak hour share merged — median {df['peak_hour_share'].median():.2%}")
+    else:
+        df["peak_hour_share"] = 0.0
 
     return df
 
@@ -144,11 +257,14 @@ def train_model(train: pd.DataFrame) -> XGBRegressor:
     X_train = train[FEATURES]
     y_train = train[TARGET]
     model = XGBRegressor(
-        n_estimators=400,
-        max_depth=6,
+        n_estimators=500,
+        max_depth=7,
         learning_rate=0.05,
         subsample=0.8,
         colsample_bytree=0.8,
+        min_child_weight=5,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
         random_state=42,
     )
     model.fit(X_train, y_train, verbose=False)
@@ -158,7 +274,11 @@ def train_model(train: pd.DataFrame) -> XGBRegressor:
 def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     mae = float(mean_absolute_error(y_true, y_pred))
     rmse = float(np.sqrt(mean_squared_error(y_true, y_pred)))
-    wape = float(np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true))) if np.sum(np.abs(y_true)) > 0 else 0.0
+    wape = (
+        float(np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true)))
+        if np.sum(np.abs(y_true)) > 0
+        else 0.0
+    )
     return {"MAE": round(mae, 2), "RMSE": round(rmse, 2), "WAPE": round(wape, 4)}
 
 
@@ -166,17 +286,16 @@ def evaluate(model: XGBRegressor, test: pd.DataFrame, city: str) -> dict:
     X_test = test[FEATURES]
     y_test = test[TARGET].values
 
-    # XGBoost predictions
     xgb_preds = model.predict(X_test)
+    xgb_preds = np.clip(xgb_preds, 0, None)
     xgb_metrics = compute_metrics(y_test, xgb_preds)
 
-    # Seasonal naive baseline
     naive_preds = seasonal_naive_predict(test)
     naive_metrics = compute_metrics(y_test, naive_preds)
 
-    print(f"\n{'='*50}")
+    print(f"\n{'='*55}")
     print(f"  {city} — Test Set Results ({len(test):,} station-days)")
-    print(f"{'='*50}")
+    print(f"{'='*55}")
     print(f"  {'Metric':<8} {'XGBoost':>10} {'Naive(7d)':>10} {'Improvement':>12}")
     print(f"  {'-'*42}")
     for metric in ["MAE", "RMSE", "WAPE"]:
@@ -188,6 +307,8 @@ def evaluate(model: XGBRegressor, test: pd.DataFrame, city: str) -> dict:
     return {
         "city": city,
         "test_station_days": len(test),
+        "features_used": FEATURES,
+        "n_features": len(FEATURES),
         "xgboost": xgb_metrics,
         "seasonal_naive": naive_metrics,
     }
@@ -199,10 +320,14 @@ def save_feature_importance(model: XGBRegressor, city: str) -> None:
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        importances = pd.Series(model.feature_importances_, index=FEATURES).sort_values()
-        fig, ax = plt.subplots(figsize=(8, 5))
-        importances.plot(kind="barh", ax=ax, color="#2D7FF9")
-        ax.set_title(f"XGBoost Feature Importance — {city}")
+        importances = pd.Series(
+            model.feature_importances_, index=FEATURES
+        ).sort_values()
+        fig, ax = plt.subplots(figsize=(9, 6))
+        colors = ["#2D7FF9" if v < importances.quantile(0.75) else "#F59E0B"
+                  for v in importances.values]
+        importances.plot(kind="barh", ax=ax, color=colors)
+        ax.set_title(f"XGBoost Feature Importance — {city}", fontsize=14)
         ax.set_xlabel("Importance")
         plt.tight_layout()
 
@@ -222,11 +347,13 @@ def save_feature_importance(model: XGBRegressor, city: str) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=Path, default=DATA_PATH)
+    parser.add_argument("--hourly", type=Path, default=HOURLY_PATH)
+    parser.add_argument("--mta", type=Path, default=MTA_PATH)
     parser.add_argument(
         "--city",
         type=str,
         default="New York City",
-        help="City to train on (default: New York City — the decision model)",
+        help="City to train on (default: New York City)",
     )
     parser.add_argument("--test-days", type=int, default=60)
     return parser.parse_args()
@@ -240,48 +367,53 @@ def main() -> None:
         print("Run scripts/ingest_bike_data.py first.")
         return
 
-    cities = [args.city]
-    all_results = []
+    print(f"\n>>> Loading {args.city} data...")
+    daily = load_daily(args.data, city=args.city)
+    if daily.empty:
+        print(f"  No data for {args.city}")
+        return
 
-    for city in cities:
-        print(f"\n>>> Loading {city} data...")
-        daily = load_daily(args.data, city=city)
-        if daily.empty:
-            print(f"  No data for {city}, skipping")
-            continue
+    print(f"  {len(daily):,} station-day rows, "
+          f"{daily['station_name'].nunique()} stations, "
+          f"{daily['date'].min().date()} to {daily['date'].max().date()}")
 
-        print(f"  {len(daily):,} station-day rows, "
-              f"{daily['station_name'].nunique()} stations, "
-              f"{daily['date'].min().date()} to {daily['date'].max().date()}")
+    # Load auxiliary data
+    print("\n>>> Loading auxiliary features...")
+    mta_df = load_mta_features(args.mta)
+    peak_df = load_peak_hour_share(args.hourly)
 
-        daily = add_features(daily)
-        train, test = chronological_split(daily, test_days=args.test_days)
+    # Engineer features
+    print("\n>>> Engineering features...")
+    daily = add_features(daily, mta_df=mta_df, peak_df=peak_df)
 
-        if train.empty or test.empty:
-            print(f"  Insufficient data for train/test split, skipping")
-            continue
+    print(f"\n  Final feature set ({len(FEATURES)} features):")
+    for f in FEATURES:
+        print(f"    - {f}")
 
-        print(f"  Train: {len(train):,} rows | Test: {len(test):,} rows")
+    train, test = chronological_split(daily, test_days=args.test_days)
 
-        model = train_model(train)
-        results = evaluate(model, test, city)
-        all_results.append(results)
-        save_feature_importance(model, city)
+    if train.empty or test.empty:
+        print("  Insufficient data for train/test split")
+        return
 
-        # Save model
-        MODELS_DIR.mkdir(parents=True, exist_ok=True)
-        slug = city.lower().replace(" ", "_")
-        model_path = MODELS_DIR / f"xgboost_{slug}.json"
-        model.save_model(str(model_path))
-        print(f"  Saved model to {model_path}")
+    print(f"\n  Train: {len(train):,} rows | Test: {len(test):,} rows")
 
-    # Save combined metrics
-    if all_results:
-        MODELS_DIR.mkdir(parents=True, exist_ok=True)
-        metrics_path = MODELS_DIR / "forecast_metrics.json"
-        with open(metrics_path, "w") as f:
-            json.dump(all_results, f, indent=2)
-        print(f"\nSaved metrics to {metrics_path}")
+    model = train_model(train)
+    results = evaluate(model, test, args.city)
+    save_feature_importance(model, args.city)
+
+    # Save model
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    slug = args.city.lower().replace(" ", "_")
+    model_path = MODELS_DIR / f"xgboost_{slug}.json"
+    model.save_model(str(model_path))
+    print(f"  Saved model to {model_path}")
+
+    # Save metrics
+    metrics_path = MODELS_DIR / "forecast_metrics.json"
+    with open(metrics_path, "w") as f:
+        json.dump([results], f, indent=2)
+    print(f"  Saved metrics to {metrics_path}")
 
 
 if __name__ == "__main__":

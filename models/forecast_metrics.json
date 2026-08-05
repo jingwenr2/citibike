@@ -1,30 +1,37 @@
 [
   {
     "city": "New York City",
-    "test_station_days": 131978,
+    "test_station_days": 137841,
+    "features_used": [
+      "lat",
+      "lon",
+      "capacity",
+      "day_of_week",
+      "month",
+      "is_weekend",
+      "is_holiday",
+      "lag_1d",
+      "lag_7d",
+      "roll_mean_7d",
+      "roll_mean_28d",
+      "roll_std_7d",
+      "electric_share",
+      "member_share",
+      "mta_daily_riders",
+      "mta_delay_rate",
+      "nearest_mta_distance_km",
+      "peak_hour_share"
+    ],
+    "n_features": 18,
     "xgboost": {
-      "MAE": 13.63,
-      "RMSE": 26.32,
-      "WAPE": 0.1816
+      "MAE": 12.7,
+      "RMSE": 24.63,
+      "WAPE": 0.1734
     },
     "seasonal_naive": {
-      "MAE": 20.02,
-      "RMSE": 40.7,
-      "WAPE": 0.2667
-    }
-  },
-  {
-    "city": "San Francisco",
-    "test_station_days": 35655,
-    "xgboost": {
-      "MAE": 4.52,
-      "RMSE": 7.63,
-      "WAPE": 0.1757
-    },
-    "seasonal_naive": {
-      "MAE": 6.61,
-      "RMSE": 10.79,
-      "WAPE": 0.2567
+      "MAE": 19.56,
+      "RMSE": 39.92,
+      "WAPE": 0.267
     }
   }
 ]
