@@ -748,7 +748,7 @@ with stations_tab:
         )
         display_ranked = ranked[
             ["city", "station_name", "average_daily", "capacity", "pressure"]
-        ].head(10)
+        ].replace([float('inf'), float('-inf')], float('nan')).dropna(subset=["pressure"]).head(10)
         st.dataframe(
             display_ranked,
             hide_index=True,
@@ -762,7 +762,7 @@ with stations_tab:
                     "Pressure",
                     format="%.1f",
                     min_value=0,
-                    max_value=max(1.0, float(display_ranked["pressure"].max())),
+                    max_value=max(1.0, float(display_ranked["pressure"].replace([float('inf'), float('-inf')], 0).max())),
                 ),
             },
         )
