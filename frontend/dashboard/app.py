@@ -7,11 +7,16 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from plotly.subplots import make_subplots
 
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = ROOT / "data" / "processed" / "bike_share_daily.parquet"
 MTA_PATH = ROOT / "data" / "processed" / "mta_bike_opportunity.parquet"
+HOURLY_PATH = ROOT / "data" / "processed" / "bike_share_hourly.parquet"
+
+DAY_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+PEAK_HOURS = {7, 8, 9, 17, 18, 19}
 
 CITY_META = {
     "New York City": {
@@ -200,6 +205,46 @@ def load_mta_signal() -> pd.DataFrame:
             "mta_delay_rate",
         ],
     ).assign(mta_is_demo=True)
+
+
+@st.cache_data
+def make_demo_hourly() -> pd.DataFrame:
+    rng = np.random.default_rng(7)
+    rows: list[dict] = []
+    reference_monday = pd.Timestamp("2026-01-05")
+    for day_index, day in enumerate(DAY_ORDER):
+        weekend = day_index >= 5
+        demo_date = reference_monday + pd.Timedelta(days=day_index)
+        for hour in range(24):
+            morning_peak = np.exp(-((hour - 8) ** 2) / 6)
+            evening_peak = np.exp(-((hour - 18) ** 2) / 6)
+            midday_lull = 0.28 * np.exp(-((hour - 13) ** 2) / 30)
+            base = 650 if weekend else 950
+            shape = (0.45 if weekend else 1.0) * (morning_peak + evening_peak) + midday_lull + 0.06
+            trips = max(20, base * shape * float(rng.normal(1, 0.05)))
+            rows.append({"date": demo_date, "day_name": day, "hour": hour, "rider_type": "Member", "trips": trips * 0.78})
+            rows.append({"date": demo_date, "day_name": day, "hour": hour, "rider_type": "Casual", "trips": trips * 0.22})
+    frame = pd.DataFrame(rows)
+    frame["hourly_is_demo"] = True
+    return frame
+
+
+@st.cache_data
+def load_hourly_demand() -> pd.DataFrame:
+    if not HOURLY_PATH.exists():
+        return make_demo_hourly()
+
+    frame = pd.read_parquet(HOURLY_PATH)
+    required = {"date", "hour", "day_name", "rider_type", "trips"}
+    missing = required.difference(frame.columns)
+    if missing:
+        st.error(
+            "The hourly demand dataset is missing required columns: "
+            + ", ".join(sorted(missing))
+        )
+        st.stop()
+    frame["hourly_is_demo"] = False
+    return frame
 
 
 def compact_number(value: float) -> str:
@@ -397,54 +442,58 @@ with overview_tab:
     )
     st.plotly_chart(trend_chart, use_container_width=True)
 
-    mix_col, bike_col = st.columns([1, 1])
-    with mix_col:
-        st.subheader("Member vs. casual")
-        rider_mix = nyc_filtered.groupby("rider_type", as_index=False)["trips"].sum()
-        rider_chart = px.pie(
-            rider_mix,
-            names="rider_type",
-            values="trips",
-            color="rider_type",
-            hole=0.55,
-            color_discrete_map={"Member": "#17233D", "Casual": "#7DD3FC"},
-        )
-        rider_chart.update_traces(textinfo="percent+label")
-        rider_chart.update_layout(
-            height=350,
-            margin=dict(l=10, r=10, t=15, b=10),
-            showlegend=False,
-            paper_bgcolor="rgba(0,0,0,0)",
-        )
-        st.plotly_chart(rider_chart, use_container_width=True)
+    st.subheader("Ridership")
+    st.caption("Share of NYC trips by rider type and bike type, for the selected date range.")
 
-    with bike_col:
-        st.subheader("E-bike vs. classic")
-        bike_mix = pd.DataFrame(
-            {
-                "bike_type": ["Electric", "Classic"],
-                "trips": [
-                    nyc_filtered["electric_trips"].sum(),
-                    nyc_filtered["trips"].sum() - nyc_filtered["electric_trips"].sum(),
-                ],
-            }
-        )
-        bike_chart = px.pie(
-            bike_mix,
-            names="bike_type",
-            values="trips",
-            color="bike_type",
+    rider_mix = nyc_filtered.groupby("rider_type", as_index=False)["trips"].sum()
+    bike_mix = pd.DataFrame(
+        {
+            "bike_type": ["Electric", "Classic"],
+            "trips": [
+                nyc_filtered["electric_trips"].sum(),
+                nyc_filtered["trips"].sum() - nyc_filtered["electric_trips"].sum(),
+            ],
+        }
+    )
+    rider_colors = {"Member": "#17233D", "Casual": "#7DD3FC"}
+    bike_colors = {"Electric": "#2D7FF9", "Classic": "#94A3B8"}
+
+    ridership_chart = make_subplots(
+        rows=1,
+        cols=2,
+        specs=[[{"type": "domain"}, {"type": "domain"}]],
+        subplot_titles=("Member vs. casual", "E-bike vs. classic"),
+    )
+    ridership_chart.add_trace(
+        go.Pie(
+            labels=rider_mix["rider_type"],
+            values=rider_mix["trips"],
             hole=0.55,
-            color_discrete_map={"Electric": "#2D7FF9", "Classic": "#94A3B8"},
-        )
-        bike_chart.update_traces(textinfo="percent+label")
-        bike_chart.update_layout(
-            height=350,
-            margin=dict(l=10, r=10, t=15, b=10),
+            marker=dict(colors=[rider_colors[label] for label in rider_mix["rider_type"]]),
+            textinfo="percent+label",
             showlegend=False,
-            paper_bgcolor="rgba(0,0,0,0)",
-        )
-        st.plotly_chart(bike_chart, use_container_width=True)
+        ),
+        row=1,
+        col=1,
+    )
+    ridership_chart.add_trace(
+        go.Pie(
+            labels=bike_mix["bike_type"],
+            values=bike_mix["trips"],
+            hole=0.55,
+            marker=dict(colors=[bike_colors[label] for label in bike_mix["bike_type"]]),
+            textinfo="percent+label",
+            showlegend=False,
+        ),
+        row=1,
+        col=2,
+    )
+    ridership_chart.update_layout(
+        height=380,
+        margin=dict(l=10, r=10, t=40, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    st.plotly_chart(ridership_chart, use_container_width=True)
 
     st.subheader("Weekly rhythm by bike type")
     st.caption("Average NYC daily trips by weekday, electric vs. classic bikes.")
@@ -484,6 +533,75 @@ with overview_tab:
         plot_bgcolor="white",
     )
     st.plotly_chart(weekday_chart, use_container_width=True)
+
+    hourly = load_hourly_demand()
+
+    peak_total = hourly[hourly["hour"].isin(PEAK_HOURS)]["trips"].sum()
+    hourly_total = hourly["trips"].sum()
+    peak_share = peak_total / hourly_total if hourly_total else 0
+
+    st.subheader(f"{peak_share:.1%} of trips happen during the six peak rush hours")
+    st.caption(
+        "NYC trips by hour of day and day of week, averaged across the full "
+        "hourly sample period (independent of the date range and rider filters "
+        "above). Dashed lines mark 7-10am and 5-8pm."
+    )
+    if bool(hourly["hourly_is_demo"].all()):
+        st.markdown(
+            '<span class="demo-pill">DEMO DATA</span> '
+            "The app will automatically use "
+            "`data/processed/bike_share_hourly.parquet` when available.",
+            unsafe_allow_html=True,
+        )
+
+    # The underlying parquet sums trips across every date in the sample period, so a
+    # raw sum per (hour, weekday) cell scales with however many months were ingested
+    # rather than reflecting a single day's demand. Divide by how many times each
+    # weekday actually occurs in the sample to get a comparable daily average.
+    day_counts = hourly.drop_duplicates(["date", "day_name"]).groupby("day_name")["date"].nunique()
+    hourly_pivot = hourly.groupby(["hour", "day_name"], as_index=False)["trips"].sum()
+    hourly_pivot["day_count"] = hourly_pivot["day_name"].map(day_counts).clip(lower=1)
+    hourly_pivot["avg_trips"] = hourly_pivot["trips"] / hourly_pivot["day_count"]
+
+    hourly_days = [d for d in DAY_ORDER if d in hourly_pivot["day_name"].unique()]
+    hourly_wide = (
+        hourly_pivot.pivot(index="hour", columns="day_name", values="avg_trips")
+        .reindex(columns=hourly_days)
+        .reindex(index=range(24))
+        .fillna(0)
+    )
+
+    heatmap_chart = go.Figure(
+        data=go.Heatmap(
+            z=hourly_wide.values,
+            x=hourly_wide.columns.tolist(),
+            y=hourly_wide.index.tolist(),
+            colorscale=[[0, "#EFF6FF"], [0.5, "#2D7FF9"], [1, "#0B1324"]],
+            colorbar=dict(title="Avg trips"),
+            hovertemplate="%{x}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
+        )
+    )
+    for hour_line in [6.5, 9.5, 16.5, 19.5]:
+        heatmap_chart.add_hline(y=hour_line, line_dash="dash", line_color="#EA580C", opacity=0.6)
+    heatmap_chart.update_yaxes(
+        title="Hour of day",
+        autorange="reversed",
+        tickmode="array",
+        tickvals=list(range(0, 24, 2)),
+    )
+    heatmap_chart.update_layout(
+        height=520,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="white",
+    )
+    st.plotly_chart(heatmap_chart, use_container_width=True)
+
+    sample_dates = pd.to_datetime(hourly["date"])
+    st.caption(
+        "Color scale shows average trips for that hour on that weekday, "
+        f"based on {sample_dates.min():%b %Y}–{sample_dates.max():%b %Y} of data."
+    )
 
 with stations_tab:
     st.subheader("NYC station demand map")
@@ -1524,6 +1642,10 @@ with methods_tab:
           revenue, equity, and benefit estimates before a real funding decision.
         - **Scope:** Bay Wheels serves the wider Bay Area. Its benchmark is labeled
           separately and does not enter NYC funding recommendations.
+        - **Peak demand heatmap:** hour-of-day x day-of-week trip counts, NYC only.
+          Built from a separate hourly aggregation since the daily dataset above
+          drops timestamps down to the day. It reflects its own hourly sample
+          period rather than the sidebar date range.
         """
     )
     st.subheader("Expected production dataset")
@@ -1536,6 +1658,12 @@ with methods_tab:
     st.code(
         "data/processed/mta_bike_opportunity.parquet\n\n"
         "station_name | neighborhood | mta_daily_riders | mta_delay_rate",
+        language="text",
+    )
+    st.code(
+        "data/processed/bike_share_hourly.parquet\n\n"
+        "date | hour | day_name | city | system | rider_type |\n"
+        "trips | electric_trips",
         language="text",
     )
     st.caption(
