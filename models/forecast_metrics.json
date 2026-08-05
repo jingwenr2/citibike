@@ -1,0 +1,30 @@
+[
+  {
+    "city": "New York City",
+    "test_station_days": 131978,
+    "xgboost": {
+      "MAE": 13.63,
+      "RMSE": 26.32,
+      "WAPE": 0.1816
+    },
+    "seasonal_naive": {
+      "MAE": 20.02,
+      "RMSE": 40.7,
+      "WAPE": 0.2667
+    }
+  },
+  {
+    "city": "San Francisco",
+    "test_station_days": 35655,
+    "xgboost": {
+      "MAE": 4.52,
+      "RMSE": 7.63,
+      "WAPE": 0.1757
+    },
+    "seasonal_naive": {
+      "MAE": 6.61,
+      "RMSE": 10.79,
+      "WAPE": 0.2567
+    }
+  }
+]
