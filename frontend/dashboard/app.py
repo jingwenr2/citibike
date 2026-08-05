@@ -369,22 +369,23 @@ overview_tab, stations_tab, forecast_tab, mta_tab, investment_tab, dot_tab, meth
 )
 
 with overview_tab:
-    st.subheader("Demand over time")
+    st.subheader("NYC demand over time")
+    st.caption("Member vs. casual ridership, New York City only.")
     trend = (
-        filtered.groupby(["date", "city"], as_index=False)["trips"]
+        nyc_filtered.groupby(["date", "rider_type"], as_index=False)["trips"]
         .sum()
         .sort_values("date")
     )
-    trend["smoothed_trips"] = trend.groupby("city")["trips"].transform(
+    trend["smoothed_trips"] = trend.groupby("rider_type")["trips"].transform(
         lambda values: values.rolling(smoothing, min_periods=1).mean()
     )
     trend_chart = px.line(
         trend,
         x="date",
         y="smoothed_trips",
-        color="city",
-        color_discrete_map={city: meta["color"] for city, meta in CITY_META.items()},
-        labels={"smoothed_trips": "Trips", "date": "", "city": "City"},
+        color="rider_type",
+        color_discrete_map={"Member": "#17233D", "Casual": "#7DD3FC"},
+        labels={"smoothed_trips": "Trips", "date": "", "rider_type": "Rider"},
     )
     trend_chart.update_layout(
         height=390,
@@ -396,56 +397,93 @@ with overview_tab:
     )
     st.plotly_chart(trend_chart, use_container_width=True)
 
-    mix_col, weekday_col = st.columns([1, 1.35])
+    mix_col, bike_col = st.columns([1, 1])
     with mix_col:
-        st.subheader("Who is riding?")
-        rider_mix = filtered.groupby(["city", "rider_type"], as_index=False)["trips"].sum()
-        rider_chart = px.bar(
+        st.subheader("Member vs. casual")
+        rider_mix = nyc_filtered.groupby("rider_type", as_index=False)["trips"].sum()
+        rider_chart = px.pie(
             rider_mix,
-            x="city",
-            y="trips",
+            names="rider_type",
+            values="trips",
             color="rider_type",
-            barmode="stack",
+            hole=0.55,
             color_discrete_map={"Member": "#17233D", "Casual": "#7DD3FC"},
-            labels={"trips": "Trips", "city": "", "rider_type": "Rider"},
         )
+        rider_chart.update_traces(textinfo="percent+label")
         rider_chart.update_layout(
             height=350,
             margin=dict(l=10, r=10, t=15, b=10),
-            legend_title_text="",
+            showlegend=False,
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
         )
         st.plotly_chart(rider_chart, use_container_width=True)
 
-    with weekday_col:
-        st.subheader("Weekly rhythm")
-        weekday = filtered.assign(
-            weekday=filtered["date"].dt.day_name(),
-            weekday_index=filtered["date"].dt.dayofweek,
+    with bike_col:
+        st.subheader("E-bike vs. classic")
+        bike_mix = pd.DataFrame(
+            {
+                "bike_type": ["Electric", "Classic"],
+                "trips": [
+                    nyc_filtered["electric_trips"].sum(),
+                    nyc_filtered["trips"].sum() - nyc_filtered["electric_trips"].sum(),
+                ],
+            }
         )
-        weekday = (
-            weekday.groupby(["city", "weekday", "weekday_index"], as_index=False)["trips"]
-            .mean()
-            .sort_values("weekday_index")
+        bike_chart = px.pie(
+            bike_mix,
+            names="bike_type",
+            values="trips",
+            color="bike_type",
+            hole=0.55,
+            color_discrete_map={"Electric": "#2D7FF9", "Classic": "#94A3B8"},
         )
-        weekday_chart = px.bar(
-            weekday,
-            x="weekday",
-            y="trips",
-            color="city",
-            barmode="group",
-            color_discrete_map={city: meta["color"] for city, meta in CITY_META.items()},
-            labels={"trips": "Average trips", "weekday": "", "city": "City"},
-        )
-        weekday_chart.update_layout(
+        bike_chart.update_traces(textinfo="percent+label")
+        bike_chart.update_layout(
             height=350,
             margin=dict(l=10, r=10, t=15, b=10),
-            legend_title_text="",
+            showlegend=False,
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
         )
-        st.plotly_chart(weekday_chart, use_container_width=True)
+        st.plotly_chart(bike_chart, use_container_width=True)
+
+    st.subheader("Weekly rhythm by bike type")
+    st.caption("Average NYC daily trips by weekday, electric vs. classic bikes.")
+    weekday = nyc_filtered.assign(
+        weekday=nyc_filtered["date"].dt.day_name(),
+        weekday_index=nyc_filtered["date"].dt.dayofweek,
+        classic_trips=nyc_filtered["trips"] - nyc_filtered["electric_trips"],
+    )[["weekday", "weekday_index", "date", "electric_trips", "classic_trips"]]
+    weekday_long = weekday.melt(
+        id_vars=["weekday", "weekday_index", "date"],
+        value_vars=["electric_trips", "classic_trips"],
+        var_name="bike_type",
+        value_name="trips",
+    )
+    weekday_long["bike_type"] = weekday_long["bike_type"].map(
+        {"electric_trips": "Electric", "classic_trips": "Classic"}
+    )
+    weekday_summary = (
+        weekday_long.groupby(["weekday", "weekday_index", "bike_type"], as_index=False)["trips"]
+        .mean()
+        .sort_values("weekday_index")
+    )
+    weekday_chart = px.bar(
+        weekday_summary,
+        x="weekday",
+        y="trips",
+        color="bike_type",
+        barmode="group",
+        color_discrete_map={"Electric": "#2D7FF9", "Classic": "#94A3B8"},
+        labels={"trips": "Average trips", "weekday": "", "bike_type": "Bike type"},
+    )
+    weekday_chart.update_layout(
+        height=350,
+        margin=dict(l=10, r=10, t=15, b=10),
+        legend_title_text="",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="white",
+    )
+    st.plotly_chart(weekday_chart, use_container_width=True)
 
 with stations_tab:
     st.subheader("NYC station demand map")
@@ -1241,7 +1279,7 @@ with dot_tab:
         f"### Total estimated annual revenue: **${total_current_revenue:,.0f}**"
     )
     st.markdown(
-        f"That's from **{nyc_annual_trips:,.0f} trips/year** across **{stations:,} stations**. "
+        f"That's from **{nyc_annual_trips:,.0f} trips/year** across **{active_stations:,} stations**. "
         f"The biggest revenue driver? **E-bike overage fees at ${ebike_overage_revenue:,.0f}/yr** — "
         f"with {nyc_ebike_pct:.0%} of rides now electric, every trip generates $3.24 in usage fees "
         "on top of the membership or single-ride price."
@@ -1251,7 +1289,11 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### What 250 new stations would make Lyft")
 
-    trips_per_station_day = nyc_trips_total / stations / nyc_days if stations > 0 and nyc_days > 0 else 48
+    trips_per_station_day = (
+        nyc_trips_total / active_stations / nyc_days
+        if active_stations > 0 and nyc_days > 0
+        else 48
+    )
     new_stations = 250
     new_annual_trips = new_stations * trips_per_station_day * 365
     new_casual_trips = new_annual_trips * real_casual_pct
