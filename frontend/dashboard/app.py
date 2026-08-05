@@ -1163,8 +1163,8 @@ with dot_tab:
         st.metric("Citi Bike annual membership", "$239/yr")
         st.metric("MTA monthly unlimited", "$132/mo ($1,584/yr)")
         st.markdown(
-            "A Citi Bike member saves **$1,345/year** vs. an unlimited MetroCard. "
-            "For casual riders, single trips cost $4.49 vs. $2.90 subway fare — "
+            "A Citi Bike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
+            "For casual riders, single trips cost \\$4.49 vs. \\$2.90 subway fare — "
             "but with zero wait time and door-to-door service."
         )
 
@@ -1233,7 +1233,7 @@ with dot_tab:
     # ===================================================================
     st.markdown("### 5. The money: why Lyft should fund this and how much they'll make")
     st.markdown(
-        "This isn't charity. Citi Bike is already a **$196M/year revenue engine**. "
+        "This isn't charity. Citi Bike is already a **\\$196M/year revenue engine**. "
         "Expansion doesn't cost Lyft money — it **makes** Lyft money. Here's the math."
     )
 
@@ -1280,9 +1280,10 @@ with dot_tab:
     )
     st.markdown(
         f"That's from **{nyc_annual_trips:,.0f} trips/year** across **{active_stations:,} stations**. "
-        f"The biggest revenue driver? **E-bike overage fees at ${ebike_overage_revenue:,.0f}/yr** — "
-        f"with {nyc_ebike_pct:.0%} of rides now electric, every trip generates $3.24 in usage fees "
-        "on top of the membership or single-ride price."
+        f"The biggest revenue driver? **E-bike overage fees at "
+        f"\\${ebike_overage_revenue:,.0f}/yr** — "
+        f"with {nyc_ebike_pct:.0%} of rides now electric, every trip generates "
+        "\\$3.24 in usage fees on top of the membership or single-ride price."
     )
 
     # ---------- 250-station expansion math ----------
@@ -1328,11 +1329,13 @@ with dot_tab:
         st.metric("Payback period", f"{payback_months:.0f} months", delta="Investment recovered")
 
     st.error(
-        f"**250 new stations = ${net_annual_profit:,.0f}/year in net profit.** "
-        f"The ${total_install:,.0f} installation cost pays for itself in **{payback_months:.0f} months**. "
-        f"After that, it's pure margin. And with {len(strained)} of {len(station_pressure):,} current stations "
-        "already running above capacity, this demand isn't hypothetical — it's riders who "
-        "are already showing up and finding no bikes."
+        f"**250 new stations = \\${net_annual_profit:,.0f}/year in net profit.** "
+        f"The \\${total_install:,.0f} installation cost pays for itself in "
+        f"**{payback_months:.0f} months**. "
+        f"After that, it's pure margin. And with {len(strained)} of "
+        f"{len(station_pressure):,} current stations "
+        "already running above capacity, this demand isn't hypothetical — "
+        "it's riders who are already showing up and finding no bikes."
     )
 
     # ---------- Revenue projection chart ----------
@@ -1388,10 +1391,12 @@ with dot_tab:
         )
     )
     st.success(
-        f"**By 2031, the gap between investing and doing nothing is ${gap_2031:,.0f}/year.** "
-        f"Over 5 years, the DOT partnership scenario generates **${cumulative_gap:,.0f} more** "
-        "than the status quo. That's not a projection — it's what happens when you add supply "
-        "to a market where 50% of stations are already at capacity."
+        f"**By 2031, the gap between investing and doing nothing is "
+        f"\\${gap_2031:,.0f}/year.** "
+        f"Over 5 years, the DOT partnership scenario generates "
+        f"**\\${cumulative_gap:,.0f} more** "
+        "than the status quo. That's not a projection — it's what happens "
+        "when you add supply to a market where 50% of stations are already at capacity."
     )
 
     # ---------- Government side ----------
@@ -1405,7 +1410,7 @@ with dot_tab:
         st.metric("Annual health benefit", f"${health_benefit:,.0f}")
         st.markdown(
             "Each bike trip reduces obesity, heart disease, and diabetes risk. "
-            "NYC DOH estimates cycling saves the city $0.50/trip in healthcare costs."
+            "NYC DOH estimates cycling saves the city \\$0.50/trip in healthcare costs."
         )
     with govt_cols[1]:
         st.markdown("**Congestion & emissions**")
@@ -1480,7 +1485,7 @@ with dot_tab:
 | **NYC demand is massive** | 60.9M trips in our dataset, 5.4M in peak month alone | Invest in capacity — this market is supply-constrained, not demand-constrained |
 | **Trains are failing** | Chronic delays across dozens of neighborhoods | Position Citi Bike as transit resilience infrastructure, not recreation |
 | **E-bikes are winning** | 70% of NYC trips are now electric | Accelerate e-bike fleet + charging infra — this is where the growth is |
-| **Green + cheap** | Zero emissions, $1,345/yr savings vs MetroCard | Market Citi Bike as the smart commute, not a tourist product |
+| **Green + cheap** | Zero emissions, \\$1,345/yr savings vs MetroCard | Market Citi Bike as the smart commute, not a tourist product |
 | **We can predict demand** | XGBoost model: 32% better than baselines across 2,466 stations | Use our forecasting engine to optimize fleet placement and expansion |
         """
     )
