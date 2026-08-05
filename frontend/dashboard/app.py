@@ -1241,7 +1241,7 @@ with dot_tab:
         f"### Total estimated annual revenue: **${total_current_revenue:,.0f}**"
     )
     st.markdown(
-        f"That's from **{nyc_annual_trips:,.0f} trips/year** across **{stations:,} stations**. "
+        f"That's from **{nyc_annual_trips:,.0f} trips/year** across **{active_stations:,} stations**. "
         f"The biggest revenue driver? **E-bike overage fees at ${ebike_overage_revenue:,.0f}/yr** — "
         f"with {nyc_ebike_pct:.0%} of rides now electric, every trip generates $3.24 in usage fees "
         "on top of the membership or single-ride price."
@@ -1251,7 +1251,7 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### What 250 new stations would make Lyft")
 
-    trips_per_station_day = nyc_trips_total / stations / nyc_days if stations > 0 and nyc_days > 0 else 48
+    trips_per_station_day = nyc_trips_total / active_stations / nyc_days if active_stations > 0 and nyc_days > 0 else 48
     new_stations = 250
     new_annual_trips = new_stations * trips_per_station_day * 365
     new_casual_trips = new_annual_trips * real_casual_pct
