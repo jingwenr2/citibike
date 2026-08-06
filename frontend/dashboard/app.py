@@ -13,9 +13,11 @@ from plotly.subplots import make_subplots
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from backend.services import data_service, demand_service, revenue_service
+from backend.services import data_service, demand_service, revenue_service, scenario_service
+from backend.services.case_study_service import load_case_studies
 from backend.services.opportunity_service import compute_mta_transit_scores
 from backend.utils.paths import DAILY_DATA_PATH, HOURLY_DATA_PATH, MTA_DATA_PATH
+from backend.validation.validators import ValidationError
 
 DATA_PATH = DAILY_DATA_PATH
 MTA_PATH = MTA_DATA_PATH
@@ -172,6 +174,32 @@ st.markdown(
         display: inline-block; padding: .28rem .65rem; border-radius: 999px;
         background: #FEF3C7; color: #92400E; font-size: .78rem; font-weight: 700;
     }
+    .estimate-pill {
+        display: inline-block; padding: .28rem .65rem; border-radius: 999px;
+        background: #DBEAFE; color: #1E40AF; font-size: .78rem; font-weight: 700;
+    }
+    .flow-diagram {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+        gap: .5rem; margin: 1.5rem 0;
+    }
+    .flow-step {
+        background: white; border: 1px solid #E5E7EB; border-radius: 14px;
+        padding: 1rem 1.25rem; text-align: center; min-width: 150px;
+        box-shadow: 0 6px 18px rgba(15,23,42,.05); font-weight: 600; color: #0F172A;
+        font-size: .92rem;
+    }
+    .flow-arrow {color: #94A3B8; font-size: 1.4rem; font-weight: 700;}
+    .closing-banner {
+        padding: 2.25rem 2rem;
+        border-radius: 22px;
+        color: white;
+        text-align: center;
+        background: linear-gradient(120deg, #102A43 0%, #0B1324 60%, #17233D 100%);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, .16);
+        margin: 1.5rem 0 1rem 0;
+    }
+    .closing-banner h2 {margin: 0 0 .5rem 0; font-size: 1.7rem;}
+    .closing-banner p {color: #D6E4FF; font-size: 1.05rem; margin: 0; max-width: 640px; margin: 0 auto;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -310,6 +338,30 @@ def prior_period_delta(frame: pd.DataFrame) -> float:
     return demand_service.prior_period_delta(frame, load_data())
 
 
+def render_icon_card_grid(cards: list[tuple[str, str, str]], per_row: int = 4) -> None:
+    """Render a responsive grid of bordered icon + title + description cards."""
+    for start in range(0, len(cards), per_row):
+        row_cards = cards[start : start + per_row]
+        cols = st.columns(len(row_cards))
+        for col, (icon, title, desc) in zip(cols, row_cards):
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"### {icon}")
+                    st.markdown(f"**{title}**")
+                    st.caption(desc)
+
+
+def render_flow_diagram(steps: list[tuple[str, str]]) -> None:
+    """Render a horizontal, wrap-friendly flow diagram from (icon, label) steps."""
+    parts = ['<div class="flow-diagram">']
+    for i, (icon, label) in enumerate(steps):
+        if i > 0:
+            parts.append('<div class="flow-arrow">→</div>')
+        parts.append(f'<div class="flow-step">{icon}<br>{label}</div>')
+    parts.append("</div>")
+    st.markdown("".join(parts), unsafe_allow_html=True)
+
+
 data = load_data()
 is_demo = bool(data["is_demo"].all())
 
@@ -408,6 +460,7 @@ metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
     forecast_tab,
     mta_tab,
     success_tab,
+    opportunity_tab,
     investment_tab,
     dot_tab,
     methods_tab,
@@ -418,6 +471,7 @@ metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
         "Forecast lab",
         "MTA connection",
         "Success stories",
+        "Investment Opportunity",
         "Government investment",
         "DOT support case",
         "Data & methods",
@@ -925,6 +979,308 @@ with success_tab:
 This is the evidence base for the investment strategy modeled in the
 **Government investment** tab that follows.
         """
+    )
+
+with opportunity_tab:
+    # ==================================================================
+    # Hero
+    # ==================================================================
+    st.markdown(
+        """
+        <div class="hero">
+          <div class="eyebrow">INVESTMENT OPPORTUNITY</div>
+          <h1>Invest in the Future of Urban Mobility</h1>
+          <p>Strategic investment in Citi Bike can expand service coverage, accelerate
+          ridership growth, and strengthen long-term recurring revenue — for Lyft and
+          for the cities it serves.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    current_rev = revenue_service.estimate_annual_revenue(nyc_filtered)
+    st.markdown(
+        f'<p class="section-note">📊 <strong>Today, from live NYC trip data:</strong> '
+        f"{active_stations:,} active stations, an estimated "
+        f'${current_rev["total_estimated_revenue"]:,.0f}/yr in revenue. Everything below '
+        "this line is a scenario-based projection, not historical data.</p>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
+
+    # ==================================================================
+    # Investment Scenario Cards
+    # ==================================================================
+    st.markdown("### Choose an investment scenario")
+    st.markdown(
+        '<p class="section-note">Three expansion tiers. Pick one to see what it could '
+        "unlock — figures come from the same scenario model as the ROI simulator below.</p>",
+        unsafe_allow_html=True,
+    )
+
+    INVESTMENT_TIERS = {
+        "Small Expansion ($25M)": {
+            "investment_amount": 25_000_000, "new_stations": 250,
+            "new_classic_bikes": 3_500, "new_ebikes": 1_500,
+        },
+        "Medium Expansion ($50M)": {
+            "investment_amount": 50_000_000, "new_stations": 500,
+            "new_classic_bikes": 7_000, "new_ebikes": 3_000,
+        },
+        "Major Expansion ($100M)": {
+            "investment_amount": 100_000_000, "new_stations": 1_000,
+            "new_classic_bikes": 14_000, "new_ebikes": 6_000,
+        },
+    }
+
+    selected_tier_label = st.segmented_control(
+        "Investment scenario",
+        list(INVESTMENT_TIERS.keys()),
+        default="Medium Expansion ($50M)",
+        label_visibility="collapsed",
+    ) or "Medium Expansion ($50M)"
+    tier = INVESTMENT_TIERS[selected_tier_label]
+
+    tier_sim = scenario_service.simulate_investment(
+        investment_amount=tier["investment_amount"],
+        new_stations=tier["new_stations"],
+        new_classic_bikes=tier["new_classic_bikes"],
+        new_ebikes=tier["new_ebikes"],
+        analysis_years=5,
+        mode="base",
+    )
+
+    with st.container(border=True):
+        st.markdown(f"#### {selected_tier_label}")
+        st.markdown('<span class="estimate-pill">ESTIMATE</span>', unsafe_allow_html=True)
+        tier_cols_1 = st.columns(4)
+        tier_cols_1[0].metric("New stations", f"{tier['new_stations']:,}")
+        tier_cols_1[1].metric(
+            "Additional bikes", f"{tier['new_classic_bikes'] + tier['new_ebikes']:,}"
+        )
+        tier_cols_1[2].metric("Additional e-bikes", f"{tier['new_ebikes']:,}")
+        tier_cols_1[3].metric(
+            "Additional annual rides",
+            compact_number(tier_sim["projected_rides"]["steady_state_annual"]),
+        )
+        tier_cols_2 = st.columns(3)
+        tier_cols_2[0].metric(
+            "Est. annual revenue increase",
+            f"${tier_sim['projected_revenue']['steady_state_annual']:,.0f}",
+        )
+        tier_cols_2[1].metric("Est. 5-yr ROI", f"{tier_sim['simple_roi']:.0%}")
+        tier_payback = tier_sim["payback_period_years"]
+        tier_cols_2[2].metric(
+            "Est. payback period",
+            f"{tier_payback:.1f} yrs" if tier_payback is not None else "5+ yrs",
+        )
+        st.caption(
+            "Estimates based on this app's base-case financial assumptions "
+            "(see the Government investment tab for the full assumption set). "
+            "Not a guaranteed outcome."
+        )
+
+    st.markdown("---")
+
+    # ==================================================================
+    # Expected Impact
+    # ==================================================================
+    st.markdown("### Expected impact")
+    st.markdown(
+        '<p class="section-note">Directional benefits of the selected scenario — '
+        "not guaranteed figures.</p>",
+        unsafe_allow_html=True,
+    )
+
+    impact_cards = [
+        ("🗺️", "More Neighborhood Coverage", "Denser station spacing reaches areas today's network skips."),
+        ("📈", "Higher Ridership", f"Up to {compact_number(tier_sim['projected_rides']['steady_state_annual'])} additional annual rides at this tier."),
+        ("🚇", "Better First/Last Mile Transit", "New stations near high-delay subway stops close the gap trains leave behind."),
+        ("🚗", "Reduced Car Dependency", "Every added trip is a potential car, taxi, or rideshare trip that didn't happen."),
+        ("💳", "Increased Membership Growth", "More docks near where people live and work convert casual riders into annual members."),
+        ("💰", "Higher Revenue Potential", f"Est. +${tier_sim['projected_revenue']['steady_state_annual']:,.0f}/yr in recurring revenue at this tier."),
+        ("🌱", "Lower Carbon Emissions", "Each bike trip that replaces a car trip cuts tailpipe emissions directly."),
+    ]
+    render_icon_card_grid(impact_cards, per_row=4)
+
+    st.markdown("---")
+
+    # ==================================================================
+    # Growth Timeline
+    # ==================================================================
+    st.markdown("### How investment compounds over time")
+    render_flow_diagram(
+        [
+            ("💵", "Investment"),
+            ("🏗️", "Expand Stations"),
+            ("🚲", "Increase Bike<br>Availability"),
+            ("📈", "More Daily<br>Riders"),
+            ("💳", "Higher<br>Membership"),
+            ("💰", "Higher<br>Revenue"),
+            ("🌱", "Long-term<br>Sustainable Growth"),
+        ]
+    )
+
+    st.markdown("---")
+
+    # ==================================================================
+    # Supporting Evidence
+    # ==================================================================
+    st.markdown("### Evidence from other cities")
+    st.markdown(
+        '<p class="section-note">Not a comparison with New York — independent proof '
+        "that public and public-private investment reliably grows bike-share ridership "
+        "and infrastructure elsewhere.</p>",
+        unsafe_allow_html=True,
+    )
+
+    evidence_cities = {"San Francisco", "Paris", "London", "Montreal", "Washington, D.C."}
+    evidence_studies = [c for c in load_case_studies() if c["city"] in evidence_cities]
+
+    if evidence_studies:
+        evidence_cols = st.columns(len(evidence_studies))
+        for col, study in zip(evidence_cols, evidence_studies):
+            with col:
+                with st.container(border=True):
+                    st.markdown(f"**{study['system_name']}**")
+                    st.caption(study["city"])
+                    st.caption(f"Public investment: {study['government_involvement']}")
+                    st.caption(f"Expansion: {study['investment_action']}")
+                    st.caption(f"Ridership growth: {study['ridership_result']}")
+                    st.markdown(f"**Key takeaway:** {study['main_lesson']}")
+
+    st.markdown("---")
+
+    # ==================================================================
+    # Why Lyft?
+    # ==================================================================
+    st.markdown("### Why Lyft?")
+    st.markdown(
+        '<p class="section-note">Business opportunities this investment could unlock '
+        "— not guarantees.</p>",
+        unsafe_allow_html=True,
+    )
+
+    why_lyft_cards = [
+        ("🔗", "Strengthening Multimodal Transportation", "Bikes complement rideshare rather than compete with it, capturing trips too short for a car."),
+        ("🌍", "Expanding Sustainable Mobility", "A larger e-bike fleet extends zero-emission trip share without new vehicle capital."),
+        ("🔁", "Increasing Recurring Membership Revenue", "Annual memberships are predictable, subscription-style revenue — not one-off rides."),
+        ("🤝", "Stronger Government Partnerships", "The Success stories tab shows public investment following, not replacing, a private operator."),
+        ("❤️", "Improving Customer Retention", "Riders who use both rideshare and bike-share for different trip types become stickier customers."),
+        ("🌱", "Supporting Climate & ESG Goals", "Expanded bike-share is a direct, measurable lever for sustainability commitments."),
+        ("🧭", "Expanding First/Last-Mile Reach", "Denser station coverage extends reach into trips transit and rideshare alone don't cover well."),
+    ]
+    render_icon_card_grid(why_lyft_cards, per_row=4)
+
+    st.markdown("---")
+
+    # ==================================================================
+    # Interactive ROI Simulator
+    # ==================================================================
+    st.markdown("### Interactive ROI simulator")
+    st.markdown(
+        '<p class="section-note">Adjust the assumptions yourself. This uses the same '
+        "transparent financial formulas as the scenario cards above — no machine "
+        "learning, no black box.</p>",
+        unsafe_allow_html=True,
+    )
+
+    sim_input_cols = st.columns(4)
+    with sim_input_cols[0]:
+        sim_investment_m = st.slider("Investment amount ($M)", 10, 150, 50, step=5)
+    with sim_input_cols[1]:
+        sim_stations = st.slider("New stations", 50, 1_500, 500, step=25)
+    with sim_input_cols[2]:
+        sim_ebikes = st.slider("New e-bikes", 0, 12_000, 3_000, step=250)
+    with sim_input_cols[3]:
+        sim_growth_pct = st.slider("Expected annual ridership growth", 0, 15, 3, format="%d%%")
+
+    sim_total_bikes = sim_stations * 20
+    sim_classic = max(0, sim_total_bikes - sim_ebikes)
+    st.caption(
+        f"Assumes ~20 bikes per new station: {sim_total_bikes:,} total bikes "
+        f"({sim_classic:,} classic + {sim_ebikes:,} e-bikes)."
+    )
+
+    sim_result = None
+    try:
+        sim_result = scenario_service.simulate_investment(
+            investment_amount=sim_investment_m * 1_000_000,
+            new_stations=sim_stations,
+            new_classic_bikes=sim_classic,
+            new_ebikes=sim_ebikes,
+            analysis_years=5,
+            mode="base",
+            overrides={"organic_growth_rate": sim_growth_pct / 100},
+        )
+    except ValidationError as exc:
+        st.warning(str(exc))
+
+    if sim_result:
+        if sim_result["capital_warning"]:
+            st.warning(sim_result["capital_warning"])
+
+        sim_metric_cols = st.columns(5)
+        sim_metric_cols[0].metric(
+            "Total capital cost", f"${sim_result['capital_cost']['total_capital']:,.0f}"
+        )
+        sim_metric_cols[1].metric(
+            "Additional annual rides",
+            compact_number(sim_result["projected_rides"]["steady_state_annual"]),
+        )
+        sim_metric_cols[2].metric(
+            "Est. annual revenue",
+            f"${sim_result['projected_revenue']['steady_state_annual']:,.0f}",
+        )
+        sim_metric_cols[3].metric("Est. 5-yr ROI", f"{sim_result['simple_roi']:.0%}")
+        sim_payback = sim_result["payback_period_years"]
+        sim_metric_cols[4].metric(
+            "Est. payback period",
+            f"{sim_payback:.1f} yrs" if sim_payback is not None else "5+ yrs",
+        )
+
+        sim_proj_df = pd.DataFrame(sim_result["annual_projections"])
+        sim_chart = px.bar(
+            sim_proj_df,
+            x="year",
+            y="projected_revenue",
+            labels={"year": "Year", "projected_revenue": "Projected annual revenue ($)"},
+            title="Projected revenue ramp-up",
+        )
+        sim_chart.update_layout(
+            height=320,
+            margin=dict(l=10, r=10, t=35, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="white",
+            yaxis_tickprefix="$",
+            yaxis_tickformat=",.0f",
+        )
+        st.plotly_chart(sim_chart, use_container_width=True)
+
+    st.caption(
+        "This simulator uses transparent, editable financial assumptions — not a "
+        "machine-learning model. See the Government investment tab for the full "
+        "assumption set and sensitivity analysis."
+    )
+
+    st.markdown("---")
+
+    # ==================================================================
+    # Closing
+    # ==================================================================
+    st.markdown(
+        """
+        <div class="closing-banner">
+          <h2>Strategic investment today can create a larger, more connected, and more
+          sustainable Citi Bike network for tomorrow.</h2>
+          <p>Every figure on this page is a labeled estimate, not a guarantee — but the
+          pattern holds across every government-backed system in the Success stories tab.
+          The question isn't whether investment works. It's how much, how fast, and with
+          whom.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
 with investment_tab:
