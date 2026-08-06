@@ -9,9 +9,10 @@ from plotly.subplots import make_subplots
 from .styles import (
     CHART_LAYOUT,
     CHART_MARGIN_MAP,
-    BLUES_HEATMAP,
+    HEATMAP_SCALE,
     HISTORICAL_BLUE,
     FORECAST_PURPLE,
+    LYFT_PINK,
     TEXT_PRIMARY,
     apply_layout,
 )
@@ -161,28 +162,70 @@ def heatmap(
     height: int = 500,
     show_rush_hours: bool = True,
 ) -> go.Figure:
-    RUSH_ORANGE = "#EA580C"
     fig = go.Figure(go.Heatmap(
         z=z, x=x_labels, y=y_labels,
-        colorscale=BLUES_HEATMAP, xgap=2, ygap=2,
+        colorscale=HEATMAP_SCALE, xgap=2, ygap=2,
         colorbar=dict(
-            title=dict(text="Avg trips", font=dict(color=HISTORICAL_BLUE)),
+            title=dict(text="Avg Hourly Trips", font=dict(color=HISTORICAL_BLUE)),
             tickfont=dict(color=HISTORICAL_BLUE),
         ),
         hovertemplate="%{x}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
     ))
     if show_rush_hours:
-        for y0, y1 in [(6.5, 9.5), (16.5, 19.5)]:
-            fig.add_hrect(y0=y0, y1=y1, fillcolor=RUSH_ORANGE, opacity=0.10, layer="above", line_width=0)
-        for h in [6.5, 9.5, 16.5, 19.5]:
-            fig.add_hline(y=h, line_dash="dash", line_color=RUSH_ORANGE, line_width=2, opacity=0.8)
+        # Weekdays and weekends peak at different times of day, so shade/mark
+        # each block separately: weekday commute rush vs. weekend
+        # mid-afternoon peak.
+        weekday_labels = [d for d in x_labels if d not in ("Saturday", "Sunday")]
+        weekend_labels = [d for d in x_labels if d in ("Saturday", "Sunday")]
+        weekday_x1 = len(weekday_labels) - 0.5
+        weekend_x0 = weekday_x1
+        weekend_x1 = len(x_labels) - 0.5
+
+        peak_bands = []
+        if weekday_labels:
+            peak_bands.append((-0.5, weekday_x1, 6.5, 9.5))
+            peak_bands.append((-0.5, weekday_x1, 16.5, 19.5))
+        if weekend_labels:
+            peak_bands.append((weekend_x0, weekend_x1, 12.5, 15.5))
+
+        for x0, x1, y0, y1 in peak_bands:
+            fig.add_shape(
+                type="rect", xref="x", yref="y",
+                x0=x0, x1=x1, y0=y0, y1=y1,
+                fillcolor=LYFT_PINK, opacity=0.15, line_width=0, layer="above",
+            )
+            for y in (y0, y1):
+                fig.add_shape(
+                    type="line", xref="x", yref="y",
+                    x0=x0, x1=x1, y0=y, y1=y,
+                    line=dict(color=LYFT_PINK, dash="dash", width=2.5),
+                    opacity=0.9,
+                )
+
+        if weekday_labels and weekend_labels:
+            fig.add_shape(
+                type="line", xref="x", yref="paper",
+                x0=weekday_x1, x1=weekday_x1, y0=0, y1=1,
+                line=dict(color=HISTORICAL_BLUE, width=2),
+            )
+
+        fig.add_trace(go.Scatter(
+            x=[None], y=[None], mode="lines",
+            line=dict(color=LYFT_PINK, dash="dash", width=2.5),
+            name="Peak Hours",
+        ))
     fig.update_yaxes(
         title="Hour of day", autorange="reversed",
         tickmode="array", tickvals=list(range(0, 24, 2)),
         tickfont=dict(color=HISTORICAL_BLUE), showgrid=False,
     )
     fig.update_xaxes(tickfont=dict(color=HISTORICAL_BLUE))
-    return apply_layout(fig, height=height, title=title)
+    return apply_layout(
+        fig, height=height, title=title,
+        margin=dict(l=10, r=10, t=40, b=10),
+        showlegend=show_rush_hours,
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0, font=dict(color=HISTORICAL_BLUE)),
+    )
 
 
 def opportunity_scatter(

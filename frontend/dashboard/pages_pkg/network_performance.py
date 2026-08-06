@@ -80,7 +80,7 @@ def render(nyc_filtered, filtered, hourly, smoothing, is_demo, demand_service):
     # ── Heatmap ──
     section_header(
         "Peak demand by hour and day",
-        f"{peak_share:.0%} of trips happen during the six peak rush hours (7-10am, 5-8pm).",
+        f"{peak_share:.0%} of trips happen during the six peak rush hours.",
     )
     day_counts = hourly.drop_duplicates(["date", "day_name"]).groupby("day_name")["date"].nunique()
     hourly_pivot = hourly.groupby(["hour", "day_name"], as_index=False)["trips"].sum()
@@ -101,6 +101,8 @@ def render(nyc_filtered, filtered, hourly, smoothing, is_demo, demand_service):
 
     sample_dates = pd.to_datetime(hourly["date"])
     st.caption(
+        "Pink dashed lines mark peak hours: 7-10am and 5-8pm on weekdays, "
+        "12-4pm on weekends. Solid line divides weekday from weekend. "
         f"Based on {sample_dates.min():%b %Y}\u2013{sample_dates.max():%b %Y} hourly data. "
         "Independent of sidebar date filters."
     )

@@ -39,11 +39,14 @@ CITY_COLORS = {"New York City": "#2D7FF9", "San Francisco": "#F26B4A"}
 SCENARIO_COLORS = ["#94A3B8", "#2D7FF9", "#10B981"]
 PRESSURE_COLORS = [LIGHT_GRAY, ACCENT_CYAN, PRESSURE_AMBER, CRITICAL_RED]
 
-BLUES_HEATMAP = [
-    [0 / 8, "#f7fbff"], [1 / 8, "#deebf7"], [2 / 8, "#c6dbef"],
-    [3 / 8, "#9ecae1"], [4 / 8, "#6baed6"], [5 / 8, "#4292c6"],
-    [6 / 8, "#2171b5"], [7 / 8, "#08519c"], [8 / 8, "#08306b"],
+# Cyan-to-magenta scale for the hourly demand heatmap, fading to a light
+# blue (not pure white) at the low end for contrast among quiet hours.
+_HEATMAP_HEX = [
+    "#eaf6ff", "#d3f0ff", "#a9e6ff",
+    "#59e9ff", "#4ed2ee", "#43b8dc", "#399bca", "#317cba",
+    "#2b5cac", "#263aa1", "#2f2398", "#502091", "#731f8d", "#891d7d",
 ]
+HEATMAP_SCALE = [[i / (len(_HEATMAP_HEX) - 1), hex_] for i, hex_ in enumerate(_HEATMAP_HEX)]
 
 # ── Badge colors by data type ─────────────────────────────────────
 BADGE_COLORS = {
