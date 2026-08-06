@@ -147,6 +147,7 @@ st.markdown(
     .stApp {background: #F5F7FA;}
     [data-testid="stSidebar"] {background: #111827;}
     [data-testid="stSidebar"] * {color: #F9FAFB;}
+    [data-testid="stSidebar"] input {color: #111827;}
     .hero {
         padding: 2rem 2.25rem;
         border-radius: 22px;
@@ -319,13 +320,12 @@ with st.sidebar:
     selected_cities = city_options
     st.markdown("**Decision geography**")
     st.markdown("New York City · Citi Bike")
-    st.caption("San Francisco is included only as a comparison benchmark.")
 
     min_date = data["date"].min().date()
     max_date = data["date"].max().date()
     selected_dates = st.date_input(
         "Date range",
-        value=(max(min_date, max_date - pd.Timedelta(days=89)), max_date),
+        value=(min_date, max_date),
         min_value=min_date,
         max_value=max_date,
     )
@@ -514,7 +514,13 @@ with overview_tab:
     hourly = load_hourly_demand()
     peak_share = demand_service.peak_hour_share(hourly)
 
-    st.subheader(f"{peak_share:.1%} of trips happen during the six peak rush hours")
+    # Matches the ColorBrewer/matplotlib "Blues" sequential palette used for the
+    # heatmap in notebooks/NYC_CitiBike_Analysis, so the dashboard and notebook
+    # read as the same chart.
+    NAVY = "#1B3A6B"
+    RUSH_ORANGE = "#EA580C"
+
+    st.subheader("Trip demand by hour and day of the week")
     st.caption(
         "NYC trips by hour of day and day of week, averaged across the full "
         "hourly sample period (independent of the date range and rider filters "
@@ -545,49 +551,69 @@ with overview_tab:
         .fillna(0)
     )
 
+    BLUES_SCALE = [
+        [0 / 8, "#f7fbff"],
+        [1 / 8, "#deebf7"],
+        [2 / 8, "#c6dbef"],
+        [3 / 8, "#9ecae1"],
+        [4 / 8, "#6baed6"],
+        [5 / 8, "#4292c6"],
+        [6 / 8, "#2171b5"],
+        [7 / 8, "#08519c"],
+        [8 / 8, "#08306b"],
+    ]
+
     heatmap_chart = go.Figure(
         data=go.Heatmap(
             z=hourly_wide.values,
             x=hourly_wide.columns.tolist(),
             y=hourly_wide.index.tolist(),
-            colorscale=[
-                [0, "#0D1117"],
-                [0.15, "#162447"],
-                [0.35, "#1F4287"],
-                [0.55, "#2D7FF9"],
-                [0.75, "#5CA8FF"],
-                [0.9, "#A5D8FF"],
-                [1, "#E7F5FF"],
-            ],
+            colorscale=BLUES_SCALE,
+            xgap=2,
+            ygap=2,
             colorbar=dict(
-                title="Avg trips",
-                tickfont=dict(color="#94A3B8"),
-                titlefont=dict(color="#94A3B8"),
+                title=dict(text="Avg Hourly Trips", font=dict(color=NAVY)),
+                tickfont=dict(color=NAVY),
             ),
             hovertemplate="%{x}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
         )
     )
+    # Shade the rush-hour bands so they read at a glance, then mark their edges
+    # with bold lines on top.
+    for y0, y1 in [(6.5, 9.5), (16.5, 19.5)]:
+        heatmap_chart.add_hrect(y0=y0, y1=y1, fillcolor=RUSH_ORANGE, opacity=0.12, layer="above", line_width=0)
     for hour_line in [6.5, 9.5, 16.5, 19.5]:
-        heatmap_chart.add_hline(y=hour_line, line_dash="dash", line_color="#F59E0B", opacity=0.7)
+        heatmap_chart.add_hline(
+            y=hour_line,
+            line_dash="dash",
+            line_color=RUSH_ORANGE,
+            line_width=2.5,
+            opacity=0.9,
+        )
     heatmap_chart.update_yaxes(
-        title="Hour of day",
+        title=dict(text="Hour of day", font=dict(color=NAVY)),
         autorange="reversed",
         tickmode="array",
         tickvals=list(range(0, 24, 2)),
-        tickfont=dict(color="#94A3B8"),
-        titlefont=dict(color="#94A3B8"),
-        gridcolor="#1E293B",
+        tickfont=dict(color=NAVY),
+        showgrid=False,
     )
     heatmap_chart.update_xaxes(
-        tickfont=dict(color="#94A3B8"),
+        tickfont=dict(color=NAVY),
     )
     heatmap_chart.update_layout(
         height=520,
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="#0D1117",
+        plot_bgcolor="white",
     )
     st.plotly_chart(heatmap_chart, use_container_width=True)
+
+    st.markdown(
+        f'<p style="font-size:1.05rem; font-weight:600; color:{NAVY}; margin:0.5rem 0 0;">'
+        f"{peak_share:.1%} of trips happen during the six peak rush hours</p>",
+        unsafe_allow_html=True,
+    )
 
     sample_dates = pd.to_datetime(hourly["date"])
     st.caption(
