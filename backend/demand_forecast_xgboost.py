@@ -1,16 +1,19 @@
 """
-Citi Bike Station Demand Forecasting — XGBoost (v2)
+Citi Bike Station Demand Forecasting — XGBoost (v3)
 ----------------------------------------------------
 Predicts daily trip counts per NYC Citi Bike station.
 Compares against a seasonal-naive (lag-7) baseline.
 
-Features:
+Features (21):
   - Station: lat, lon, capacity
   - Calendar: day_of_week, month, is_weekend, is_holiday
   - Lag / rolling: lag_1d, lag_7d, roll_mean_7d, roll_mean_28d, roll_std_7d
   - Composition: electric_share, member_share
   - Transit (MTA): mta_daily_riders, mta_delay_rate, nearest_mta_distance_km
   - Hourly pattern: peak_hour_share (share of trips in rush hours)
+  - Weather (deviation-based): temp_deviation, precip_deviation, is_bad_weather
+    Uses deviation from monthly climate normals so weather impact scales
+    with seasonal context (e.g. 15°C in Jan ≠ 15°C in Jul).
 
 Bay Wheels/San Francisco is excluded — used only as a benchmark for the
 DOT investment case, never as training data for NYC decisions.
@@ -18,6 +21,7 @@ DOT investment case, never as training data for NYC decisions.
 Input:  data/processed/bike_share_daily.parquet
         data/processed/bike_share_hourly.parquet  (optional — peak hour feature)
         data/processed/mta_bike_opportunity.parquet (optional — MTA features)
+        data/processed/nyc_weather_daily.parquet  (optional — weather features)
 Output: models/  (saved model + metrics)
         report/  (feature importance plots)
 
@@ -39,6 +43,7 @@ from xgboost import XGBRegressor
 DATA_PATH = Path("data/processed/bike_share_daily.parquet")
 HOURLY_PATH = Path("data/processed/bike_share_hourly.parquet")
 MTA_PATH = Path("data/processed/mta_bike_opportunity.parquet")
+WEATHER_PATH = Path("data/processed/nyc_weather_daily.parquet")
 MODELS_DIR = Path("models")
 REPORT_DIR = Path("report")
 
@@ -67,6 +72,10 @@ FEATURES = [
     "nearest_mta_distance_km",
     # Hourly demand pattern
     "peak_hour_share",
+    # Weather (deviation from monthly normals)
+    "temp_deviation",
+    "precip_deviation",
+    "is_bad_weather",
 ]
 TARGET = "trips"
 
@@ -161,6 +170,21 @@ def load_peak_hour_share(path: Path) -> pd.DataFrame:
     return merged[["date", "peak_hour_share"]]
 
 
+def load_weather(path: Path) -> pd.DataFrame:
+    """Load weather data with deviation-based features.
+
+    Uses deviation from monthly climate normals so the model learns
+    that the *same* temperature has different impact depending on
+    the time of year (the sliding-scale approach).
+    """
+    if not path.exists():
+        print("  Weather data not found — skipping weather features")
+        return pd.DataFrame()
+    weather = pd.read_parquet(path)
+    weather["date"] = pd.to_datetime(weather["date"])
+    return weather[["date", "temp_deviation", "precip_deviation", "is_bad_weather"]]
+
+
 # ---------------------------------------------------------------
 # 2. Feature engineering
 # ---------------------------------------------------------------
@@ -168,6 +192,7 @@ def add_features(
     df: pd.DataFrame,
     mta_df: pd.DataFrame | None = None,
     peak_df: pd.DataFrame | None = None,
+    weather_df: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     df = df.copy()
 
@@ -228,6 +253,20 @@ def add_features(
         print(f"  Peak hour share merged — median {df['peak_hour_share'].median():.2%}")
     else:
         df["peak_hour_share"] = 0.0
+
+    # Weather deviation features
+    if weather_df is not None and not weather_df.empty:
+        df = df.merge(weather_df, on="date", how="left")
+        df["temp_deviation"] = df["temp_deviation"].fillna(0)
+        df["precip_deviation"] = df["precip_deviation"].fillna(0)
+        df["is_bad_weather"] = df["is_bad_weather"].fillna(0).astype(int)
+        bad_pct = df["is_bad_weather"].mean()
+        print(f"  Weather features merged — {bad_pct:.1%} bad weather days, "
+              f"temp deviation range [{df['temp_deviation'].min():+.1f}, {df['temp_deviation'].max():+.1f}]°C")
+    else:
+        df["temp_deviation"] = 0.0
+        df["precip_deviation"] = 0.0
+        df["is_bad_weather"] = 0
 
     return df
 
@@ -349,6 +388,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data", type=Path, default=DATA_PATH)
     parser.add_argument("--hourly", type=Path, default=HOURLY_PATH)
     parser.add_argument("--mta", type=Path, default=MTA_PATH)
+    parser.add_argument("--weather", type=Path, default=WEATHER_PATH)
     parser.add_argument(
         "--city",
         type=str,
@@ -381,10 +421,11 @@ def main() -> None:
     print("\n>>> Loading auxiliary features...")
     mta_df = load_mta_features(args.mta)
     peak_df = load_peak_hour_share(args.hourly)
+    weather_df = load_weather(args.weather)
 
     # Engineer features
     print("\n>>> Engineering features...")
-    daily = add_features(daily, mta_df=mta_df, peak_df=peak_df)
+    daily = add_features(daily, mta_df=mta_df, peak_df=peak_df, weather_df=weather_df)
 
     print(f"\n  Final feature set ({len(FEATURES)} features):")
     for f in FEATURES:

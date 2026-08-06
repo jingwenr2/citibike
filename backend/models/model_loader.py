@@ -22,6 +22,7 @@ FEATURES = [
     "electric_share", "member_share",
     "mta_daily_riders", "mta_delay_rate", "nearest_mta_distance_km",
     "peak_hour_share",
+    "temp_deviation", "precip_deviation", "is_bad_weather",
 ]
 
 US_HOLIDAYS = {

@@ -20,13 +20,16 @@
       "mta_daily_riders",
       "mta_delay_rate",
       "nearest_mta_distance_km",
-      "peak_hour_share"
+      "peak_hour_share",
+      "temp_deviation",
+      "precip_deviation",
+      "is_bad_weather"
     ],
-    "n_features": 18,
+    "n_features": 21,
     "xgboost": {
-      "MAE": 12.7,
-      "RMSE": 24.63,
-      "WAPE": 0.1734
+      "MAE": 11.24,
+      "RMSE": 21.53,
+      "WAPE": 0.1534
     },
     "seasonal_naive": {
       "MAE": 19.56,
