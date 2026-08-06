@@ -204,6 +204,33 @@ div[data-testid="stMetricValue"] {font-weight: 700;}
     background: #FEF3C7; color: #92400E; font-size: .72rem; font-weight: 700;
 }
 
+/* ── Flow diagram ── */
+.flow-diagram {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: .5rem; margin: 1.25rem 0;
+}
+.flow-step {
+    background: white; border: 1px solid #E5E7EB; border-radius: 14px;
+    padding: .9rem 1.2rem; text-align: center; min-width: 140px;
+    box-shadow: 0 1px 3px rgba(15,23,42,.04); font-weight: 600;
+    color: #0F172A; font-size: .88rem;
+}
+.flow-arrow {color: #94A3B8; font-size: 1.3rem; font-weight: 700;}
+
+/* ── Closing banner ── */
+.closing-banner {
+    padding: 2.25rem 2rem; border-radius: 18px; color: white; text-align: center;
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    margin: 1.5rem 0 1rem 0; position: relative; overflow: hidden;
+}
+.closing-banner::before {
+    content: ''; position: absolute; top: -40%; left: -10%;
+    width: 400px; height: 400px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,0,191,.12), transparent 70%);
+}
+.closing-banner h2 {margin: 0 0 .5rem 0; font-size: 1.5rem; position: relative;}
+.closing-banner p {color: #CBD5E1; font-size: 1rem; margin: 0 auto; max-width: 640px; position: relative;}
+
 /* ── Misc ── */
 .section-divider {border: none; border-top: 1px solid #E5E7EB; margin: 1.5rem 0;}
 </style>

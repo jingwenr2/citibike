@@ -14,6 +14,7 @@ PAGES = [
         ("Station Opportunities", "station_opportunities"),
         ("Investment Strategy", "investment_strategy"),
         ("Investment Impact", "investment_impact"),
+        ("Investment Opportunity", "investment_opportunity"),
     ]),
     ("VALIDATE", [
         ("Evidence from Other Cities", "evidence_cities"),

@@ -269,6 +269,10 @@ elif active_page == "investment_impact":
     from pages_pkg.investment_impact import render
     render(nyc_filtered, rev, active_stations, is_demo)
 
+elif active_page == "investment_opportunity":
+    from pages_pkg.investment_opportunity import render
+    render(nyc_filtered, active_stations, is_demo)
+
 elif active_page == "evidence_cities":
     from pages_pkg.evidence_cities import render
     render()

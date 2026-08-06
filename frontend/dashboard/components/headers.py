@@ -48,3 +48,22 @@ def insight_panel(body: str):
         f'<div class="insight-panel"><p>{body}</p></div>',
         unsafe_allow_html=True,
     )
+
+
+def flow_diagram(steps: list[tuple[str, str]]):
+    """Render a horizontal, wrap-friendly flow diagram from (icon, label) steps."""
+    parts = ['<div class="flow-diagram">']
+    for i, (icon, label) in enumerate(steps):
+        if i > 0:
+            parts.append('<div class="flow-arrow">→</div>')
+        parts.append(f'<div class="flow-step">{icon}<br>{label}</div>')
+    parts.append("</div>")
+    st.markdown("".join(parts), unsafe_allow_html=True)
+
+
+def closing_banner(title: str, body: str):
+    """Render a closing/CTA banner, visually distinct from the opening hero."""
+    st.markdown(
+        f'<div class="closing-banner"><h2>{title}</h2><p>{body}</p></div>',
+        unsafe_allow_html=True,
+    )
