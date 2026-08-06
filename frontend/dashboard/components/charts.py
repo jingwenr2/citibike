@@ -24,12 +24,13 @@ def line_chart(
     y: str,
     color: str | None = None,
     color_map: dict | None = None,
+    labels: dict | None = None,
     title: str = "",
     height: int = 400,
     **kwargs,
 ) -> go.Figure:
-    labels = {x: "", y: y.replace("_", " ").title()}
-    labels.update(kwargs.pop("labels", {}))
+    if labels is None:
+        labels = {x: "", y: y.replace("_", " ").title()}
     fig = px.line(
         df, x=x, y=y, color=color,
         color_discrete_map=color_map,
