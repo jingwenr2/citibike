@@ -164,6 +164,7 @@ st.markdown(
     div[data-testid="stMetric"] {
         background: white; border: 1px solid #E5E7EB; padding: 1rem 1.1rem;
         border-radius: 16px; box-shadow: 0 6px 18px rgba(15,23,42,.05);
+        min-height: 112px;
     }
     div[data-testid="stMetricLabel"] {color: #64748B;}
     .section-note {color: #64748B; margin-top: -.6rem;}
@@ -389,14 +390,14 @@ if is_demo:
         unsafe_allow_html=True,
     )
 
-total_trips = demand_service.total_trips(nyc_filtered)
 active_stations = nyc_filtered["station_name"].nunique()
 electric_share = demand_service.electric_bike_share(nyc_filtered)
 avg_daily = demand_service.average_daily_trips(nyc_filtered)
+avg_annual_trips = avg_daily * 365
 delta = prior_period_delta(nyc_filtered)
 
 metric_cols = st.columns(4)
-metric_cols[0].metric("NYC total trips", compact_number(total_trips), f"{delta:+.1%} vs prior period")
+metric_cols[0].metric("NYC Average Annual Trips", compact_number(avg_annual_trips), f"{delta:+.1%} vs prior period")
 metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
 metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
 metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
@@ -521,10 +522,10 @@ with overview_tab:
     RUSH_ORANGE = "#EA580C"
 
     st.subheader("Trip demand by hour and day of the week")
-    st.caption(
-        "NYC trips by hour of day and day of week, averaged across the full "
-        "hourly sample period (independent of the date range and rider filters "
-        "above). Dashed lines mark 7-10am and 5-8pm."
+    st.markdown(
+        f'<p style="font-size:1.05rem; font-weight:600; color:{NAVY}; margin:0 0 0.5rem;">'
+        f"{peak_share:.1%} of trips happen during the six peak rush hours</p>",
+        unsafe_allow_html=True,
     )
     if bool(hourly["hourly_is_demo"].all()):
         st.markdown(
@@ -609,12 +610,11 @@ with overview_tab:
     )
     st.plotly_chart(heatmap_chart, use_container_width=True)
 
-    st.markdown(
-        f'<p style="font-size:1.05rem; font-weight:600; color:{NAVY}; margin:0.5rem 0 0;">'
-        f"{peak_share:.1%} of trips happen during the six peak rush hours</p>",
-        unsafe_allow_html=True,
+    st.caption(
+        "NYC trips by hour of day and day of week, averaged across the full "
+        "hourly sample period (independent of the date range and rider filters "
+        "above). Dashed lines mark 7-10am and 5-8pm."
     )
-
     sample_dates = pd.to_datetime(hourly["date"])
     st.caption(
         "Color scale shows average trips for that hour on that weekday, "
