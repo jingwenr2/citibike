@@ -1,6 +1,7 @@
 """Standardized Plotly chart wrappers with consistent styling."""
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -165,31 +166,51 @@ def heatmap(
     height: int = 500,
     show_rush_hours: bool = True,
 ) -> go.Figure:
-    fig = go.Figure(go.Heatmap(
-        z=z, x=x_labels, y=y_labels,
-        colorscale=HEATMAP_SCALE, xgap=2, ygap=2,
-        colorbar=dict(
-            title=dict(text="Avg Hourly Trips", font=dict(color=HISTORICAL_BLUE)),
-            tickfont=dict(color=HISTORICAL_BLUE),
-        ),
-        hovertemplate="%{x}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
-    ))
-    if show_rush_hours:
-        # Weekdays and weekends peak at different times of day, so shade/mark
-        # each block separately: weekday commute rush vs. weekend
-        # mid-afternoon peak.
-        weekday_labels = [d for d in x_labels if d not in ("Saturday", "Sunday")]
-        weekend_labels = [d for d in x_labels if d in ("Saturday", "Sunday")]
-        weekday_x1 = len(weekday_labels) - 0.5
-        weekend_x0 = weekday_x1
-        weekend_x1 = len(x_labels) - 0.5
+    z = np.asarray(z)
+    zmin, zmax = float(np.nanmin(z)), float(np.nanmax(z))
 
+    # Weekdays and weekends peak at different times of day, so split them into
+    # separate traces with a blank gap between — reads as two grouped blocks
+    # without needing a dividing line.
+    weekday_idx = [i for i, d in enumerate(x_labels) if d not in ("Saturday", "Sunday")]
+    weekend_idx = [i for i, d in enumerate(x_labels) if d in ("Saturday", "Sunday")]
+    weekday_labels = [x_labels[i] for i in weekday_idx]
+    weekend_labels = [x_labels[i] for i in weekend_idx]
+
+    GROUP_GAP = 0.06  # extra x-axis units of blank space between the two blocks (~2-3x a cell gap)
+    weekday_x = list(range(len(weekday_labels)))
+    weekend_x = [len(weekday_labels) + GROUP_GAP + i for i in range(len(weekend_labels))]
+
+    fig = go.Figure()
+    if weekday_labels:
+        fig.add_trace(go.Heatmap(
+            z=z[:, weekday_idx], x=weekday_x, y=y_labels,
+            colorscale=HEATMAP_SCALE, xgap=2, ygap=2,
+            zmin=zmin, zmax=zmax,
+            colorbar=dict(
+                title=dict(text="Avg Hourly Trips", font=dict(color=HISTORICAL_BLUE)),
+                tickfont=dict(color=HISTORICAL_BLUE),
+            ),
+            customdata=np.tile(weekday_labels, (len(y_labels), 1)),
+            hovertemplate="%{customdata}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
+        ))
+    if weekend_labels:
+        fig.add_trace(go.Heatmap(
+            z=z[:, weekend_idx], x=weekend_x, y=y_labels,
+            colorscale=HEATMAP_SCALE, xgap=2, ygap=2,
+            zmin=zmin, zmax=zmax,
+            showscale=False,
+            customdata=np.tile(weekend_labels, (len(y_labels), 1)),
+            hovertemplate="%{customdata}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
+        ))
+
+    if show_rush_hours:
         peak_bands = []
         if weekday_labels:
-            peak_bands.append((-0.5, weekday_x1, 6.5, 9.5))
-            peak_bands.append((-0.5, weekday_x1, 16.5, 19.5))
+            peak_bands.append((-0.5, len(weekday_labels) - 0.5, 6.5, 9.5))
+            peak_bands.append((-0.5, len(weekday_labels) - 0.5, 16.5, 19.5))
         if weekend_labels:
-            peak_bands.append((weekend_x0, weekend_x1, 12.5, 15.5))
+            peak_bands.append((weekend_x[0] - 0.5, weekend_x[-1] + 0.5, 12.5, 15.5))
 
         for x0, x1, y0, y1 in peak_bands:
             fig.add_shape(
@@ -205,13 +226,6 @@ def heatmap(
                     opacity=0.9,
                 )
 
-        if weekday_labels and weekend_labels:
-            fig.add_shape(
-                type="line", xref="x", yref="paper",
-                x0=weekday_x1, x1=weekday_x1, y0=0, y1=1,
-                line=dict(color=HISTORICAL_BLUE, width=2),
-            )
-
         fig.add_trace(go.Scatter(
             x=[None], y=[None], mode="lines",
             line=dict(color=LYFT_PINK, dash="dash", width=2.5),
@@ -222,7 +236,12 @@ def heatmap(
         tickmode="array", tickvals=list(range(0, 24, 2)),
         tickfont=dict(color=HISTORICAL_BLUE), showgrid=False,
     )
-    fig.update_xaxes(tickfont=dict(color=HISTORICAL_BLUE))
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=weekday_x + weekend_x,
+        ticktext=weekday_labels + weekend_labels,
+        tickfont=dict(color=HISTORICAL_BLUE),
+    )
     return apply_layout(
         fig, height=height, title=title,
         margin=dict(l=10, r=10, t=40, b=10),

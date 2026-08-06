@@ -102,7 +102,7 @@ def render(nyc_filtered, filtered, hourly, smoothing, is_demo, demand_service):
     sample_dates = pd.to_datetime(hourly["date"])
     st.caption(
         "Pink dashed lines mark peak hours: 7-10am and 5-8pm on weekdays, "
-        "12-4pm on weekends. Solid line divides weekday from weekend. "
+        "12-4pm on weekends. Weekday and weekend columns are gapped apart. "
         f"Based on {sample_dates.min():%b %Y}\u2013{sample_dates.max():%b %Y} hourly data. "
         "Independent of sidebar date filters."
     )
