@@ -27,10 +27,12 @@ def line_chart(
     height: int = 400,
     **kwargs,
 ) -> go.Figure:
+    labels = {x: "", y: y.replace("_", " ").title()}
+    labels.update(kwargs.pop("labels", {}))
     fig = px.line(
         df, x=x, y=y, color=color,
         color_discrete_map=color_map,
-        labels={x: "", y: y.replace("_", " ").title()},
+        labels=labels,
         **kwargs,
     )
     return apply_layout(fig, height=height, title=title)

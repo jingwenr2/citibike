@@ -33,8 +33,8 @@ CHART_COLORS = {
     "scenario_growth": POSITIVE_GREEN,
 }
 
-RIDER_COLORS = {"Member": HISTORICAL_BLUE, "Casual": ACCENT_CYAN}
-BIKE_COLORS = {"Electric": "#2D7FF9", "Classic": LIGHT_GRAY}
+RIDER_COLORS = {"Member": "#358DC3", "Casual": "#48C4E4"}
+BIKE_COLORS = {"Electric": "#358DC3", "Classic": "#48C4E4"}
 CITY_COLORS = {"New York City": "#2D7FF9", "San Francisco": "#F26B4A"}
 SCENARIO_COLORS = ["#94A3B8", "#2D7FF9", "#10B981"]
 PRESSURE_COLORS = [LIGHT_GRAY, ACCENT_CYAN, PRESSURE_AMBER, CRITICAL_RED]
