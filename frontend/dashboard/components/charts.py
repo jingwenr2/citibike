@@ -105,6 +105,7 @@ def scatter_map_chart(
     zoom: float = 10.5,
     center: tuple = (40.7306, -73.9866),
     height: int = 480,
+    size_max: int = 7,
     **kwargs,
 ) -> go.Figure:
     fig = px.scatter_map(
@@ -114,6 +115,7 @@ def scatter_map_chart(
         zoom=zoom,
         center={"lat": center[0], "lon": center[1]},
         map_style="carto-positron",
+        size_max=size_max,
         **kwargs,
     )
     fig.update_layout(

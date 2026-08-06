@@ -176,15 +176,19 @@ data = load_data()
 is_demo = bool(data["is_demo"].all())
 hourly = load_hourly_demand()
 
+# Date range is scoped to NYC only — San Francisco's rows in `data` span
+# further back and would otherwise widen the picker past the real NYC data.
+nyc_dates = data.loc[data["city"] == "New York City", "date"]
+
 # ── Sidebar filters ──
 active_page = render_sidebar(
-    data_period=f"{data['date'].min():%b %Y} – {data['date'].max():%b %Y}"
+    data_period=f"{nyc_dates.min():%b %Y} – {nyc_dates.max():%b %Y}"
 )
 
 with st.sidebar:
     st.markdown("<hr style='border-color:#1E293B;margin:.5rem 0;'>", unsafe_allow_html=True)
-    min_date = data["date"].min().date()
-    max_date = data["date"].max().date()
+    min_date = nyc_dates.min().date()
+    max_date = nyc_dates.max().date()
     selected_dates = st.date_input(
         "Date range", value=(min_date, max_date),
         min_value=min_date, max_value=max_date,
