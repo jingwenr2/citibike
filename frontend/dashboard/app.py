@@ -423,8 +423,8 @@ metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
     ]
 )
 
-RIDER_COLORS = {"Member": "#358DC3", "Casual": "#48C4E4"}
-BIKE_COLORS = {"Electric": "#358DC3", "Classic": "#48C4E4"}
+RIDER_COLORS = {"Member": "#2D76A4", "Casual": "#48C4E4"}
+BIKE_COLORS = {"Electric": "#2D76A4", "Classic": "#48C4E4"}
 
 with overview_tab:
     st.subheader("NYC demand over time")
@@ -687,6 +687,7 @@ with stations_tab:
         lon="lon",
         color="city",
         size="marker_size",
+        size_max=7,
         hover_name="station_name",
         hover_data={
             "system": True,
