@@ -321,8 +321,11 @@ with st.sidebar:
     st.markdown("**Decision geography**")
     st.markdown("New York City · Citi Bike")
 
-    min_date = data["date"].min().date()
-    max_date = data["date"].max().date()
+    # San Francisco's rows in `data` span further back than NYC's, so scope
+    # the date picker to NYC-only dates rather than the full dataset's range.
+    nyc_dates = data.loc[data["city"] == "New York City", "date"]
+    min_date = nyc_dates.min().date()
+    max_date = nyc_dates.max().date()
     selected_dates = st.date_input(
         "Date range",
         value=(min_date, max_date),
