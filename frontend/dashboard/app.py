@@ -564,7 +564,7 @@ with overview_tab:
     _HEATMAP_HEX = [
         "#eaf6ff", "#d3f0ff", "#a9e6ff",
         "#59e9ff", "#4ed2ee", "#43b8dc", "#399bca", "#317cba",
-        "#2b5cac", "#263aa1", "#2f2398", "#502091", "#731f8d", "#891d7d",
+        "#2b5cac", "#263aa1", "#2f2398", "#502091", "#731f8d", "#891d7d", "#FF00BF"
     ]
     HEATMAP_SCALE = [[i / (len(_HEATMAP_HEX) - 1), hex_] for i, hex_ in enumerate(_HEATMAP_HEX)]
 
