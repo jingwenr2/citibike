@@ -521,11 +521,8 @@ with overview_tab:
     hourly = load_hourly_demand()
     peak_share = demand_service.peak_hour_share(hourly)
 
-    # Matches the ColorBrewer/matplotlib "Blues" sequential palette used for the
-    # heatmap in notebooks/NYC_CitiBike_Analysis, so the dashboard and notebook
-    # read as the same chart.
     NAVY = "#1B3A6B"
-    RUSH_ORANGE = "#EA580C"
+    LYFT_PINK = "#FF00BF"
 
     st.subheader("Trip demand by hour and day of the week")
     st.markdown(
@@ -567,33 +564,81 @@ with overview_tab:
     ]
     HEATMAP_SCALE = [[i / (len(_HEATMAP_HEX) - 1), hex_] for i, hex_ in enumerate(_HEATMAP_HEX)]
 
-    heatmap_chart = go.Figure(
-        data=go.Heatmap(
-            z=hourly_wide.values,
-            x=hourly_wide.columns.tolist(),
+    # Weekdays and weekends peak at different times of day, so split them into
+    # separate traces with a gap between — reads as two distinct blocks — and
+    # highlight each with its own peak window (weekday commute rush vs.
+    # weekend midday leisure peak).
+    weekday_names = [d for d in hourly_days if d not in ("Saturday", "Sunday")]
+    weekend_names = [d for d in hourly_days if d in ("Saturday", "Sunday")]
+
+    GROUP_GAP = 0.12  # extra x-axis units of blank space between the two blocks
+    weekday_x = list(range(len(weekday_names)))
+    weekend_x = [len(weekday_names) + GROUP_GAP + i for i in range(len(weekend_names))]
+
+    zmin, zmax = float(hourly_wide.values.min()), float(hourly_wide.values.max())
+    heatmap_chart = go.Figure()
+    if weekday_names:
+        heatmap_chart.add_trace(go.Heatmap(
+            z=hourly_wide[weekday_names].values,
+            x=weekday_x,
             y=hourly_wide.index.tolist(),
             colorscale=HEATMAP_SCALE,
             xgap=2,
             ygap=2,
+            zmin=zmin,
+            zmax=zmax,
             colorbar=dict(
                 title=dict(text="Avg Hourly Trips", font=dict(color=NAVY)),
                 tickfont=dict(color=NAVY),
             ),
-            hovertemplate="%{x}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
+            customdata=np.tile(weekday_names, (len(hourly_wide.index), 1)),
+            hovertemplate="%{customdata}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
+        ))
+    if weekend_names:
+        heatmap_chart.add_trace(go.Heatmap(
+            z=hourly_wide[weekend_names].values,
+            x=weekend_x,
+            y=hourly_wide.index.tolist(),
+            colorscale=HEATMAP_SCALE,
+            xgap=2,
+            ygap=2,
+            zmin=zmin,
+            zmax=zmax,
+            showscale=False,
+            customdata=np.tile(weekend_names, (len(hourly_wide.index), 1)),
+            hovertemplate="%{customdata}, %{y}:00<br>%{z:,.0f} avg trips<extra></extra>",
+        ))
+
+    # Shade the peak-hour bands so they read at a glance, then mark their edges
+    # with bold lines on top.
+    peak_bands = []
+    if weekday_x:
+        x0, x1 = weekday_x[0] - 0.5, weekday_x[-1] + 0.5
+        peak_bands += [(x0, x1, 6.5, 9.5), (x0, x1, 16.5, 19.5)]
+    if weekend_x:
+        x0, x1 = weekend_x[0] - 0.5, weekend_x[-1] + 0.5
+        peak_bands.append((x0, x1, 12.5, 15.5))
+
+    for x0, x1, y0, y1 in peak_bands:
+        heatmap_chart.add_shape(
+            type="rect", xref="x", yref="y",
+            x0=x0, x1=x1, y0=y0, y1=y1,
+            fillcolor=LYFT_PINK, opacity=0.15, line_width=0, layer="above",
+        )
+        for y in (y0, y1):
+            heatmap_chart.add_shape(
+                type="line", xref="x", yref="y",
+                x0=x0, x1=x1, y0=y, y1=y,
+                line=dict(color=LYFT_PINK, dash="dash", width=2.5),
+                opacity=0.9,
+            )
+    heatmap_chart.add_trace(
+        go.Scatter(
+            x=[None], y=[None], mode="lines",
+            line=dict(color=LYFT_PINK, dash="dash", width=2.5),
+            name="Peak Hours",
         )
     )
-    # Shade the rush-hour bands so they read at a glance, then mark their edges
-    # with bold lines on top.
-    for y0, y1 in [(6.5, 9.5), (16.5, 19.5)]:
-        heatmap_chart.add_hrect(y0=y0, y1=y1, fillcolor=RUSH_ORANGE, opacity=0.12, layer="above", line_width=0)
-    for hour_line in [6.5, 9.5, 16.5, 19.5]:
-        heatmap_chart.add_hline(
-            y=hour_line,
-            line_dash="dash",
-            line_color=RUSH_ORANGE,
-            line_width=2.5,
-            opacity=0.9,
-        )
     heatmap_chart.update_yaxes(
         title=dict(text="Hour of day", font=dict(color=NAVY)),
         autorange="reversed",
@@ -604,6 +649,9 @@ with overview_tab:
         zeroline=False,
     )
     heatmap_chart.update_xaxes(
+        tickmode="array",
+        tickvals=weekday_x + weekend_x,
+        ticktext=weekday_names + weekend_names,
         tickfont=dict(color=NAVY),
     )
     heatmap_chart.update_layout(
@@ -611,13 +659,16 @@ with overview_tab:
         margin=dict(l=10, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="white",
+        showlegend=True,
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1, font=dict(color=NAVY)),
     )
     st.plotly_chart(heatmap_chart, use_container_width=True)
 
     st.caption(
         "NYC trips by hour of day and day of week, averaged across the full "
         "hourly sample period (independent of the date range and rider filters "
-        "above). Dashed lines mark 7-10am and 5-8pm."
+        "above). Dashed lines mark weekday rush hours (7-10am, 5-8pm) and the "
+        "weekend midday peak (12:30-3:30pm)."
     )
     sample_dates = pd.to_datetime(hourly["date"])
     st.caption(
