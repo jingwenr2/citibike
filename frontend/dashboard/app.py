@@ -8,7 +8,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from plotly.subplots import make_subplots
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -447,52 +446,34 @@ with overview_tab:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="white",
     )
-    st.plotly_chart(trend_chart, use_container_width=True)
-
-    st.subheader("Ridership")
-    st.caption("Share of NYC trips by rider type and bike type, for the selected date range.")
 
     rider_mix = demand_service.member_casual_split(nyc_filtered)
     bike_mix = demand_service.bike_type_split(nyc_filtered)
-    rider_colors = RIDER_COLORS
-    bike_colors = BIKE_COLORS
 
-    ridership_chart = make_subplots(
-        rows=1,
-        cols=2,
-        specs=[[{"type": "domain"}, {"type": "domain"}]],
-        subplot_titles=("Member vs. casual", "E-bike vs. classic"),
-    )
-    ridership_chart.add_trace(
+    DONUT_HEIGHT = 320
+
+    rider_donut = go.Figure(
         go.Pie(
             labels=rider_mix["rider_type"],
             values=rider_mix["trips"],
             hole=0.55,
-            marker=dict(colors=[rider_colors[label] for label in rider_mix["rider_type"]]),
+            marker=dict(colors=[RIDER_COLORS[label] for label in rider_mix["rider_type"]]),
             textinfo="percent+label",
             showlegend=False,
-        ),
-        row=1,
-        col=1,
+        )
     )
-    ridership_chart.add_trace(
-        go.Pie(
-            labels=bike_mix["bike_type"],
-            values=bike_mix["trips"],
-            hole=0.55,
-            marker=dict(colors=[bike_colors[label] for label in bike_mix["bike_type"]]),
-            textinfo="percent+label",
-            showlegend=False,
-        ),
-        row=1,
-        col=2,
-    )
-    ridership_chart.update_layout(
-        height=380,
+    rider_donut.update_layout(
+        height=DONUT_HEIGHT,
         margin=dict(l=10, r=10, t=40, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
+        title=dict(text="Member vs. casual", font=dict(size=14)),
     )
-    st.plotly_chart(ridership_chart, use_container_width=True)
+
+    trend_col, rider_col = st.columns([7, 3])
+    with trend_col:
+        st.plotly_chart(trend_chart, use_container_width=True)
+    with rider_col:
+        st.plotly_chart(rider_donut, use_container_width=True)
 
     st.subheader("Weekly rhythm by bike type")
     st.caption("Average NYC daily trips by weekday, electric vs. classic bikes.")
@@ -513,7 +494,29 @@ with overview_tab:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="white",
     )
-    st.plotly_chart(weekday_chart, use_container_width=True)
+
+    bike_donut = go.Figure(
+        go.Pie(
+            labels=bike_mix["bike_type"],
+            values=bike_mix["trips"],
+            hole=0.55,
+            marker=dict(colors=[BIKE_COLORS[label] for label in bike_mix["bike_type"]]),
+            textinfo="percent+label",
+            showlegend=False,
+        )
+    )
+    bike_donut.update_layout(
+        height=DONUT_HEIGHT,
+        margin=dict(l=10, r=10, t=40, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        title=dict(text="E-bike vs. classic", font=dict(size=14)),
+    )
+
+    weekday_col, bike_col = st.columns([7, 3])
+    with weekday_col:
+        st.plotly_chart(weekday_chart, use_container_width=True)
+    with bike_col:
+        st.plotly_chart(bike_donut, use_container_width=True)
 
     hourly = load_hourly_demand()
     peak_share = demand_service.peak_hour_share(hourly)
@@ -598,6 +601,7 @@ with overview_tab:
         tickvals=list(range(0, 24, 2)),
         tickfont=dict(color=NAVY),
         showgrid=False,
+        zeroline=False,
     )
     heatmap_chart.update_xaxes(
         tickfont=dict(color=NAVY),
