@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from matplotlib.colors import LinearSegmentedColormap
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -685,11 +686,29 @@ with stations_tab:
     st.caption("Bay Wheels is excluded from station-level investment decisions.")
     station_summary_df = demand_service.station_summary(nyc_filtered)
 
+    # Cyan-to-magenta pressure scale: light/low pressure to dark/high pressure.
+    # Shared by the map and the ranking table so a given pressure value always
+    # maps to the same color in both places.
+    NAVY = "#1B3A6B"
+    _PRESSURE_HEX = [
+        "#59e9ff", "#4ed2ee", "#43b8dc", "#399bca", "#317cba",
+        "#2b5cac", "#263aa1", "#2f2398", "#502091", "#891d7d",
+    ]
+    PRESSURE_SCALE = [[i / (len(_PRESSURE_HEX) - 1), hex_] for i, hex_ in enumerate(_PRESSURE_HEX)]
+    pressure_max = max(1.0, float(station_summary_df["pressure"].max()))
+
+    # A handful of stations have zero/missing recorded dock capacity, so
+    # pressure (avg trips / capacity) is undefined for them. Render those
+    # separately in gray with their own legend entry instead of letting them
+    # fall back silently to Plotly's default missing-value color.
+    known_pressure = station_summary_df[station_summary_df["pressure"].notna()]
+    unknown_pressure = station_summary_df[station_summary_df["pressure"].isna()]
+
     map_chart = px.scatter_map(
-        station_summary_df,
+        known_pressure,
         lat="lat",
         lon="lon",
-        color="city",
+        color="pressure",
         size="marker_size",
         size_max=7,
         hover_name="station_name",
@@ -702,7 +721,8 @@ with stations_tab:
             "lon": False,
             "marker_size": False,
         },
-        color_discrete_map={city: meta["color"] for city, meta in CITY_META.items()},
+        color_continuous_scale=PRESSURE_SCALE,
+        range_color=(0, pressure_max),
         zoom=10.5,
         center={
             "lat": CITY_META["New York City"]["center"][0],
@@ -713,8 +733,29 @@ with stations_tab:
     map_chart.update_layout(
         height=500,
         margin=dict(l=0, r=0, t=0, b=0),
-        legend_title_text="",
+        coloraxis_colorbar=dict(
+            title=dict(text="Pressure", font=dict(color=NAVY)),
+            tickvals=[0, pressure_max],
+            ticktext=["Low pressure", "High pressure"],
+            tickfont=dict(color=NAVY),
+        ),
     )
+
+    if not unknown_pressure.empty:
+        map_chart.add_trace(
+            go.Scattermap(
+                lat=unknown_pressure["lat"],
+                lon=unknown_pressure["lon"],
+                mode="markers",
+                marker=dict(size=8, color="#94A3B8"),
+                name="Unknown capacity",
+                showlegend=True,
+                hovertext=unknown_pressure["station_name"],
+                hoverinfo="text",
+            )
+        )
+        map_chart.update_layout(showlegend=True)
+
     st.plotly_chart(map_chart, use_container_width=True)
 
     ranking_col, detail_col = st.columns([1.05, 1])
@@ -723,13 +764,19 @@ with stations_tab:
         st.subheader("Highest demand pressure")
         st.caption(
             "Average daily trips divided by stated dock capacity. Stations with "
-            "unknown or zero recorded capacity are excluded from this ranking."
+            "unknown or zero recorded capacity are excluded from this ranking. "
+            "Pressure cell color matches the map above (light cyan = low, dark "
+            "magenta = high)."
         )
         display_ranked = ranked[
             ["city", "station_name", "average_daily", "capacity", "pressure"]
         ].head(10)
+        pressure_cmap = LinearSegmentedColormap.from_list("pressure", _PRESSURE_HEX)
+        styled_ranked = display_ranked.style.background_gradient(
+            cmap=pressure_cmap, subset=["pressure"], vmin=0, vmax=pressure_max
+        )
         st.dataframe(
-            display_ranked,
+            styled_ranked,
             hide_index=True,
             use_container_width=True,
             column_config={
@@ -737,12 +784,7 @@ with stations_tab:
                 "station_name": "Station",
                 "average_daily": st.column_config.NumberColumn("Avg. trips", format="%.0f"),
                 "capacity": "Docks",
-                "pressure": st.column_config.ProgressColumn(
-                    "Pressure",
-                    format="%.1f",
-                    min_value=0,
-                    max_value=max(1.0, float(display_ranked["pressure"].max())),
-                ),
+                "pressure": st.column_config.NumberColumn("Pressure", format="%.1f"),
             },
         )
 
