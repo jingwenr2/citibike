@@ -697,8 +697,15 @@ with stations_tab:
     PRESSURE_SCALE = [[i / (len(_PRESSURE_HEX) - 1), hex_] for i, hex_ in enumerate(_PRESSURE_HEX)]
     pressure_max = max(1.0, float(station_summary_df["pressure"].max()))
 
+    # A handful of stations have zero/missing recorded dock capacity, so
+    # pressure (avg trips / capacity) is undefined for them. Render those
+    # separately in gray with their own legend entry instead of letting them
+    # fall back silently to Plotly's default missing-value color.
+    known_pressure = station_summary_df[station_summary_df["pressure"].notna()]
+    unknown_pressure = station_summary_df[station_summary_df["pressure"].isna()]
+
     map_chart = px.scatter_map(
-        station_summary_df,
+        known_pressure,
         lat="lat",
         lon="lon",
         color="pressure",
@@ -733,6 +740,22 @@ with stations_tab:
             tickfont=dict(color=NAVY),
         ),
     )
+
+    if not unknown_pressure.empty:
+        map_chart.add_trace(
+            go.Scattermap(
+                lat=unknown_pressure["lat"],
+                lon=unknown_pressure["lon"],
+                mode="markers",
+                marker=dict(size=8, color="#94A3B8"),
+                name="Unknown capacity",
+                showlegend=True,
+                hovertext=unknown_pressure["station_name"],
+                hoverinfo="text",
+            )
+        )
+        map_chart.update_layout(showlegend=True)
+
     st.plotly_chart(map_chart, use_container_width=True)
 
     ranking_col, detail_col = st.columns([1.05, 1])
