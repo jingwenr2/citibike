@@ -129,15 +129,27 @@ def station_summary(df: pd.DataFrame) -> pd.DataFrame:
     """Station-level aggregation with demand pressure.
 
     Safely handles zero/missing capacity and infinite pressure values.
+
+    Grouped by station_name (not lat/lon): the same physical station's
+    recorded coordinates drift by a few meters between daily snapshots
+    (GPS/geocoding jitter), which would otherwise fragment one station
+    into many near-duplicate rows. capacity is stable per station_name
+    across the dataset, so it's a safe grouping key; lat/lon are instead
+    averaged for a single representative map position.
     """
     if df.empty:
         return pd.DataFrame()
     summary = (
         df.groupby(
-            ["city", "system", "station_name", "lat", "lon", "capacity"],
+            ["city", "system", "station_name", "capacity"],
             as_index=False,
         )
-        .agg(trips=("trips", "sum"), average_daily=("trips", "mean"))
+        .agg(
+            trips=("trips", "sum"),
+            average_daily=("trips", "mean"),
+            lat=("lat", "mean"),
+            lon=("lon", "mean"),
+        )
     )
     summary["capacity"] = summary["capacity"].replace(0, np.nan)
     summary["pressure"] = summary["average_daily"] / summary["capacity"]
