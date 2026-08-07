@@ -424,6 +424,9 @@ metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
     ]
 )
 
+RIDER_COLORS = {"Member": "#358DC3", "Casual": "#48C4E4"}
+BIKE_COLORS = {"Electric": "#358DC3", "Classic": "#48C4E4"}
+
 with overview_tab:
     st.subheader("NYC demand over time")
     st.caption("Member vs. casual ridership, New York City only.")
@@ -433,7 +436,7 @@ with overview_tab:
         x="date",
         y="smoothed_trips",
         color="rider_type",
-        color_discrete_map={"Member": "#17233D", "Casual": "#7DD3FC"},
+        color_discrete_map=RIDER_COLORS,
         labels={"smoothed_trips": "Trips", "date": "", "rider_type": "Rider"},
     )
     trend_chart.update_layout(
@@ -451,8 +454,8 @@ with overview_tab:
 
     rider_mix = demand_service.member_casual_split(nyc_filtered)
     bike_mix = demand_service.bike_type_split(nyc_filtered)
-    rider_colors = {"Member": "#17233D", "Casual": "#7DD3FC"}
-    bike_colors = {"Electric": "#2D7FF9", "Classic": "#94A3B8"}
+    rider_colors = RIDER_COLORS
+    bike_colors = BIKE_COLORS
 
     ridership_chart = make_subplots(
         rows=1,
@@ -500,7 +503,7 @@ with overview_tab:
         y="trips",
         color="bike_type",
         barmode="group",
-        color_discrete_map={"Electric": "#2D7FF9", "Classic": "#94A3B8"},
+        color_discrete_map=BIKE_COLORS,
         labels={"trips": "Average trips", "weekday": "", "bike_type": "Bike type"},
     )
     weekday_chart.update_layout(
@@ -552,24 +555,21 @@ with overview_tab:
         .fillna(0)
     )
 
-    BLUES_SCALE = [
-        [0 / 8, "#f7fbff"],
-        [1 / 8, "#deebf7"],
-        [2 / 8, "#c6dbef"],
-        [3 / 8, "#9ecae1"],
-        [4 / 8, "#6baed6"],
-        [5 / 8, "#4292c6"],
-        [6 / 8, "#2171b5"],
-        [7 / 8, "#08519c"],
-        [8 / 8, "#08306b"],
+    # Cyan-to-magenta scale for the hourly demand heatmap, fading to a light
+    # blue (not pure white) at the low end for contrast among quiet hours.
+    _HEATMAP_HEX = [
+        "#eaf6ff", "#d3f0ff", "#a9e6ff",
+        "#59e9ff", "#4ed2ee", "#43b8dc", "#399bca", "#317cba",
+        "#2b5cac", "#263aa1", "#2f2398", "#502091", "#731f8d", "#891d7d",
     ]
+    HEATMAP_SCALE = [[i / (len(_HEATMAP_HEX) - 1), hex_] for i, hex_ in enumerate(_HEATMAP_HEX)]
 
     heatmap_chart = go.Figure(
         data=go.Heatmap(
             z=hourly_wide.values,
             x=hourly_wide.columns.tolist(),
             y=hourly_wide.index.tolist(),
-            colorscale=BLUES_SCALE,
+            colorscale=HEATMAP_SCALE,
             xgap=2,
             ygap=2,
             colorbar=dict(
