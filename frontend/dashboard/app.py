@@ -9,7 +9,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, to_hex
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -133,6 +133,17 @@ CITY_META = {
         ],
     },
 }
+
+# Cyan-to-magenta sequential scale shared by every "low value -> high value"
+# gradient in the app (hourly demand heatmap, MTA opportunity score), fading
+# to a light blue (not pure white) at the low end for contrast among quiet
+# values.
+HEATMAP_HEX = [
+    "#eaf6ff", "#d3f0ff", "#a9e6ff",
+    "#59e9ff", "#4ed2ee", "#43b8dc", "#399bca", "#317cba",
+    "#2b5cac", "#263aa1", "#2f2398", "#502091", "#731f8d", "#891d7d",
+]
+HEATMAP_SCALE = [[i / (len(HEATMAP_HEX) - 1), hex_] for i, hex_ in enumerate(HEATMAP_HEX)]
 
 
 st.set_page_config(
@@ -560,15 +571,6 @@ with overview_tab:
         .fillna(0)
     )
 
-    # Cyan-to-magenta scale for the hourly demand heatmap, fading to a light
-    # blue (not pure white) at the low end for contrast among quiet hours.
-    _HEATMAP_HEX = [
-        "#eaf6ff", "#d3f0ff", "#a9e6ff",
-        "#59e9ff", "#4ed2ee", "#43b8dc", "#399bca", "#317cba",
-        "#2b5cac", "#263aa1", "#2f2398", "#502091", "#731f8d", "#891d7d"
-    ]
-    HEATMAP_SCALE = [[i / (len(_HEATMAP_HEX) - 1), hex_] for i, hex_ in enumerate(_HEATMAP_HEX)]
-
     # Weekdays and weekends peak at different times of day, so split them into
     # separate traces with a gap between — reads as two distinct blocks — and
     # highlight each with its own peak window (weekday commute rush vs.
@@ -919,6 +921,16 @@ with mta_tab:
     if mta_opportunity.empty:
         st.info("No Citi Bike stations match the current MTA opportunity table.")
     else:
+        # Same cyan-to-magenta scale as the "Avg Hourly Trips" heatmap, shared
+        # by the scatter plot, its legend, and the table below so a given
+        # opportunity score always renders the same color everywhere.
+        opportunity_max = max(1.0, float(mta_opportunity["transit_opportunity_score"].max()))
+        opportunity_cmap = LinearSegmentedColormap.from_list("opportunity", HEATMAP_HEX)
+
+        def score_to_hex(score: float) -> str:
+            fraction = max(0.0, min(1.0, score / opportunity_max))
+            return to_hex(opportunity_cmap(fraction))
+
         signal_chart = px.scatter(
             mta_opportunity,
             x="mta_daily_riders",
@@ -933,7 +945,8 @@ with mta_tab:
                 "bike_daily_trips": ":,.0f",
                 "transit_opportunity_score": ":.1f",
             },
-            color_continuous_scale=["#CBD5E1", "#2D7FF9", "#0B1324"],
+            color_continuous_scale=HEATMAP_SCALE,
+            range_color=(0, opportunity_max),
             labels={
                 "mta_daily_riders": "MTA daily riders",
                 "bike_daily_trips": "Citi Bike daily trips",
@@ -990,7 +1003,7 @@ with mta_tab:
                     <div style="display:flex; align-items:center; gap:.5rem;">
                         <div style="flex:1; background:#E5E7EB; border-radius:4px; height:8px;">
                             <div style="width:{max(0, min(100, row.transit_opportunity_score)):.1f}%;
-                                background:#2D7FF9; height:8px; border-radius:4px;"></div>
+                                background:{score_to_hex(row.transit_opportunity_score)}; height:8px; border-radius:4px;"></div>
                         </div>
                         <span style="font-size:.82rem; min-width:2.4rem; text-align:right;">
                             {row.transit_opportunity_score:.1f}
