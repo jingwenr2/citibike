@@ -695,7 +695,7 @@ with stations_tab:
         "#2b5cac", "#263aa1", "#2f2398", "#502091", "#891d7d",
     ]
     PRESSURE_SCALE = [[i / (len(_PRESSURE_HEX) - 1), hex_] for i, hex_ in enumerate(_PRESSURE_HEX)]
-    pressure_max = max(1.0, float(station_summary_df["pressure"].max()))
+    pressure_max = float(station_summary_df["pressure"].max(skipna=True) or 1.0)
 
     # A handful of stations have zero/missing recorded dock capacity, so
     # pressure (avg trips / capacity) is undefined for them. Render those
