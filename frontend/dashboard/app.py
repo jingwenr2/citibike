@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -936,26 +937,84 @@ with mta_tab:
                 "transit_opportunity_score",
             ]
         ]
-        st.dataframe(
-            opportunity_table,
-            hide_index=True,
-            use_container_width=True,
-            column_config={
-                "neighborhood": "Neighborhood",
-                "station_name": "Citi Bike station",
-                "mta_daily_riders": st.column_config.NumberColumn(
-                    "MTA riders/day", format="%d"
-                ),
-                "mta_delay_rate": st.column_config.NumberColumn(
-                    "MTA delay rate", format="percent"
-                ),
-                "bike_daily_trips": st.column_config.NumberColumn(
-                    "Bike trips/day", format="%.0f"
-                ),
-                "transit_opportunity_score": st.column_config.ProgressColumn(
-                    "Investment signal", min_value=0, max_value=100, format="%.1f"
-                ),
-            },
+
+        # Streamlit's interactive dataframe renders cells on a single line (it
+        # collapses embedded newlines to a space), so the only way to actually
+        # break the trailing "(subway lines)" list — e.g. "Times Sq-42 St/Port
+        # Authority Bus Terminal (1,2,3,7,A,C,E,N,Q,R,W,S)" — onto its own line
+        # is a plain HTML table.
+        neighborhood_pattern = re.compile(r"^(.*?)\s*(\([^()]*\))$")
+
+        def render_neighborhood(name: str) -> str:
+            match = neighborhood_pattern.match(name)
+            if not match:
+                return name
+            title, lines = match.groups()
+            return (
+                f"{title}<br>"
+                f'<span style="color:#64748B; font-size:.8rem;">{lines}</span>'
+            )
+
+        table_rows = "".join(
+            f"""
+            <tr>
+                <td>{render_neighborhood(row.neighborhood)}</td>
+                <td>{row.station_name}</td>
+                <td style="text-align:right;">{row.mta_daily_riders:,.0f}</td>
+                <td style="text-align:right;">{row.mta_delay_rate:.1%}</td>
+                <td style="text-align:right;">{row.bike_daily_trips:,.0f}</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:.5rem;">
+                        <div style="flex:1; background:#E5E7EB; border-radius:4px; height:8px;">
+                            <div style="width:{max(0, min(100, row.transit_opportunity_score)):.1f}%;
+                                background:#2D7FF9; height:8px; border-radius:4px;"></div>
+                        </div>
+                        <span style="font-size:.82rem; min-width:2.4rem; text-align:right;">
+                            {row.transit_opportunity_score:.1f}
+                        </span>
+                    </div>
+                </td>
+            </tr>
+            """
+            for row in opportunity_table.itertuples()
+        )
+        st.markdown(
+            f"""
+            <style>
+            .investment-table-wrap {{
+                max-height: 480px; overflow-y: auto; overflow-x: hidden;
+                border: 1px solid #E5E7EB; border-radius: 8px;
+            }}
+            .investment-table {{ width: 100%; border-collapse: collapse; font-size: .88rem; }}
+            .investment-table th {{
+                position: sticky; top: 0; background: #F8F9FB;
+                text-align: left; padding: .5rem .6rem; border-bottom: 1px solid #E5E7EB;
+                color: #64748B; font-weight: 600; font-size: .78rem;
+                text-transform: uppercase; letter-spacing: .03em;
+            }}
+            .investment-table td {{
+                padding: .55rem .6rem; border-bottom: 1px solid #F1F5F9; color: #0F172A;
+                vertical-align: middle;
+            }}
+            .investment-table th:nth-child(n+3), .investment-table td:nth-child(n+3) {{ text-align: right; }}
+            </style>
+            <div class="investment-table-wrap">
+            <table class="investment-table">
+                <thead>
+                    <tr>
+                        <th>Neighborhood</th>
+                        <th>Citi Bike station</th>
+                        <th>MTA riders/day</th>
+                        <th>MTA delay rate</th>
+                        <th>Bike trips/day</th>
+                        <th>Investment signal</th>
+                    </tr>
+                </thead>
+                <tbody>{table_rows}</tbody>
+            </table>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
 with success_tab:
