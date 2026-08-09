@@ -14,6 +14,8 @@ MTA_DATA_PATH = DATA_DIR / "mta_bike_opportunity.parquet"
 MODELS_DIR = ROOT / "models"
 NYC_MODEL_PATH = MODELS_DIR / "xgboost_new_york_city.json"
 FORECAST_METRICS_PATH = MODELS_DIR / "forecast_metrics.json"
+FORECAST_PREDICTIONS_PATH = MODELS_DIR / "forecast_predictions.parquet"
+FEATURE_IMPORTANCE_PATH = MODELS_DIR / "feature_importance.json"
 
 # Config
 CONFIG_DIR = ROOT / "backend" / "config"

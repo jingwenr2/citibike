@@ -8,6 +8,8 @@
       "capacity",
       "day_of_week",
       "month",
+      "quarter",
+      "year",
       "is_weekend",
       "is_holiday",
       "lag_1d",
@@ -25,16 +27,47 @@
       "precip_deviation",
       "is_bad_weather"
     ],
-    "n_features": 21,
+    "n_features": 23,
     "xgboost": {
       "MAE": 11.24,
-      "RMSE": 21.53,
+      "RMSE": 21.43,
       "WAPE": 0.1534
     },
     "seasonal_naive": {
       "MAE": 19.56,
       "RMSE": 39.92,
       "WAPE": 0.267
+    },
+    "cv_results": [
+      {
+        "MAE": 6.68,
+        "RMSE": 12.78,
+        "WAPE": 0.2566,
+        "fold": 1,
+        "train_rows": 1181047,
+        "test_rows": 125096
+      },
+      {
+        "MAE": 10.12,
+        "RMSE": 19.13,
+        "WAPE": 0.1961,
+        "fold": 2,
+        "train_rows": 1304023,
+        "test_rows": 138144
+      },
+      {
+        "MAE": 11.24,
+        "RMSE": 21.43,
+        "WAPE": 0.1534,
+        "fold": 3,
+        "train_rows": 1439907,
+        "test_rows": 137841
+      }
+    ],
+    "cv_avg": {
+      "MAE": 9.35,
+      "RMSE": 17.78,
+      "WAPE": 0.202
     }
   }
 ]

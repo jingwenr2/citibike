@@ -357,8 +357,6 @@ with st.sidebar:
     )
     smoothing = st.slider("Trend smoothing", 1, 28, 7, help="Rolling average in days")
     st.markdown("---")
-    st.caption("NYC · Citi Bike")
-    st.caption("San Francisco · Bay Wheels")
 
 filtered = data[
     data["city"].isin(selected_cities)
@@ -1064,6 +1062,11 @@ with success_tab:
         unsafe_allow_html=True,
     )
 
+    CITY_IMAGE_DIR = Path(__file__).parent / "assets" / "cities"
+    # Expected filenames: san_francisco.jpg, paris.jpg, london.jpg,
+    # montreal.jpg, washington_dc.jpg, chicago.jpg
+    # Drop your city photos into frontend/dashboard/assets/cities/
+
     story_rows = [SUCCESS_STORIES[i : i + 3] for i in range(0, len(SUCCESS_STORIES), 3)]
     for row in story_rows:
         story_cols = st.columns(len(row))
@@ -1076,6 +1079,16 @@ with success_tab:
                     for label, text in story["stats"].items():
                         st.markdown(f"**{label}**")
                         st.markdown(text)
+
+                    # City photo at the bottom of the card
+                    slug = story["city"].lower().replace(" ", "_").replace(".", "").replace(",", "")
+                    for ext in (".jpg", ".jpeg", ".png", ".webp"):
+                        img_path = CITY_IMAGE_DIR / f"{slug}{ext}"
+                        if img_path.exists():
+                            st.image(str(img_path), use_container_width=True)
+                            break
+                    else:
+                        st.caption(f"Add {slug}.jpg to assets/cities/")
 
     st.markdown("---")
     st.markdown("#### What these systems have in common")
