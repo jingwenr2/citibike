@@ -184,6 +184,52 @@ st.markdown(
         display: inline-block; padding: .28rem .65rem; border-radius: 999px;
         background: #FEF3C7; color: #92400E; font-size: .78rem; font-weight: 700;
     }
+
+    /* ── Reading guide ── */
+    .reading-guide {
+        background: white; border: 1px solid #E5E7EB; border-radius: 16px;
+        padding: 1.4rem 1.6rem; margin: .8rem 0 1.2rem 0;
+        box-shadow: 0 4px 12px rgba(15,23,42,.04);
+    }
+    .reading-guide h3 {
+        font-size: 1rem; color: #0F172A; margin: 0 0 .8rem 0; font-weight: 700;
+    }
+    .guide-step {
+        display: flex; align-items: flex-start; gap: .7rem; margin-bottom: .6rem;
+    }
+    .guide-number {
+        flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+        background: #2D7FF9; color: white; font-size: .75rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; margin-top: 1px;
+    }
+    .guide-text {
+        font-size: .88rem; color: #334155; line-height: 1.45;
+    }
+    .guide-text strong { color: #0F172A; }
+
+    /* ── Tab takeaway box ── */
+    .tab-takeaway {
+        background: linear-gradient(135deg, #F0F9FF 0%, #EFF6FF 100%);
+        border-left: 4px solid #2D7FF9;
+        padding: 1rem 1.25rem; border-radius: 0 12px 12px 0;
+        margin: 0 0 1.2rem 0;
+    }
+    .tab-takeaway p {
+        margin: 0; font-size: .95rem; color: #1E3A5F; line-height: 1.5;
+    }
+    .tab-takeaway strong { color: #0F172A; }
+
+    /* ── Section label ── */
+    .section-label {
+        display: inline-block; padding: .2rem .6rem; border-radius: 6px;
+        font-size: .7rem; font-weight: 700; letter-spacing: .06em;
+        text-transform: uppercase; margin-bottom: .4rem;
+    }
+    .section-label-blue { background: #DBEAFE; color: #1E40AF; }
+    .section-label-purple { background: #EDE9FE; color: #5B21B6; }
+    .section-label-green { background: #D1FAE5; color: #065F46; }
+    .section-label-amber { background: #FEF3C7; color: #92400E; }
+    .section-label-pink { background: #FCE7F3; color: #9D174D; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -386,10 +432,10 @@ mta_opportunity = compute_mta_transit_scores(mta_signal, nyc_station_daily)
 st.markdown(
     """
     <div class="hero">
-      <div class="eyebrow">NYC investment · prediction · MTA connection</div>
-      <h1>NYC should invest more—where the data supports it.</h1>
-      <p>Forecast Citi Bike demand, compare it with MTA ridership and reliability,
-      and invest in bike-share as a resilient option when transit is disrupted.</p>
+      <div class="eyebrow">Capstone project · data-driven investment case</div>
+      <h1>Citi Bike is a $196M/yr business running at capacity.</h1>
+      <p>50% of stations are maxed out. Trains are failing. 250 new stations pay back in 17 months.
+      This dashboard is the evidence — start with the Overview, then follow the tabs left to right.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -415,6 +461,35 @@ metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
 metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
 metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
 
+st.markdown(
+    """
+    <div class="reading-guide">
+      <h3>How to read this dashboard</h3>
+      <div class="guide-step">
+        <div class="guide-number">1</div>
+        <div class="guide-text"><strong>Overview</strong> — See the big picture: how big is demand, who rides, and when.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-number">2</div>
+        <div class="guide-text"><strong>Station explorer</strong> — Find which stations are over capacity and where the gaps are.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-number">3</div>
+        <div class="guide-text"><strong>Forecast lab</strong> — Our XGBoost model predicts where demand will grow next.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-number">4</div>
+        <div class="guide-text"><strong>MTA connection</strong> — Subway delays are pushing riders to bikes. Here's the proof.</div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-number">5</div>
+        <div class="guide-text"><strong>Success stories → Government investment → DOT support case</strong> — The evidence, the math, and the pitch.</div>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 (
     overview_tab,
     stations_tab,
@@ -426,14 +501,14 @@ metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
     methods_tab,
 ) = st.tabs(
     [
-        "Overview",
-        "Station explorer",
-        "Forecast lab",
-        "MTA connection",
-        "Success stories",
-        "Government investment",
-        "DOT support case",
-        "Data & methods",
+        "1. Overview",
+        "2. Station explorer",
+        "3. Forecast lab",
+        "4. MTA connection",
+        "5. Success stories",
+        "6. Government investment",
+        "7. DOT support case",
+        "8. Data & methods",
     ]
 )
 
@@ -441,6 +516,14 @@ RIDER_COLORS = {"Member": "#2D76A4", "Casual": "#48C4E4"}
 BIKE_COLORS = {"Electric": "#2D76A4", "Classic": "#48C4E4"}
 
 with overview_tab:
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        '<strong>The big picture:</strong> NYC Citi Bike demand is massive and growing. '
+        'Members dominate ridership, e-bikes drive 70% of trips, and weekday rush hours '
+        'show clear commuter patterns — this is transit infrastructure, not recreation.'
+        '</p></div>',
+        unsafe_allow_html=True,
+    )
     st.subheader("NYC demand over time")
     st.caption("Member vs. casual ridership, New York City only.")
     trend = demand_service.daily_demand_trend(nyc_filtered, smoothing=smoothing)
@@ -682,6 +765,14 @@ with overview_tab:
     )
 
 with stations_tab:
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        '<strong>Where is demand highest?</strong> The map below shows every NYC Citi Bike station '
+        'colored by demand pressure (trips vs. dock capacity). Dark magenta = maxed out. '
+        'Over half the network is at or above capacity.'
+        '</p></div>',
+        unsafe_allow_html=True,
+    )
     st.subheader("NYC station demand map")
     st.caption("Bay Wheels is excluded from station-level investment decisions.")
     station_summary_df = demand_service.station_summary(nyc_filtered)
@@ -816,6 +907,14 @@ with stations_tab:
         st.plotly_chart(station_chart, use_container_width=True)
 
 with forecast_tab:
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        '<strong>Predicting demand:</strong> Our XGBoost model forecasts daily station-level trips '
+        'with 42.5% better accuracy than a naive baseline. Use the sliders below to explore '
+        'what-if scenarios for weather and policy changes.'
+        '</p></div>',
+        unsafe_allow_html=True,
+    )
     st.subheader("Interactive demand scenario")
     st.markdown(
         '<p class="section-note">Adjust assumptions to explore a planning scenario. '
@@ -902,6 +1001,14 @@ with forecast_tab:
         )
 
 with mta_tab:
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        '<strong>The transit connection:</strong> Neighborhoods with the worst subway delays '
+        'show the strongest bike-share demand. Each dot below is a neighborhood — '
+        'top-right means high MTA ridership + high bike usage. These are the priority zones for expansion.'
+        '</p></div>',
+        unsafe_allow_html=True,
+    )
     st.subheader("Where MTA demand and delays signal a Citi Bike opportunity")
     st.markdown(
         '<p class="section-note">High transit ridership paired with relatively low '
@@ -1052,6 +1159,14 @@ with mta_tab:
         )
 
 with success_tab:
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        '<strong>It works elsewhere:</strong> Six cities prove that sustained public investment '
+        'in bike-share grows ridership, expands infrastructure, and reaches financial sustainability. '
+        'SF is the closest model for NYC — government partnership unlocked scale.'
+        '</p></div>',
+        unsafe_allow_html=True,
+    )
     st.subheader("Success stories: what public investment already did elsewhere")
     st.markdown(
         '<p class="section-note">Citi Bike is the target of this investment case, not a '
@@ -1114,6 +1229,14 @@ This is the evidence base for the investment strategy modeled in the
     )
 
 with investment_tab:
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        '<strong>The financial model:</strong> Adjust the assumptions below to model '
+        'station expansion ROI. The default scenario shows positive public NPV — '
+        'every dollar invested returns more than a dollar in public value.'
+        '</p></div>',
+        unsafe_allow_html=True,
+    )
     st.subheader("Government & transportation investment planner")
     st.markdown(
         '<p class="section-note">Prioritize station expansions for public mobility impact, '
@@ -1364,6 +1487,14 @@ with investment_tab:
     )
 
 with dot_tab:
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        '<strong>The bottom line:</strong> Citi Bike is a $196M/yr business running at capacity '
+        'in a city where 8.3M people are stuck with unreliable trains. 250 new stations = '
+        '$11.3M/yr net profit, 17-month payback. This tab walks through the 6 arguments why.'
+        '</p></div>',
+        unsafe_allow_html=True,
+    )
     st.subheader("The Pitch: Why Lyft Should Double Down on Bike-Share")
     st.markdown(
         '<p class="section-note">A data-driven case for Lyft product leadership — '
