@@ -1200,6 +1200,23 @@ with mta_tab:
     if mta_opportunity.empty:
         st.info("No Citi Bike stations match the current MTA opportunity table.")
     else:
+        # ── MTA KPI summary cards ──
+        avg_delay = mta_opportunity["mta_delay_rate"].mean()
+        total_mta_riders = mta_opportunity["mta_daily_riders"].sum()
+        top_opportunity = mta_opportunity.nlargest(1, "transit_opportunity_score")
+        top_neighborhood = top_opportunity["neighborhood"].iloc[0] if not top_opportunity.empty else "—"
+        avg_score = mta_opportunity["transit_opportunity_score"].mean()
+        high_opp_count = len(mta_opportunity[mta_opportunity["transit_opportunity_score"] >= 60])
+
+        mta_kpi_cols = st.columns(5)
+        mta_kpi_cols[0].metric("Neighborhoods analyzed", f"{len(mta_opportunity):,}")
+        mta_kpi_cols[1].metric("Avg MTA delay rate", f"{avg_delay:.1%}")
+        mta_kpi_cols[2].metric("Total MTA riders/day", compact_number(total_mta_riders))
+        mta_kpi_cols[3].metric("Avg opportunity score", f"{avg_score:.1f}")
+        mta_kpi_cols[4].metric("High-opportunity zones", f"{high_opp_count}")
+
+        st.markdown("")
+
         # Same cyan-to-magenta scale as the "Avg Hourly Trips" heatmap, shared
         # by the scatter plot, its legend, and the table below so a given
         # opportunity score always renders the same color everywhere.
@@ -1210,6 +1227,7 @@ with mta_tab:
             fraction = max(0.0, min(1.0, score / opportunity_max))
             return to_hex(opportunity_cmap(fraction))
 
+        # ── Scatter plot with trend line ──
         signal_chart = px.scatter(
             mta_opportunity,
             x="mta_daily_riders",
@@ -1231,14 +1249,49 @@ with mta_tab:
                 "bike_daily_trips": "Citi Bike daily trips",
                 "transit_opportunity_score": "Opportunity score",
             },
+            trendline="ols",
         )
+        # Style the trend line
+        for trace in signal_chart.data:
+            if hasattr(trace, "mode") and trace.mode == "lines":
+                trace.line = dict(color="#F59E0B", width=2, dash="dash")
+                trace.name = "Trend"
+                trace.showlegend = True
+
         signal_chart.update_layout(
-            height=460,
-            margin=dict(l=10, r=10, t=20, b=10),
+            height=500,
+            margin=dict(l=10, r=10, t=30, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="white",
+            xaxis=dict(gridcolor="#F1F5F9", zeroline=False),
+            yaxis=dict(gridcolor="#F1F5F9", zeroline=False),
         )
         st.plotly_chart(signal_chart, use_container_width=True)
+
+        # ── Top opportunity bar chart ──
+        st.markdown("#### Top 10 expansion opportunities")
+        top10 = mta_opportunity.nlargest(10, "transit_opportunity_score").sort_values(
+            "transit_opportunity_score", ascending=True
+        )
+        bar_colors = [score_to_hex(s) for s in top10["transit_opportunity_score"]]
+        fig_top10 = go.Figure(go.Bar(
+            x=top10["transit_opportunity_score"],
+            y=top10["neighborhood"].str.split("(").str[0].str.strip(),
+            orientation="h",
+            marker_color=bar_colors,
+            text=top10["transit_opportunity_score"].apply(lambda v: f"{v:.1f}"),
+            textposition="outside",
+        ))
+        fig_top10.update_layout(
+            height=400,
+            margin=dict(l=10, r=40, t=10, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="white",
+            xaxis_title="Opportunity score",
+            yaxis_title="",
+            xaxis=dict(gridcolor="#F1F5F9"),
+        )
+        st.plotly_chart(fig_top10, use_container_width=True)
 
         opportunity_table = mta_opportunity.sort_values(
             "transit_opportunity_score", ascending=False
@@ -1335,7 +1388,7 @@ with mta_tab:
 with success_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        '<strong>It works elsewhere:</strong> Six cities prove that sustained public investment '
+        '<strong>It works elsewhere:</strong> Three cities prove that sustained public investment '
         'in bike-share grows ridership, expands infrastructure, and reaches financial sustainability. '
         'SF is the closest model for NYC — government partnership unlocked scale.'
         '</p></div>',
