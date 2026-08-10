@@ -494,6 +494,9 @@ metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
 # Fleet size isn't in the trip dataset (no bike-ID field to count) — this is
 # Citi Bike's own reported NYC fleet size, not derived from the filtered data.
 CITIBIKE_FLEET_SIZE = 37_000
+# NYC IBO, Nov. 2025: "e-bikes grew from a pilot of just 200 bikes to over
+# 16,000 today" — the rest of the reported 37,000-bike fleet is classic bikes.
+CITIBIKE_EBIKE_FLEET_COUNT = 16_000
 metric_cols[3].metric(
     "NYC fleet size",
     f"{CITIBIKE_FLEET_SIZE:,} bikes",
@@ -861,6 +864,53 @@ with overview_tab:
         st.plotly_chart(weekday_chart, use_container_width=True)
     with bike_col:
         st.plotly_chart(bike_donut, use_container_width=True)
+
+    st.subheader("The physical fleet: e-bike vs. classic bikes")
+    classic_fleet_count = CITIBIKE_FLEET_SIZE - CITIBIKE_EBIKE_FLEET_COUNT
+    ebike_fleet_pct = CITIBIKE_EBIKE_FLEET_COUNT / CITIBIKE_FLEET_SIZE
+    fleet_bar = go.Figure(
+        go.Bar(
+            y=["Electric   ", "Classic   "],
+            x=[CITIBIKE_EBIKE_FLEET_COUNT, classic_fleet_count],
+            orientation="h",
+            marker_color=[BIKE_COLORS["Electric"], BIKE_COLORS["Classic"]],
+            text=[
+                f"  {CITIBIKE_EBIKE_FLEET_COUNT:,} ({ebike_fleet_pct:.0%})",
+                f"  {classic_fleet_count:,} ({1 - ebike_fleet_pct:.0%})",
+            ],
+            textposition="outside",
+            textfont=dict(size=13, color="#0F172A", weight="normal"),
+            constraintext="none",
+            width=0.5,
+            hovertemplate="%{y}: %{x:,} bikes<extra></extra>",
+        )
+    )
+    fleet_bar.update_layout(
+        height=130,
+        margin=dict(l=10, r=10, t=5, b=5),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="white",
+        showlegend=False,
+        xaxis=dict(
+            title="Bikes",
+            range=[0, classic_fleet_count * 1.25],
+            gridcolor="#EEF2F6",
+        ),
+        yaxis=dict(title=""),
+        bargap=0.3,
+    )
+    st.plotly_chart(fleet_bar, use_container_width=True)
+    electric_ride_share = (
+        bike_mix.loc[bike_mix["bike_type"] == "Electric", "trips"].sum()
+        / bike_mix["trips"].sum()
+    )
+    st.caption(
+        f"E-bikes are only {ebike_fleet_pct:.0%} of the physical fleet — but they "
+        f"carry {electric_ride_share:.0%} of all trips (see the donut above). A "
+        "minority of the bikes are doing the majority of the riding, which is "
+        "exactly why the fleet mix, not just its size, matters for the next "
+        "expansion phase."
+    )
 
     hourly = load_hourly_demand()
     peak_share = demand_service.peak_hour_share(hourly)
