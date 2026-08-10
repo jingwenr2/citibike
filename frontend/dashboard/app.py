@@ -25,6 +25,11 @@ HOURLY_PATH = HOURLY_DATA_PATH
 DAY_ORDER = demand_service.DAY_ORDER
 PEAK_HOURS = demand_service.PEAK_HOURS
 
+# Shared default assumption: net operating revenue per new/incremental trip.
+# Used as the Government investment tab's editable default and reused as-is
+# (not re-derived) by the SF case study's ROI estimate.
+DEFAULT_NET_REVENUE_PER_TRIP = 2.25
+
 # External case studies used as supporting evidence for the NYC investment case.
 # These are standalone facts about each system's own investment/PPP structure and
 # outcomes — deliberately not benchmarked against Citi Bike/NYC figures.
@@ -425,6 +430,7 @@ metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
     success_tab,
     investment_tab,
     dot_tab,
+    sf_nyc_tab,
     methods_tab,
 ) = st.tabs(
     [
@@ -435,6 +441,7 @@ metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
         "Success stories",
         "Government investment",
         "DOT support case",
+        "SF vs NYC Comparison",
         "Data & methods",
     ]
 )
@@ -1141,7 +1148,7 @@ with investment_tab:
             "Net operating revenue per new trip",
             min_value=0.0,
             max_value=20.0,
-            value=2.25,
+            value=DEFAULT_NET_REVENUE_PER_TRIP,
             step=0.25,
         )
         public_value_trip = st.number_input(
@@ -1781,6 +1788,11 @@ with dot_tab:
 4. **Cross-city rollout** — same pipeline works for Chicago Divvy, DC Capital Bikeshare, and beyond
         """
     )
+
+with sf_nyc_tab:
+    from pages_pkg.sf_nyc_investment_comparison import render as render_sf_nyc_comparison
+
+    render_sf_nyc_comparison(data, DEFAULT_NET_REVENUE_PER_TRIP)
 
 with methods_tab:
     st.subheader("How to read this dashboard")
