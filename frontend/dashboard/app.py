@@ -164,7 +164,7 @@ st.markdown(
     }
     .hero h1 {font-size: 2.45rem; margin: 0 0 .35rem 0;}
     .hero p {font-size: 1.05rem; color: #D6E4FF; margin: 0; max-width: 760px;}
-    .eyebrow {font-size: .78rem; letter-spacing: .15em; text-transform: uppercase; color: #7DD3FC;}
+    .eyebrow {font-size: .78rem; letter-spacing: .15em; text-transform: uppercase; color: #FF6FD8;}
     div[data-testid="stMetric"] {
         background: white; padding: 1rem 1.1rem;
         border-radius: 16px; box-shadow: 0 6px 18px rgba(15,23,42,.05);
@@ -172,9 +172,9 @@ st.markdown(
         border-top: 1px solid #E5E7EB; border-right: 1px solid #E5E7EB;
         border-bottom: 1px solid #E5E7EB;
     }
-    div[data-testid="stMetric"]:nth-child(2) { border-left-color: #10B981; }
-    div[data-testid="stMetric"]:nth-child(3) { border-left-color: #F59E0B; }
-    div[data-testid="stMetric"]:nth-child(4) { border-left-color: #8B5CF6; }
+    [data-testid="stColumn"]:nth-of-type(2) div[data-testid="stMetric"] { border-left-color: #10B981; }
+    [data-testid="stColumn"]:nth-of-type(3) div[data-testid="stMetric"] { border-left-color: #F59E0B; }
+    [data-testid="stColumn"]:nth-of-type(4) div[data-testid="stMetric"] { border-left-color: #FF00BF; }
     div[data-testid="stMetricLabel"] {color: #64748B;}
     .section-note {color: #64748B; margin-top: -.6rem;}
     .demo-pill {
@@ -196,7 +196,7 @@ st.markdown(
     }
     .guide-number {
         flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
-        background: #2D7FF9; color: white; font-size: .75rem; font-weight: 700;
+        background: #FF00BF; color: white; font-size: .75rem; font-weight: 700;
         display: flex; align-items: center; justify-content: center; margin-top: 1px;
     }
     .guide-text {
@@ -206,13 +206,13 @@ st.markdown(
 
     /* ── Tab takeaway box ── */
     .tab-takeaway {
-        background: linear-gradient(135deg, #F0F9FF 0%, #EFF6FF 100%);
-        border-left: 4px solid #2D7FF9;
+        background: linear-gradient(135deg, #FFF0FA 0%, #FDF2F8 100%);
+        border-left: 4px solid #FF00BF;
         padding: 1rem 1.25rem; border-radius: 0 12px 12px 0;
         margin: 0 0 1.2rem 0;
     }
     .tab-takeaway p {
-        margin: 0; font-size: .95rem; color: #1E3A5F; line-height: 1.5;
+        margin: 0; font-size: .95rem; color: #7A1263; line-height: 1.5;
     }
     .tab-takeaway strong { color: #0F172A; }
 
