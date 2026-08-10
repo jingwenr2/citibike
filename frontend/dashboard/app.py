@@ -430,7 +430,7 @@ data = load_data()
 is_demo = bool(data["is_demo"].all())
 
 with st.sidebar:
-    st.markdown("## 🚲 CityCycle")
+    st.markdown("## CityCycle")
     st.caption("NYC public investment intelligence")
     st.markdown("---")
     city_options = list(CITY_META)
