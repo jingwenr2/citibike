@@ -44,42 +44,6 @@ SUCCESS_STORIES = [
     },
     {
         "flag": "🚲",
-        "city": "Paris",
-        "system": "Vélib' Métropole",
-        "tagline": "The world's largest bike-share system, kept running and expanding by a sustained public subsidy.",
-        "stats": {
-            "Investment model": "A city-run public-private partnership: roughly 60-70% of operating costs are publicly subsidized, with operator Smovengo under contract to run the fleet.",
-            "Ridership growth": "About 48.5 million trips in 2025 — the highest-ridership public bike-share system in Europe — up from 173 million cumulative rides in its first six years.",
-            "Infrastructure expansion": "The world's largest bike-share system: 1,400+ stations and 16,000+ bikes across Paris and 66 surrounding municipalities, with a docking point roughly every 300 meters.",
-            "Financial sustainability": "Sustained public subsidy has kept the system running and expanding for nearly two decades.",
-        },
-    },
-    {
-        "flag": "🚲",
-        "city": "London",
-        "system": "Santander Cycles",
-        "tagline": "Over a decade of renewed corporate sponsorship funding continuous fleet and station growth.",
-        "stats": {
-            "Investment model": "Owned by Transport for London, funded through corporate sponsorship — Barclays, then Santander since 2015 — with a new £220M operating contract (Lyft Urban Solutions and Serco) beginning the scheme's next chapter.",
-            "Ridership growth": "106+ million hires since the 2015 sponsorship began; daily journeys hit 1.5 million in 2025, up 12.7% year-over-year.",
-            "Infrastructure expansion": "800+ docking stations citywide with 10,000 classic bikes and 2,000+ e-bikes; e-bikes (added 2022) have already logged 2.3 million rides.",
-            "Financial sustainability": "Decade-plus of renewed, expanding sponsorship — now backed by a new long-term £220M contract.",
-        },
-    },
-    {
-        "flag": "🚲",
-        "city": "Montreal",
-        "system": "BIXI",
-        "tagline": "A public bailout and non-profit restructuring turned a bankrupt operator into a growth story.",
-        "stats": {
-            "Investment model": "Launched with \\$15M in 2009; after the original operator's 2014 bankruptcy, the City of Montreal took over and restructured it as a non-profit funded roughly 50% by user fees, 25% sponsorship/advertising, and 25% public subsidy.",
-            "Ridership growth": "+146% unique users and +81% ridership since the 2014 restructuring, with 100+ million cumulative trips and record usage every summer month in 2025.",
-            "Infrastructure expansion": "Grew from 459 stations in 2014 to 1,080 stations and 12,600 bikes (3,200 electric) by 2025.",
-            "Financial sustainability": "The clearest turnaround here — after a public bailout and restructuring, BIXI reached full financial stability by 2018.",
-        },
-    },
-    {
-        "flag": "🚲",
         "city": "Washington, D.C.",
         "system": "Capital Bikeshare",
         "tagline": "The largest municipally-owned bike-share system in the U.S. — and one of its fastest-growing.",
@@ -1625,6 +1589,150 @@ with investment_tab:
             "Fiscal return remains visible as a sustainability constraint—not the sole goal."
         )
 
+        # ── Cash Flow & IRR ──
+        st.subheader("Portfolio cash flow & IRR")
+        st.markdown(
+            '<p class="section-note">Year-by-year cash flow for all recommended projects combined. '
+            "IRR is the discount rate at which NPV equals zero.</p>",
+            unsafe_allow_html=True,
+        )
+
+        total_annual_revenue = recommended["new_annual_trips"].sum() * net_revenue_trip
+        total_annual_opex = annual_station_cost * len(recommended)
+        total_annual_public = recommended["annual_public_benefit"].sum()
+        net_annual_fiscal = total_annual_revenue - total_annual_opex
+        net_annual_total = net_annual_fiscal + total_annual_public
+
+        # Build year-by-year cash flow
+        cf_rows = []
+        cumulative_fiscal = -total_capital
+        cumulative_total = -total_capital
+        for yr in range(0, analysis_years + 1):
+            if yr == 0:
+                cf_rows.append({
+                    "Year": 0,
+                    "Capital": -total_capital,
+                    "Revenue": 0,
+                    "Operating Cost": 0,
+                    "Public Benefit": 0,
+                    "Net Fiscal": -total_capital,
+                    "Net Total": -total_capital,
+                    "Cumulative Fiscal": cumulative_fiscal,
+                    "Cumulative Total": cumulative_total,
+                })
+            else:
+                cumulative_fiscal += net_annual_fiscal
+                cumulative_total += net_annual_total
+                cf_rows.append({
+                    "Year": yr,
+                    "Capital": 0,
+                    "Revenue": total_annual_revenue,
+                    "Operating Cost": -total_annual_opex,
+                    "Public Benefit": total_annual_public,
+                    "Net Fiscal": net_annual_fiscal,
+                    "Net Total": net_annual_total,
+                    "Cumulative Fiscal": cumulative_fiscal,
+                    "Cumulative Total": cumulative_total,
+                })
+
+        cf_df = pd.DataFrame(cf_rows)
+
+        # Calculate IRR using numpy
+        fiscal_cashflows = [-total_capital] + [net_annual_fiscal] * analysis_years
+        total_cashflows = [-total_capital] + [net_annual_total] * analysis_years
+
+        try:
+            fiscal_irr = np.irr(fiscal_cashflows) if hasattr(np, 'irr') else None
+        except Exception:
+            fiscal_irr = None
+
+        # Fallback IRR calculation if np.irr not available
+        if fiscal_irr is None:
+            # Simple IRR solver via bisection
+            def _npv(rate, cfs):
+                return sum(cf / (1 + rate) ** t for t, cf in enumerate(cfs))
+
+            def _solve_irr(cfs):
+                lo, hi = -0.5, 5.0
+                if _npv(lo, cfs) * _npv(hi, cfs) > 0:
+                    return None
+                for _ in range(200):
+                    mid = (lo + hi) / 2
+                    if _npv(mid, cfs) > 0:
+                        lo = mid
+                    else:
+                        hi = mid
+                return mid
+
+            fiscal_irr = _solve_irr(fiscal_cashflows)
+            total_irr = _solve_irr(total_cashflows)
+        else:
+            try:
+                total_irr = np.irr(total_cashflows)
+            except Exception:
+                total_irr = None
+
+        # Display IRR KPIs
+        irr_cols = st.columns(4)
+        irr_cols[0].metric(
+            "Fiscal IRR",
+            f"{fiscal_irr:.1%}" if fiscal_irr is not None else "N/A",
+            "Return on capital (operating only)",
+        )
+        irr_cols[1].metric(
+            "Total IRR (incl. public value)",
+            f"{total_irr:.1%}" if total_irr is not None else "N/A",
+            "Return including public benefits",
+        )
+        irr_cols[2].metric(
+            "Total capital",
+            f"${compact_number(total_capital)}",
+        )
+        irr_cols[3].metric(
+            "Annual net cash flow",
+            f"${compact_number(net_annual_fiscal)}",
+        )
+
+        # Cash flow chart
+        fig_cf = go.Figure()
+        fig_cf.add_trace(go.Bar(
+            x=cf_df["Year"], y=cf_df["Net Fiscal"],
+            name="Net fiscal", marker_color="#2D7FF9",
+        ))
+        fig_cf.add_trace(go.Bar(
+            x=cf_df["Year"], y=cf_df["Public Benefit"],
+            name="Public benefit", marker_color="#10B981",
+        ))
+        fig_cf.add_trace(go.Scatter(
+            x=cf_df["Year"], y=cf_df["Cumulative Fiscal"],
+            name="Cumulative fiscal", line=dict(color="#F59E0B", width=3),
+        ))
+        fig_cf.update_layout(
+            height=420, barmode="relative",
+            hovermode="x unified", legend_title_text="",
+            margin=dict(l=10, r=10, t=30, b=10),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+            xaxis_title="Year", yaxis_title="Cash flow ($)",
+            yaxis_tickformat="$,.0f",
+        )
+        st.plotly_chart(fig_cf, use_container_width=True)
+
+        # Cash flow table
+        st.dataframe(
+            cf_df, hide_index=True, use_container_width=True,
+            column_config={
+                "Year": st.column_config.NumberColumn("Year", format="%d"),
+                "Capital": st.column_config.NumberColumn("Capital", format="$%.0f"),
+                "Revenue": st.column_config.NumberColumn("Revenue", format="$%.0f"),
+                "Operating Cost": st.column_config.NumberColumn("Operating Cost", format="$%.0f"),
+                "Public Benefit": st.column_config.NumberColumn("Public Benefit", format="$%.0f"),
+                "Net Fiscal": st.column_config.NumberColumn("Net Fiscal", format="$%.0f"),
+                "Net Total": st.column_config.NumberColumn("Net Total", format="$%.0f"),
+                "Cumulative Fiscal": st.column_config.NumberColumn("Cumulative Fiscal", format="$%.0f"),
+                "Cumulative Total": st.column_config.NumberColumn("Cumulative Total", format="$%.0f"),
+            },
+        )
+
     investment_planner()
 
 with dot_tab:
@@ -1663,8 +1771,8 @@ with dot_tab:
         st.markdown("**Financial sustainability**")
         st.markdown(bay_wheels_story["stats"]["Financial sustainability"])
     st.info(
-        "Bay Wheels is one of six external case studies — see the **Success stories** "
-        "tab for the full evidence base (also Paris, London, Montreal, Washington D.C., "
+        "Bay Wheels is one of three external case studies — see the **Success stories** "
+        "tab for the full evidence base (also Washington D.C. "
         "and Chicago), each showing what sustained public investment or a formal "
         "public-private partnership does for ridership, infrastructure, and financial "
         "sustainability. **Imagine what NYC could do with the same backing.**"
