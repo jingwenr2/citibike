@@ -620,11 +620,28 @@ with home_tab:
     st.subheader("Riders are paying more for a system that's out of room")
 
     pct_strained = len(strained) / len(station_pressure) * 100 if len(station_pressure) > 0 else 0
+    avg_ride = revenue_service.estimate_average_single_ride()
     problem_cols = st.columns(3)
     with problem_cols[0]:
         st.metric("Annual membership", "$239/yr")
     with problem_cols[1]:
-        st.metric("Single ride", "$4.49")
+        st.metric(
+            f"Avg. single ride ({avg_ride['avg_minutes']:.0f} min)",
+            f"${avg_ride['price']:.2f}",
+            help=(
+                f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
+                "(computed directly from raw Citi Bike trip data). The base "
+                f"single-ride price includes {avg_ride['included_minutes']:.0f} minutes, "
+                "so the average ride costs the flat unlock price with no overage."
+                if avg_ride["overage_minutes"] == 0
+                else (
+                    f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
+                    "(computed directly from raw Citi Bike trip data), which runs "
+                    f"{avg_ride['overage_minutes']:.1f} min past the "
+                    f"{avg_ride['included_minutes']:.0f}-min included window."
+                )
+            ),
+        )
     with problem_cols[2]:
         st.metric("Stations at/above capacity", f"{pct_strained:.0f}%")
     st.markdown(
@@ -1991,7 +2008,7 @@ with dot_tab:
         st.metric("MTA monthly unlimited", "$132/mo ($1,584/yr)")
         st.markdown(
             "A Citi Bike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
-            "For casual riders, single trips cost \\$4.49 vs. \\$2.90 subway fare — "
+            "For casual riders, single trips cost \\$4.99 vs. \\$2.90 subway fare — "
             "but with zero wait time and door-to-door service."
         )
 
@@ -2071,7 +2088,10 @@ with dot_tab:
         st.caption(f"{active_members:,} members x $239/yr")
     with rev_cols[1]:
         st.metric("Casual ride fees", f"${casual_ride_revenue:,.0f}")
-        st.caption(f"{annual_casual_trips:,.0f} casual trips x $4.49")
+        st.caption(
+            f"{annual_casual_trips:,.0f} casual trips x "
+            f"${rev['assumptions_used']['single_ride_price']:.2f}"
+        )
     with rev_cols[2]:
         st.metric("E-bike overage fees", f"${ebike_overage_revenue:,.0f}")
         st.caption(f"{annual_ebike_trips:,.0f} e-bike trips x $3.24 avg")

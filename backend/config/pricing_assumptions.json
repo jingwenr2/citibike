@@ -1,10 +1,11 @@
 {
-  "_description": "Citi Bike pricing assumptions for revenue estimation. All values are estimates based on publicly available Citi Bike pricing as of January 2026. These must be verified before any formal presentation.",
-  "_last_verified": "2026-01-01",
+  "_description": "Citi Bike pricing assumptions for revenue estimation. All values are estimates based on publicly available Citi Bike pricing as of August 2026. These must be verified before any formal presentation.",
+  "_last_verified": "2026-08-10",
   "_source": "https://citibikenyc.com/pricing",
 
   "annual_membership_price": 239.00,
-  "single_ride_price": 4.49,
+  "single_ride_price": 4.99,
+  "overage_per_minute_casual": 0.41,
   "day_pass_price": 19.00,
   "ebike_per_minute_member": 0.27,
   "ebike_per_minute_nonmember": 0.27,
