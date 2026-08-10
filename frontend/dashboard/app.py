@@ -1187,7 +1187,7 @@ with forecast_tab:
             '<p class="section-note">Adjust assumptions to explore a what-if planning scenario.</p>',
             unsafe_allow_html=True,
         )
-        control_col, chart_col = st.columns([0.8, 2.2])
+        chart_col, control_col = st.columns([2.2, 0.8])
         with control_col:
             st.markdown("**Forecast geography:** New York City")
             horizon = st.slider("Forecast horizon (days)", 7, 60, 30)
@@ -1218,13 +1218,13 @@ with forecast_tab:
             figure.add_trace(go.Scatter(
                 x=pd.concat([forecast_frame["date"], forecast_frame["date"][::-1]]),
                 y=pd.concat([forecast_frame["upper"], forecast_frame["lower"][::-1]]),
-                fill="toself", fillcolor="rgba(45,127,249,.14)",
+                fill="toself", fillcolor="rgba(255,0,191,.12)",
                 line=dict(color="rgba(255,255,255,0)"),
                 hoverinfo="skip", name="Scenario range",
             ))
             figure.add_trace(go.Scatter(
                 x=forecast_frame["date"], y=forecast_frame["forecast"],
-                name="Scenario", line=dict(color="#2D7FF9", width=3),
+                name="Scenario", line=dict(color="#FF00BF", width=3),
             ))
             figure.update_layout(
                 height=410, hovermode="x unified", legend_title_text="",
