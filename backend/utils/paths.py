@@ -20,6 +20,7 @@ FEATURE_IMPORTANCE_PATH = MODELS_DIR / "feature_importance.json"
 # Config
 CONFIG_DIR = ROOT / "backend" / "config"
 PRICING_CONFIG_PATH = CONFIG_DIR / "pricing_assumptions.json"
+PRICE_HISTORY_PATH = CONFIG_DIR / "citibike_price_history.json"
 SCENARIO_CONFIG_PATH = CONFIG_DIR / "scenario_assumptions.json"
 OPPORTUNITY_WEIGHTS_PATH = CONFIG_DIR / "opportunity_weights.json"
 

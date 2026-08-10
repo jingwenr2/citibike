@@ -353,6 +353,11 @@ def load_hourly_demand() -> pd.DataFrame:
     return frame
 
 
+@st.cache_data
+def load_price_history() -> pd.DataFrame:
+    return revenue_service.load_annual_membership_price_history()
+
+
 def compact_number(value: float) -> str:
     if value >= 1_000_000:
         return f"{value / 1_000_000:.1f}M"
@@ -486,8 +491,18 @@ metric_cols = st.columns(4)
 metric_cols[0].metric("NYC Average Annual Trips", compact_number(avg_annual_trips), f"{delta:+.1%} vs prior period")
 metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
 metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
-total_docks = nyc_filtered.groupby("station_name")["capacity"].first().sum()
-metric_cols[3].metric("NYC total docks", f"{int(total_docks):,}")
+# Fleet size isn't in the trip dataset (no bike-ID field to count) — this is
+# Citi Bike's own reported NYC fleet size, not derived from the filtered data.
+CITIBIKE_FLEET_SIZE = 37_000
+metric_cols[3].metric(
+    "NYC fleet size",
+    f"{CITIBIKE_FLEET_SIZE:,} bikes",
+    help=(
+        "Citi Bike's reported NYC fleet size as of 2024 (NYC Independent Budget "
+        "Office, Nov. 2025). Unlike the other KPIs, this is a fixed reported "
+        "figure — it doesn't respond to the date range filter."
+    ),
+)
 
 st.markdown(
     """
@@ -577,7 +592,7 @@ with home_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         "<strong>The short version:</strong> NYC's Citi Bike contract with DOT runs "
-        "through 2029. That gives the city a window to negotiate the next chapter now — "
+        "through May 2029. That gives the city a window to negotiate the next chapter now — "
         "before the system outgrows itself and before fares climb further out of reach."
         "</p></div>",
         unsafe_allow_html=True,
@@ -590,7 +605,7 @@ with home_tab:
     st.subheader("The 2029 contract is the moment to act")
     st.markdown(
         "Citi Bike operates in NYC under an agreement with the Department of "
-        "Transportation that runs **through 2029**. Every year between now and then "
+        "Transportation that runs **through May 2029**. Every year between now and then "
         "is a year the city can shape what comes next — station density, fare "
         "structure, service guarantees — instead of inheriting whatever the system "
         "looks like when renewal talks start. **Acting early, while the case is "
@@ -603,6 +618,7 @@ with home_tab:
         unsafe_allow_html=True,
     )
     st.subheader("Riders are paying more for a system that's out of room")
+
     pct_strained = len(strained) / len(station_pressure) * 100 if len(station_pressure) > 0 else 0
     problem_cols = st.columns(3)
     with problem_cols[0]:
@@ -617,7 +633,8 @@ with home_tab:
         f"capacity** ({len(critical):,} of them critically so). A system this "
         "supply-constrained doesn't get cheaper on its own: without new investment, "
         "the pressure on fares only builds. **The affordability problem and the "
-        "capacity problem are the same problem.**"
+        "capacity problem are the same problem.** See the full price history on the "
+        "**Citi Bike at a Glance** tab."
     )
 
     st.markdown("---")
@@ -692,6 +709,51 @@ with overview_tab:
         '</p></div>',
         unsafe_allow_html=True,
     )
+
+    st.subheader("Annual membership price, 2013–present")
+    st.caption("What Citi Bike has charged for an annual membership since launch.")
+    price_history = load_price_history()
+    price_history["price_label"] = price_history["price_nominal"].map(lambda v: f"${v:,.0f}")
+    price_min = price_history["price_nominal"].min()
+    price_max = price_history["price_nominal"].max()
+    price_pad = (price_max - price_min) * 0.2
+    price_chart = px.line(
+        price_history,
+        x="effective_date",
+        y="price_nominal",
+        markers=True,
+        text="price_label",
+        labels={"effective_date": "", "price_nominal": "Annual membership price"},
+    )
+    price_chart.update_traces(
+        line_color="#FF00BF",
+        line_width=3,
+        marker=dict(size=9, color="#FF00BF"),
+        textposition="top center",
+        textfont=dict(size=11, color="#4B5563"),
+    )
+    price_chart.update_layout(
+        height=380,
+        margin=dict(l=10, r=10, t=20, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="white",
+        yaxis_tickprefix="$",
+        yaxis_range=[price_min - price_pad, price_max + price_pad],
+        yaxis_dtick=25,
+        yaxis_gridcolor="#EEF2F6",
+        xaxis_gridcolor="#EEF2F6",
+    )
+    st.plotly_chart(price_chart, use_container_width=True)
+    first_price = price_history["price_nominal"].iloc[0]
+    last_price = price_history["price_nominal"].iloc[-1]
+    nominal_increase = (last_price / first_price - 1) * 100
+    st.caption(
+        f"Nominal price is up {nominal_increase:.0f}% since the program's May 2013 launch "
+        "(from \\$95/yr to \\$239/yr) — and even adjusted for inflation, membership cost "
+        "77% more in 2025 than it did in 2013 (NYC Independent Budget Office, Nov. 2025)."
+    )
+
+    st.markdown("---")
     st.subheader("NYC demand over time")
     st.caption("Member vs. casual ridership, New York City only.")
     trend = demand_service.daily_demand_trend(nyc_filtered, smoothing=smoothing)
