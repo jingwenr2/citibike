@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import re
 import sys
 from pathlib import Path
@@ -153,11 +154,37 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+_sidebar_img_path = Path(__file__).parent / "assets" / "cities" / "new_york.jpg"
+if _sidebar_img_path.exists():
+    _sidebar_b64 = base64.b64encode(_sidebar_img_path.read_bytes()).decode()
+else:
+    _sidebar_b64 = ""
+
+_sidebar_bg_css = (
+    f"""
+    [data-testid="stSidebar"] {{
+        background: linear-gradient(180deg,
+            rgba(17,24,39,.88) 0%,
+            rgba(17,24,39,.72) 40%,
+            rgba(17,24,39,.92) 100%),
+            url("data:image/jpeg;base64,{_sidebar_b64}");
+        background-size: cover;
+        background-position: center;
+    }}
+    """
+    if _sidebar_b64
+    else "[data-testid=\"stSidebar\"] {background: #111827;}"
+)
+
+st.markdown(
+    f"<style>{_sidebar_bg_css}</style>",
+    unsafe_allow_html=True,
+)
+
 st.markdown(
     """
     <style>
     .stApp {background: #F5F7FA;}
-    [data-testid="stSidebar"] {background: #111827;}
     [data-testid="stSidebar"] * {color: #F9FAFB;}
     [data-testid="stSidebar"] input {color: #111827;}
     .hero {
@@ -368,6 +395,31 @@ def prior_period_delta(frame: pd.DataFrame) -> float:
     return demand_service.prior_period_delta(frame, load_data())
 
 
+@st.cache_data
+def filter_data(
+    _data: pd.DataFrame,
+    cities: tuple,
+    riders: tuple,
+    start: str,
+    end: str,
+) -> pd.DataFrame:
+    """Cache the expensive filtering so slider changes in other tabs don't re-filter."""
+    return _data[
+        _data["city"].isin(cities)
+        & _data["rider_type"].isin(riders)
+        & _data["date"].between(pd.Timestamp(start), pd.Timestamp(end))
+    ].copy()
+
+
+@st.cache_data
+def compute_station_daily(_nyc: pd.DataFrame) -> pd.DataFrame:
+    n_days = _nyc["date"].nunique()
+    agg = _nyc.groupby("station_name", as_index=False)["trips"].sum()
+    agg["observed_days"] = n_days
+    agg["bike_daily_trips"] = agg["trips"] / max(1, n_days)
+    return agg
+
+
 data = load_data()
 is_demo = bool(data["is_demo"].all())
 
@@ -404,11 +456,13 @@ with st.sidebar:
     smoothing = st.slider("Trend smoothing", 1, 28, 7, help="Rolling average in days")
     st.markdown("---")
 
-filtered = data[
-    data["city"].isin(selected_cities)
-    & data["rider_type"].isin(rider_types)
-    & data["date"].between(pd.Timestamp(start_date), pd.Timestamp(end_date))
-].copy()
+filtered = filter_data(
+    data,
+    cities=tuple(selected_cities),
+    riders=tuple(rider_types),
+    start=str(start_date),
+    end=str(end_date),
+)
 
 if filtered.empty:
     st.warning("No data matches the current filters. Try a wider date range.")
@@ -420,13 +474,7 @@ if nyc_filtered.empty:
     st.stop()
 
 mta_signal = load_mta_signal()
-nyc_station_daily = (
-    nyc_filtered.groupby("station_name", as_index=False)["trips"].sum()
-    .assign(observed_days=nyc_filtered["date"].nunique())
-)
-nyc_station_daily["bike_daily_trips"] = (
-    nyc_station_daily["trips"] / nyc_station_daily["observed_days"]
-)
+nyc_station_daily = compute_station_daily(nyc_filtered)
 mta_opportunity = compute_mta_transit_scores(mta_signal, nyc_station_daily)
 
 st.markdown(
@@ -915,90 +963,96 @@ with forecast_tab:
         '</p></div>',
         unsafe_allow_html=True,
     )
-    st.subheader("Interactive demand scenario")
-    st.markdown(
-        '<p class="section-note">Adjust assumptions to explore a planning scenario. '
-        "This is a transparent scenario model—not the trained XGBoost forecast yet.</p>",
-        unsafe_allow_html=True,
-    )
-    control_col, chart_col = st.columns([0.8, 2.2])
-    with control_col:
-        forecast_city = "New York City"
-        st.markdown("**Forecast geography:** New York City")
-        horizon = st.slider("Forecast horizon", 7, 60, 30)
-        weather_effect = st.slider("Weather effect", -30, 30, 0, format="%d%%")
-        event_effect = st.slider("Event / policy effect", -20, 40, 0, format="%d%%")
 
-    city_history = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
-    recent = city_history.tail(min(28, len(city_history)))
-    baseline = recent["trips"].mean()
-    forecast_dates = pd.date_range(
-        city_history["date"].max() + pd.Timedelta(days=1), periods=horizon
-    )
-    weekday_factors = (
-        city_history.assign(weekday=city_history["date"].dt.dayofweek)
+    # Pre-compute the history once (doesn't depend on sliders)
+    _fc_city_history = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
+    _fc_recent = _fc_city_history.tail(min(28, len(_fc_city_history)))
+    _fc_baseline = _fc_recent["trips"].mean()
+    _fc_weekday_factors = (
+        _fc_city_history.assign(weekday=_fc_city_history["date"].dt.dayofweek)
         .groupby("weekday")["trips"]
         .mean()
-        / city_history["trips"].mean()
+        / _fc_city_history["trips"].mean()
     )
-    scenario_factor = (1 + weather_effect / 100) * (1 + event_effect / 100)
-    forecast_values = [
-        baseline * weekday_factors.get(date.dayofweek, 1.0) * scenario_factor
-        for date in forecast_dates
-    ]
-    forecast_frame = pd.DataFrame(
-        {"date": forecast_dates, "forecast": forecast_values}
-    )
-    forecast_frame["lower"] = forecast_frame["forecast"] * 0.86
-    forecast_frame["upper"] = forecast_frame["forecast"] * 1.14
 
-    with chart_col:
-        figure = go.Figure()
-        figure.add_trace(
-            go.Scatter(
-                x=city_history.tail(60)["date"],
-                y=city_history.tail(60)["trips"],
-                name="Actual",
-                line=dict(color="#94A3B8", width=2),
+    @st.fragment
+    def forecast_scenario():
+        st.subheader("Interactive demand scenario")
+        st.markdown(
+            '<p class="section-note">Adjust assumptions to explore a planning scenario. '
+            "This is a transparent scenario model—not the trained XGBoost forecast yet.</p>",
+            unsafe_allow_html=True,
+        )
+        control_col, chart_col = st.columns([0.8, 2.2])
+        with control_col:
+            st.markdown("**Forecast geography:** New York City")
+            horizon = st.slider("Forecast horizon", 7, 60, 30)
+            weather_effect = st.slider("Weather effect", -30, 30, 0, format="%d%%")
+            event_effect = st.slider("Event / policy effect", -20, 40, 0, format="%d%%")
+
+        forecast_dates = pd.date_range(
+            _fc_city_history["date"].max() + pd.Timedelta(days=1), periods=horizon
+        )
+        scenario_factor = (1 + weather_effect / 100) * (1 + event_effect / 100)
+        forecast_values = [
+            _fc_baseline * _fc_weekday_factors.get(date.dayofweek, 1.0) * scenario_factor
+            for date in forecast_dates
+        ]
+        forecast_frame = pd.DataFrame(
+            {"date": forecast_dates, "forecast": forecast_values}
+        )
+        forecast_frame["lower"] = forecast_frame["forecast"] * 0.86
+        forecast_frame["upper"] = forecast_frame["forecast"] * 1.14
+
+        with chart_col:
+            figure = go.Figure()
+            figure.add_trace(
+                go.Scatter(
+                    x=_fc_city_history.tail(60)["date"],
+                    y=_fc_city_history.tail(60)["trips"],
+                    name="Actual",
+                    line=dict(color="#94A3B8", width=2),
+                )
             )
-        )
-        figure.add_trace(
-            go.Scatter(
-                x=pd.concat([forecast_frame["date"], forecast_frame["date"][::-1]]),
-                y=pd.concat([forecast_frame["upper"], forecast_frame["lower"][::-1]]),
-                fill="toself",
-                fillcolor="rgba(45,127,249,.14)",
-                line=dict(color="rgba(255,255,255,0)"),
-                hoverinfo="skip",
-                name="Scenario range",
+            figure.add_trace(
+                go.Scatter(
+                    x=pd.concat([forecast_frame["date"], forecast_frame["date"][::-1]]),
+                    y=pd.concat([forecast_frame["upper"], forecast_frame["lower"][::-1]]),
+                    fill="toself",
+                    fillcolor="rgba(45,127,249,.14)",
+                    line=dict(color="rgba(255,255,255,0)"),
+                    hoverinfo="skip",
+                    name="Scenario range",
+                )
             )
-        )
-        figure.add_trace(
-            go.Scatter(
-                x=forecast_frame["date"],
-                y=forecast_frame["forecast"],
-                name="Scenario",
-                line=dict(color=CITY_META[forecast_city]["color"], width=3),
+            figure.add_trace(
+                go.Scatter(
+                    x=forecast_frame["date"],
+                    y=forecast_frame["forecast"],
+                    name="Scenario",
+                    line=dict(color="#2D7FF9", width=3),
+                )
             )
-        )
-        figure.update_layout(
-            height=410,
-            hovermode="x unified",
-            legend_title_text="",
-            margin=dict(l=10, r=10, t=15, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            xaxis_title="",
-            yaxis_title="Trips",
-        )
-        st.plotly_chart(figure, use_container_width=True)
-        projected = forecast_frame["forecast"].sum()
-        base_projected = baseline * horizon
-        st.metric(
-            f"Projected {horizon}-day trips",
-            compact_number(projected),
-            f"{projected / base_projected - 1:+.1%} vs recent baseline",
-        )
+            figure.update_layout(
+                height=410,
+                hovermode="x unified",
+                legend_title_text="",
+                margin=dict(l=10, r=10, t=15, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="white",
+                xaxis_title="",
+                yaxis_title="Trips",
+            )
+            st.plotly_chart(figure, use_container_width=True)
+            projected = forecast_frame["forecast"].sum()
+            base_projected = _fc_baseline * horizon
+            st.metric(
+                f"Projected {horizon}-day trips",
+                compact_number(projected),
+                f"{projected / base_projected - 1:+.1%} vs recent baseline",
+            )
+
+    forecast_scenario()
 
 with mta_tab:
     st.markdown(
@@ -1237,254 +1291,185 @@ with investment_tab:
         '</p></div>',
         unsafe_allow_html=True,
     )
-    st.subheader("Government & transportation investment planner")
-    st.markdown(
-        '<p class="section-note">Prioritize station expansions for public mobility impact, '
-        "budget efficiency, and long-term operating sustainability. Dollar values below "
-        "are editable planning assumptions, not official agency estimates.</p>",
-        unsafe_allow_html=True,
-    )
 
-    assumption_col, results_col = st.columns([0.9, 2.1])
-    with assumption_col:
-        investment_city = "New York City"
-        st.markdown("**Investment geography:** New York City")
-        public_budget = st.number_input(
-            "Available capital budget",
-            min_value=50_000,
-            max_value=20_000_000,
-            value=1_000_000,
-            step=50_000,
-            format="%d",
-        )
-        docks_added = st.slider("Docks added per station", 4, 40, 16)
-        cost_per_dock = st.number_input(
-            "Installed cost per dock",
-            min_value=1_000,
-            max_value=50_000,
-            value=8_000,
-            step=500,
-            format="%d",
-        )
-        demand_uplift = st.slider(
-            "Demand captured after expansion",
-            5,
-            60,
-            20,
-            format="%d%%",
-        )
-        net_revenue_trip = st.number_input(
-            "Net operating revenue per new trip",
-            min_value=0.0,
-            max_value=20.0,
-            value=2.25,
-            step=0.25,
-        )
-        public_value_trip = st.number_input(
-            "Estimated public value per new trip",
-            min_value=0.0,
-            max_value=30.0,
-            value=4.00,
-            step=0.25,
-            help="Editable proxy for congestion, access, health, and emissions benefits.",
-        )
-        annual_station_cost = st.number_input(
-            "Annual added station operating cost",
-            min_value=0,
-            max_value=250_000,
-            value=28_000,
-            step=2_000,
-            format="%d",
-        )
-        analysis_years = st.slider("Analysis period", 3, 15, 5)
-        discount_rate = st.slider("Discount rate", 0, 15, 5, format="%d%%")
-
-    investment_source = nyc_filtered
-    investment_rank = (
-        investment_source.groupby(["station_name", "capacity"], as_index=False)["trips"]
+    # Pre-compute the base investment data (doesn't depend on sliders)
+    _inv_base = (
+        nyc_filtered.groupby(["station_name", "capacity"], as_index=False)["trips"]
         .sum()
         .rename(columns={"trips": "period_trips"})
     )
     if not mta_opportunity.empty:
-        investment_rank = investment_rank.merge(
+        _inv_base = _inv_base.merge(
             mta_opportunity[["station_name", "transit_opportunity_score"]],
             on="station_name",
             how="left",
         )
     else:
-        investment_rank["transit_opportunity_score"] = np.nan
-    observed_days = max(1, investment_source["date"].nunique())
-    investment_rank["daily_trips"] = investment_rank["period_trips"] / observed_days
-    investment_rank["new_annual_trips"] = (
-        investment_rank["daily_trips"] * 365 * demand_uplift / 100
-    )
-    investment_rank["capital_cost"] = docks_added * cost_per_dock
-    investment_rank["annual_operating_return"] = (
-        investment_rank["new_annual_trips"] * net_revenue_trip - annual_station_cost
-    )
-    investment_rank["annual_public_benefit"] = (
-        investment_rank["new_annual_trips"] * public_value_trip
-    )
-    discount = discount_rate / 100
-    annuity_factor = sum(1 / ((1 + discount) ** year) for year in range(1, analysis_years + 1))
-    investment_rank["five_year_fiscal_npv"] = (
-        investment_rank["annual_operating_return"] * annuity_factor
-        - investment_rank["capital_cost"]
-    )
-    investment_rank["public_npv"] = (
-        (
-            investment_rank["annual_operating_return"]
-            + investment_rank["annual_public_benefit"]
-        )
-        * annuity_factor
-        - investment_rank["capital_cost"]
-    )
-    investment_rank["public_benefit_cost_ratio"] = (
-        (
-            investment_rank["annual_operating_return"]
-            + investment_rank["annual_public_benefit"]
-        )
-        * annuity_factor
-        / investment_rank["capital_cost"]
-    )
-    investment_rank["capital_cost_per_new_trip"] = (
-        investment_rank["capital_cost"]
-        / (investment_rank["new_annual_trips"] * analysis_years)
-    )
-    investment_rank["annual_operating_support_needed"] = (
-        -investment_rank["annual_operating_return"].clip(upper=0)
-    )
-    investment_rank["fiscal_payback_years"] = np.where(
-        investment_rank["annual_operating_return"] > 0,
-        investment_rank["capital_cost"] / investment_rank["annual_operating_return"],
-        np.nan,
-    )
-    investment_rank = investment_rank.sort_values(
-        ["public_npv", "transit_opportunity_score"],
-        ascending=[False, False],
-    )
-    maximum_projects = int(public_budget // (docks_added * cost_per_dock))
-    investment_rank["recommended"] = False
-    recommended_index = investment_rank[
-        investment_rank["public_npv"] > 0
-    ].head(maximum_projects).index
-    investment_rank.loc[recommended_index, "recommended"] = True
+        _inv_base["transit_opportunity_score"] = np.nan
+    _inv_observed_days = max(1, nyc_filtered["date"].nunique())
+    _inv_base["daily_trips"] = _inv_base["period_trips"] / _inv_observed_days
 
-    with results_col:
-        recommended = investment_rank[investment_rank["recommended"]]
-        total_capital = recommended["capital_cost"].sum()
-        fiscal_npv = recommended["five_year_fiscal_npv"].sum()
-        public_npv = recommended["public_npv"].sum()
-        new_trips = recommended["new_annual_trips"].sum()
-        portfolio_bcr = (
-            (public_npv + total_capital) / total_capital if total_capital else 0
+    @st.fragment
+    def investment_planner():
+        st.subheader("Government & transportation investment planner")
+        st.markdown(
+            '<p class="section-note">Prioritize station expansions for public mobility impact, '
+            "budget efficiency, and long-term operating sustainability. Dollar values below "
+            "are editable planning assumptions, not official agency estimates.</p>",
+            unsafe_allow_html=True,
         )
 
-        summary_columns = st.columns(4)
-        summary_columns[0].metric("Recommended projects", f"{len(recommended)}")
-        summary_columns[1].metric("Capital deployed", f"${compact_number(total_capital)}")
-        summary_columns[2].metric(
-            "New annual trips",
-            compact_number(new_trips),
-        )
-        summary_columns[3].metric(
-            "Public benefit-cost ratio",
-            f"{portfolio_bcr:.2f}×",
-            "Above 1.0× creates modeled public value",
-        )
+        assumption_col, results_col = st.columns([0.9, 2.1])
+        with assumption_col:
+            st.markdown("**Investment geography:** New York City")
+            public_budget = st.number_input(
+                "Available capital budget",
+                min_value=50_000, max_value=20_000_000, value=1_000_000,
+                step=50_000, format="%d",
+            )
+            docks_added = st.slider("Docks added per station", 4, 40, 16)
+            cost_per_dock = st.number_input(
+                "Installed cost per dock",
+                min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
+            )
+            demand_uplift = st.slider("Demand captured after expansion", 5, 60, 20, format="%d%%")
+            net_revenue_trip = st.number_input(
+                "Net operating revenue per new trip",
+                min_value=0.0, max_value=20.0, value=2.25, step=0.25,
+            )
+            public_value_trip = st.number_input(
+                "Estimated public value per new trip",
+                min_value=0.0, max_value=30.0, value=4.00, step=0.25,
+                help="Editable proxy for congestion, access, health, and emissions benefits.",
+            )
+            annual_station_cost = st.number_input(
+                "Annual added station operating cost",
+                min_value=0, max_value=250_000, value=28_000, step=2_000, format="%d",
+            )
+            analysis_years = st.slider("Analysis period", 3, 15, 5)
+            discount_rate = st.slider("Discount rate", 0, 15, 5, format="%d%%")
 
-        value_chart_data = investment_rank.head(10).copy()
-        value_chart = px.bar(
-            value_chart_data,
-            x="public_npv",
-            y="station_name",
-            orientation="h",
-            color="recommended",
-            color_discrete_map={True: "#2D7FF9", False: "#CBD5E1"},
-            labels={
-                "public_npv": f"{analysis_years}-year public NPV ($)",
-                "station_name": "",
-                "recommended": "Within budget",
+        investment_rank = _inv_base.copy()
+        investment_rank["new_annual_trips"] = (
+            investment_rank["daily_trips"] * 365 * demand_uplift / 100
+        )
+        investment_rank["capital_cost"] = docks_added * cost_per_dock
+        investment_rank["annual_operating_return"] = (
+            investment_rank["new_annual_trips"] * net_revenue_trip - annual_station_cost
+        )
+        investment_rank["annual_public_benefit"] = (
+            investment_rank["new_annual_trips"] * public_value_trip
+        )
+        discount = discount_rate / 100
+        annuity_factor = sum(1 / ((1 + discount) ** year) for year in range(1, analysis_years + 1))
+        investment_rank["five_year_fiscal_npv"] = (
+            investment_rank["annual_operating_return"] * annuity_factor
+            - investment_rank["capital_cost"]
+        )
+        investment_rank["public_npv"] = (
+            (investment_rank["annual_operating_return"] + investment_rank["annual_public_benefit"])
+            * annuity_factor - investment_rank["capital_cost"]
+        )
+        investment_rank["public_benefit_cost_ratio"] = (
+            (investment_rank["annual_operating_return"] + investment_rank["annual_public_benefit"])
+            * annuity_factor / investment_rank["capital_cost"]
+        )
+        investment_rank["capital_cost_per_new_trip"] = (
+            investment_rank["capital_cost"]
+            / (investment_rank["new_annual_trips"] * analysis_years)
+        )
+        investment_rank["annual_operating_support_needed"] = (
+            -investment_rank["annual_operating_return"].clip(upper=0)
+        )
+        investment_rank["fiscal_payback_years"] = np.where(
+            investment_rank["annual_operating_return"] > 0,
+            investment_rank["capital_cost"] / investment_rank["annual_operating_return"],
+            np.nan,
+        )
+        investment_rank = investment_rank.sort_values(
+            ["public_npv", "transit_opportunity_score"], ascending=[False, False],
+        )
+        maximum_projects = int(public_budget // (docks_added * cost_per_dock))
+        investment_rank["recommended"] = False
+        recommended_index = investment_rank[
+            investment_rank["public_npv"] > 0
+        ].head(maximum_projects).index
+        investment_rank.loc[recommended_index, "recommended"] = True
+
+        with results_col:
+            recommended = investment_rank[investment_rank["recommended"]]
+            total_capital = recommended["capital_cost"].sum()
+            public_npv = recommended["public_npv"].sum()
+            new_trips = recommended["new_annual_trips"].sum()
+            portfolio_bcr = (
+                (public_npv + total_capital) / total_capital if total_capital else 0
+            )
+
+            summary_columns = st.columns(4)
+            summary_columns[0].metric("Recommended projects", f"{len(recommended)}")
+            summary_columns[1].metric("Capital deployed", f"${compact_number(total_capital)}")
+            summary_columns[2].metric("New annual trips", compact_number(new_trips))
+            summary_columns[3].metric(
+                "Public benefit-cost ratio", f"{portfolio_bcr:.2f}×",
+                "Above 1.0× creates modeled public value",
+            )
+
+            value_chart_data = investment_rank.head(10).copy()
+            value_chart = px.bar(
+                value_chart_data, x="public_npv", y="station_name",
+                orientation="h", color="recommended",
+                color_discrete_map={True: "#2D7FF9", False: "#CBD5E1"},
+                labels={
+                    "public_npv": f"{analysis_years}-year public NPV ($)",
+                    "station_name": "", "recommended": "Within budget",
+                },
+            )
+            value_chart.update_layout(
+                height=410, yaxis={"categoryorder": "total ascending"},
+                legend_title_text="", margin=dict(l=10, r=10, t=20, b=10),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+            )
+            st.plotly_chart(value_chart, use_container_width=True)
+            st.caption(
+                f"Selected projects are estimated to add {compact_number(new_trips)} "
+                "annual trips under the current assumptions."
+            )
+
+        st.subheader("Project-level recommendation table")
+        planner_table = investment_rank[
+            [
+                "recommended", "station_name", "daily_trips", "new_annual_trips",
+                "capital_cost", "annual_operating_return", "annual_operating_support_needed",
+                "fiscal_payback_years", "five_year_fiscal_npv", "public_npv",
+                "public_benefit_cost_ratio", "capital_cost_per_new_trip",
+                "transit_opportunity_score",
+            ]
+        ].copy()
+        st.dataframe(
+            planner_table, hide_index=True, use_container_width=True,
+            column_config={
+                "recommended": st.column_config.CheckboxColumn("Fund"),
+                "station_name": "Station",
+                "daily_trips": st.column_config.NumberColumn("Daily demand", format="%.0f"),
+                "new_annual_trips": st.column_config.NumberColumn("New trips/year", format="%.0f"),
+                "capital_cost": st.column_config.NumberColumn("Capital cost", format="$%.0f"),
+                "annual_operating_return": st.column_config.NumberColumn("Annual operating return", format="$%.0f"),
+                "annual_operating_support_needed": st.column_config.NumberColumn("Annual support needed", format="$%.0f"),
+                "fiscal_payback_years": st.column_config.NumberColumn("Fiscal payback", format="%.1f years"),
+                "five_year_fiscal_npv": st.column_config.NumberColumn(f"{analysis_years}-yr fiscal NPV", format="$%.0f"),
+                "public_npv": st.column_config.NumberColumn(f"{analysis_years}-yr public NPV", format="$%.0f"),
+                "public_benefit_cost_ratio": st.column_config.NumberColumn("Public BCR", format="%.2f×"),
+                "capital_cost_per_new_trip": st.column_config.NumberColumn("Capital/new trip", format="$%.2f"),
+                "transit_opportunity_score": st.column_config.ProgressColumn("MTA opportunity", min_value=0, max_value=100, format="%.1f"),
             },
         )
-        value_chart.update_layout(
-            height=410,
-            yaxis={"categoryorder": "total ascending"},
-            legend_title_text="",
-            margin=dict(l=10, r=10, t=20, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-        )
-        st.plotly_chart(value_chart, use_container_width=True)
-
-        st.caption(
-            f"Selected projects are estimated to add {compact_number(new_trips)} "
-            "annual trips under the current assumptions."
+        st.info(
+            "**Public-sector decision rule:** prioritize positive public NPV and a benefit-cost "
+            "ratio above 1.0, then confirm the annual operating support fits the agency budget. "
+            "Fiscal return remains visible as a sustainability constraint—not the sole goal."
         )
 
-    st.subheader("Project-level recommendation table")
-    planner_table = investment_rank[
-        [
-            "recommended",
-            "station_name",
-            "daily_trips",
-            "new_annual_trips",
-            "capital_cost",
-            "annual_operating_return",
-            "annual_operating_support_needed",
-            "fiscal_payback_years",
-            "five_year_fiscal_npv",
-            "public_npv",
-            "public_benefit_cost_ratio",
-            "capital_cost_per_new_trip",
-            "transit_opportunity_score",
-        ]
-    ].copy()
-    st.dataframe(
-        planner_table,
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "recommended": st.column_config.CheckboxColumn("Fund"),
-            "station_name": "Station",
-            "daily_trips": st.column_config.NumberColumn("Daily demand", format="%.0f"),
-            "new_annual_trips": st.column_config.NumberColumn(
-                "New trips/year", format="%.0f"
-            ),
-            "capital_cost": st.column_config.NumberColumn(
-                "Capital cost", format="$%.0f"
-            ),
-            "annual_operating_return": st.column_config.NumberColumn(
-                "Annual operating return", format="$%.0f"
-            ),
-            "annual_operating_support_needed": st.column_config.NumberColumn(
-                "Annual support needed", format="$%.0f"
-            ),
-            "fiscal_payback_years": st.column_config.NumberColumn(
-                "Fiscal payback", format="%.1f years"
-            ),
-            "five_year_fiscal_npv": st.column_config.NumberColumn(
-                f"{analysis_years}-yr fiscal NPV", format="$%.0f"
-            ),
-            "public_npv": st.column_config.NumberColumn(
-                f"{analysis_years}-yr public NPV", format="$%.0f"
-            ),
-            "public_benefit_cost_ratio": st.column_config.NumberColumn(
-                "Public BCR", format="%.2f×"
-            ),
-            "capital_cost_per_new_trip": st.column_config.NumberColumn(
-                "Capital/new trip", format="$%.2f"
-            ),
-            "transit_opportunity_score": st.column_config.ProgressColumn(
-                "MTA opportunity", min_value=0, max_value=100, format="%.1f"
-            ),
-        },
-    )
-    st.info(
-        "**Public-sector decision rule:** prioritize positive public NPV and a benefit-cost "
-        "ratio above 1.0, then confirm the annual operating support fits the agency budget. "
-        "Fiscal return remains visible as a sustainability constraint—not the sole goal."
-    )
+    investment_planner()
 
 with dot_tab:
     st.markdown(
