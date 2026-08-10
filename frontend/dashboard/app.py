@@ -548,25 +548,25 @@ cumulative_gap = sum(
 
 (
     home_tab,
-    dot_tab,
     overview_tab,
-    stations_tab,
-    forecast_tab,
-    mta_tab,
-    success_tab,
     investment_tab,
+    stations_tab,
+    mta_tab,
+    dot_tab,
+    forecast_tab,
+    success_tab,
     methods_tab,
 ) = st.tabs(
     [
         "Home",
-        "DOT support case",
         "Citi Bike at a Glance",
-        "Station explorer",
-        "Forecast lab",
-        "MTA connection",
-        "Success stories",
-        "Government investment",
-        "Data & methods",
+        "Government Investment",
+        "Station Explorer",
+        "MTA Connection",
+        "DOT Support Case",
+        "Forecast Lab",
+        "Success Stories",
+        "Data & Methods",
     ]
 )
 
