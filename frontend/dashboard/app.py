@@ -548,7 +548,36 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ---------------------------------------------------------------------
+# Shared investment-case figures — computed once here so the Home landing
+# tab and the DOT support case tab (deep-dive version of the same pitch)
+# always show identical numbers.
+# ---------------------------------------------------------------------
+station_pressure = demand_service.station_pressure_categories(nyc_filtered)
+strained = station_pressure[station_pressure["pressure"] >= 1.0]
+critical = station_pressure[station_pressure["pressure"] >= 1.5]
+
+rev = revenue_service.estimate_annual_revenue(nyc_filtered)
+rev["active_stations"] = active_stations
+new_stations = 250
+exp = revenue_service.estimate_expansion_revenue(rev, new_stations=new_stations)
+pub = revenue_service.estimate_public_benefits(
+    exp["new_annual_trips"], exp["new_total_revenue"], exp["install_cost"]
+)
+
+proj_df, scenarios = revenue_service.revenue_projection(
+    rev["total_estimated_revenue"], exp["new_total_revenue"]
+)
+gap_2031 = scenarios["500 stations + DOT partnership"][-1] - scenarios["Do nothing (3% organic growth)"][-1]
+cumulative_gap = sum(
+    b - a for a, b in zip(
+        scenarios["Do nothing (3% organic growth)"],
+        scenarios["500 stations + DOT partnership"],
+    )
+)
+
 (
+    home_tab,
     dot_tab,
     overview_tab,
     stations_tab,
@@ -559,19 +588,130 @@ st.markdown(
     methods_tab,
 ) = st.tabs(
     [
-        "1. DOT support case",
-        "2. Overview",
-        "3. Station explorer",
-        "4. Forecast lab",
-        "5. MTA connection",
-        "6. Success stories",
-        "7. Government investment",
-        "8. Data & methods",
+        "Home",
+        "DOT support case",
+        "Overview",
+        "Station explorer",
+        "Forecast lab",
+        "MTA connection",
+        "Success stories",
+        "Government investment",
+        "Data & methods",
     ]
 )
 
 RIDER_COLORS = {"Member": "#2D76A4", "Casual": "#48C4E4"}
 BIKE_COLORS = {"Electric": "#2D76A4", "Classic": "#48C4E4"}
+
+with home_tab:
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        "<strong>The short version:</strong> NYC's Citi Bike contract with DOT runs "
+        "through 2029. That gives the city a window to negotiate the next chapter now — "
+        "before the system outgrows itself and before fares climb further out of reach."
+        "</p></div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<span class="section-label section-label-blue">The opportunity</span>',
+        unsafe_allow_html=True,
+    )
+    st.subheader("The 2029 contract is the moment to act")
+    st.markdown(
+        "Citi Bike operates in NYC under an agreement with the Department of "
+        "Transportation that runs **through 2029**. Every year between now and then "
+        "is a year the city can shape what comes next — station density, fare "
+        "structure, service guarantees — instead of inheriting whatever the system "
+        "looks like when renewal talks start. **Acting early, while the case is "
+        "strong, is the leverage.**"
+    )
+
+    st.markdown("---")
+    st.markdown(
+        '<span class="section-label section-label-amber">The problem</span>',
+        unsafe_allow_html=True,
+    )
+    st.subheader("Riders are paying more for a system that's out of room")
+    pct_strained = len(strained) / len(station_pressure) * 100 if len(station_pressure) > 0 else 0
+    problem_cols = st.columns(3)
+    with problem_cols[0]:
+        st.metric("Annual membership", "$239/yr")
+    with problem_cols[1]:
+        st.metric("Single ride", "$4.49")
+    with problem_cols[2]:
+        st.metric("Stations at/above capacity", f"{pct_strained:.0f}%")
+    st.markdown(
+        f"Membership and per-ride prices are already a real cost barrier for many "
+        f"New Yorkers — and **{pct_strained:.0f}% of stations are running at or above "
+        f"capacity** ({len(critical):,} of them critically so). A system this "
+        "supply-constrained doesn't get cheaper on its own: without new investment, "
+        "the pressure on fares only builds. **The affordability problem and the "
+        "capacity problem are the same problem.**"
+    )
+
+    st.markdown("---")
+    st.markdown(
+        '<span class="section-label section-label-green">The solution</span>',
+        unsafe_allow_html=True,
+    )
+    st.subheader("Invest to expand the system — and to make it cheaper")
+    st.markdown(
+        f"Our proposal isn't just more stations. **250 new stations generate "
+        f"\\${exp['net_annual_profit']:,.0f} in net profit a year**, on top of "
+        f"today's estimated \\${rev['total_estimated_revenue']:,.0f}/yr — enough "
+        "headroom that growth doesn't have to mean higher fares. That new margin "
+        "can fund **lower membership and per-ride pricing** at the same time the "
+        "network gets bigger, turning Citi Bike into both a larger *and* a more "
+        "accessible system, not a choice between the two."
+    )
+
+    st.markdown("---")
+    st.markdown(
+        '<span class="section-label section-label-purple">The decision model</span>',
+        unsafe_allow_html=True,
+    )
+    st.subheader("Data tells us where to build first")
+    st.markdown(
+        "Expansion only pays off if the new stations land where riders actually "
+        "are. Our XGBoost demand-forecasting model predicts station-level demand "
+        "**32% more accurately** than a seasonal baseline, and our station-pressure "
+        "index already flags exactly which parts of the network are maxed out "
+        "today. Together they turn \"where should we build?\" from a guess into a "
+        "ranked, data-backed list — see the **Forecast lab** and **Station "
+        "explorer** tabs for the underlying model."
+    )
+
+    st.markdown("---")
+    st.markdown(
+        '<span class="section-label section-label-pink">The payoff</span>',
+        unsafe_allow_html=True,
+    )
+    st.subheader("What the city and DOT stand to earn")
+    payoff_cols = st.columns(3)
+    with payoff_cols[0]:
+        st.metric("Public benefit / yr", f"${pub['total_public_benefit']:,.0f}")
+        st.caption("Health + congestion + emissions + tax revenue")
+    with payoff_cols[1]:
+        st.metric("DOT payback period", f"{pub['govt_payback_years']:.1f} yrs")
+        st.caption("Public benefit vs. install cost")
+    with payoff_cols[2]:
+        st.metric("5-yr upside vs. status quo", f"${cumulative_gap:,.0f}")
+        st.caption("Cumulative gain, invest vs. do nothing, through 2031")
+    st.markdown(
+        f"By 2031, investing rather than standing still is worth "
+        f"**\\${gap_2031:,.0f}/year more** — and DOT's own share of that, in health, "
+        f"congestion, emissions, and tax benefits, pays back the public cost of "
+        f"expansion in **{pub['govt_payback_years']:.1f} years**. That's the case "
+        "for negotiating the 2029 contract from a position of evidence, not "
+        "guesswork."
+    )
+
+    st.markdown("---")
+    st.caption(
+        "This is the summary. The full evidence, methodology, and detailed pitch "
+        "start with the **DOT support case** tab and continue left to right."
+    )
 
 with overview_tab:
     st.markdown(
@@ -1641,8 +1781,6 @@ with dot_tab:
     # ===================================================================
     st.markdown("### 4. The urgency: stations are already at capacity")
 
-    station_pressure = demand_service.station_pressure_categories(nyc_filtered)
-
     pressure_cols = st.columns(2)
     with pressure_cols[0]:
         pressure_dist = station_pressure["pressure_category"].value_counts().reset_index()
@@ -1662,8 +1800,6 @@ with dot_tab:
         st.plotly_chart(pressure_chart, use_container_width=True)
 
     with pressure_cols[1]:
-        strained = station_pressure[station_pressure["pressure"] >= 1.0]
-        critical = station_pressure[station_pressure["pressure"] >= 1.5]
         st.metric(
             "Stations at or above capacity",
             f"{len(strained):,} of {len(station_pressure):,}",
@@ -1686,7 +1822,6 @@ with dot_tab:
     )
 
     # ---------- Revenue model from REAL data (via revenue_service) ----------
-    rev = revenue_service.estimate_annual_revenue(nyc_filtered)
     nyc_annual_trips = rev["annual_trips"]
     annual_casual_trips = rev["annual_casual_trips"]
     annual_ebike_trips = rev["annual_ebike_trips"]
@@ -1730,9 +1865,6 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### What 250 new stations would make Lyft")
 
-    rev["active_stations"] = active_stations
-    new_stations = 250
-    exp = revenue_service.estimate_expansion_revenue(rev, new_stations=new_stations)
     trips_per_station_day = exp["trips_per_station_day"]
     new_annual_trips = exp["new_annual_trips"]
     new_member_revenue = exp["new_member_revenue"]
@@ -1773,9 +1905,6 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### 5-year revenue projection: invest vs. don't")
 
-    proj_df, scenarios = revenue_service.revenue_projection(
-        total_current_revenue, new_total_revenue
-    )
     years = list(range(2026, 2032))
 
     proj_chart = px.line(
@@ -1798,13 +1927,6 @@ with dot_tab:
     )
     st.plotly_chart(proj_chart, use_container_width=True)
 
-    gap_2031 = scenarios["500 stations + DOT partnership"][-1] - scenarios["Do nothing (3% organic growth)"][-1]
-    cumulative_gap = sum(
-        b - a for a, b in zip(
-            scenarios["Do nothing (3% organic growth)"],
-            scenarios["500 stations + DOT partnership"]
-        )
-    )
     st.success(
         f"**By 2031, the gap between investing and doing nothing is "
         f"\\${gap_2031:,.0f}/year.** "
@@ -1818,9 +1940,6 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### Why government should co-invest")
 
-    pub = revenue_service.estimate_public_benefits(
-        new_annual_trips, new_total_revenue, total_install
-    )
     govt_cols = st.columns(3)
     with govt_cols[0]:
         st.markdown("**Public health**")
