@@ -1304,6 +1304,81 @@ with forecast_tab:
             "XGBoost predictions not available. Run `python backend/demand_forecast_xgboost.py` to train the model."
         )
 
+    # ── Interactive demand scenario ──
+    st.markdown("---")
+    _fc_city_history = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
+    _fc_recent = _fc_city_history.tail(min(28, len(_fc_city_history)))
+    _fc_baseline = _fc_recent["trips"].mean()
+    _fc_weekday_factors = (
+        _fc_city_history.assign(weekday=_fc_city_history["date"].dt.dayofweek)
+        .groupby("weekday")["trips"]
+        .mean()
+        / _fc_city_history["trips"].mean()
+    )
+
+    @st.fragment
+    def forecast_scenario():
+        st.subheader("Interactive demand scenario")
+        st.markdown(
+            '<p class="section-note">Adjust assumptions to explore a what-if planning scenario.</p>',
+            unsafe_allow_html=True,
+        )
+        control_col, chart_col = st.columns([0.8, 2.2])
+        with control_col:
+            st.markdown("**Forecast geography:** New York City")
+            horizon = st.slider("Forecast horizon (days)", 7, 60, 30)
+            weather_effect = st.slider("Weather effect", -30, 30, 0, format="%d%%")
+            event_effect = st.slider("Event / policy effect", -20, 40, 0, format="%d%%")
+
+        forecast_dates = pd.date_range(
+            _fc_city_history["date"].max() + pd.Timedelta(days=1), periods=horizon
+        )
+        scenario_factor = (1 + weather_effect / 100) * (1 + event_effect / 100)
+        forecast_values = [
+            _fc_baseline * _fc_weekday_factors.get(date.dayofweek, 1.0) * scenario_factor
+            for date in forecast_dates
+        ]
+        forecast_frame = pd.DataFrame(
+            {"date": forecast_dates, "forecast": forecast_values}
+        )
+        forecast_frame["lower"] = forecast_frame["forecast"] * 0.86
+        forecast_frame["upper"] = forecast_frame["forecast"] * 1.14
+
+        with chart_col:
+            figure = go.Figure()
+            figure.add_trace(go.Scatter(
+                x=_fc_city_history.tail(60)["date"],
+                y=_fc_city_history.tail(60)["trips"],
+                name="Actual", line=dict(color="#94A3B8", width=2),
+            ))
+            figure.add_trace(go.Scatter(
+                x=pd.concat([forecast_frame["date"], forecast_frame["date"][::-1]]),
+                y=pd.concat([forecast_frame["upper"], forecast_frame["lower"][::-1]]),
+                fill="toself", fillcolor="rgba(45,127,249,.14)",
+                line=dict(color="rgba(255,255,255,0)"),
+                hoverinfo="skip", name="Scenario range",
+            ))
+            figure.add_trace(go.Scatter(
+                x=forecast_frame["date"], y=forecast_frame["forecast"],
+                name="Scenario", line=dict(color="#2D7FF9", width=3),
+            ))
+            figure.update_layout(
+                height=410, hovermode="x unified", legend_title_text="",
+                margin=dict(l=10, r=10, t=15, b=10),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+                xaxis_title="", yaxis_title="Trips",
+            )
+            st.plotly_chart(figure, use_container_width=True)
+            projected = forecast_frame["forecast"].sum()
+            base_projected = _fc_baseline * horizon
+            st.metric(
+                f"Projected {horizon}-day trips",
+                compact_number(projected),
+                f"{projected / base_projected - 1:+.1%} vs recent baseline",
+            )
+
+    forecast_scenario()
+
 with mta_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
