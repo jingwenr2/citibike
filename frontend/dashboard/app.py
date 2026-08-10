@@ -192,10 +192,11 @@ st.markdown(
         border-radius: 22px;
         color: white;
         background:
-          radial-gradient(circle at 90% 15%, rgba(45,127,249,.45), transparent 30%),
-          linear-gradient(120deg, #0B1324 0%, #17233D 60%, #102A43 100%);
+          linear-gradient(120deg, rgba(11,19,36,.85) 0%, rgba(23,35,61,.75) 50%, rgba(16,42,67,.85) 100%);
         box-shadow: 0 18px 45px rgba(15, 23, 42, .16);
         margin-bottom: 1.2rem;
+        position: relative;
+        overflow: hidden;
     }
     .hero h1 {font-size: 2.45rem; margin: 0 0 .35rem 0;}
     .hero p {font-size: 1.05rem; color: #D6E4FF; margin: 0; max-width: 760px;}
@@ -477,13 +478,22 @@ mta_signal = load_mta_signal()
 nyc_station_daily = compute_station_daily(nyc_filtered)
 mta_opportunity = compute_mta_transit_scores(mta_signal, nyc_station_daily)
 
+_hero_bg = (
+    f'background-image: url("data:image/jpeg;base64,{_sidebar_b64}");'
+    if _sidebar_b64 else ""
+)
 st.markdown(
-    """
-    <div class="hero">
-      <div class="eyebrow">Capstone project · data-driven investment case</div>
-      <h1>Citi Bike is a $196M/yr business running at capacity.</h1>
-      <p>50% of stations are maxed out. Trains are failing. 250 new stations pay back in 17 months.
-      This dashboard is the evidence — start with the Overview, then follow the tabs left to right.</p>
+    f"""
+    <div class="hero" style="position:relative; overflow:hidden;">
+      <div style="position:absolute; inset:0; {_hero_bg}
+        background-size:cover; background-position:center 35%; opacity:0.35; z-index:0;">
+      </div>
+      <div style="position:relative; z-index:1;">
+        <div class="eyebrow">Capstone project · data-driven investment case</div>
+        <h1>Citi Bike is a $196M/yr business running at capacity.</h1>
+        <p>50% of stations are maxed out. Trains are failing. 250 new stations pay back in 17 months.
+        This dashboard is the evidence — start with the Overview, then follow the tabs left to right.</p>
+      </div>
     </div>
     """,
     unsafe_allow_html=True,
