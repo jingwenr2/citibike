@@ -1078,101 +1078,145 @@ with forecast_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         '<strong>Predicting demand:</strong> Our XGBoost model forecasts daily station-level trips '
-        'with 42.5% better accuracy than a naive baseline. Use the sliders below to explore '
-        'what-if scenarios for weather and policy changes.'
+        'with 42.5% better accuracy than a naive baseline. Below are the real model predictions — '
+        'actual vs predicted demand, weekday patterns, and station-level growth signals.'
         '</p></div>',
         unsafe_allow_html=True,
     )
 
-    # Pre-compute the history once (doesn't depend on sliders)
-    _fc_city_history = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
-    _fc_recent = _fc_city_history.tail(min(28, len(_fc_city_history)))
-    _fc_baseline = _fc_recent["trips"].mean()
-    _fc_weekday_factors = (
-        _fc_city_history.assign(weekday=_fc_city_history["date"].dt.dayofweek)
-        .groupby("weekday")["trips"]
-        .mean()
-        / _fc_city_history["trips"].mean()
-    )
+    # ── Load real XGBoost predictions ──
+    _predictions_path = None
+    try:
+        from backend.utils.paths import FORECAST_PREDICTIONS_PATH
+        _predictions_path = FORECAST_PREDICTIONS_PATH
+    except ImportError:
+        pass
 
-    @st.fragment
-    def forecast_scenario():
-        st.subheader("Interactive demand scenario")
-        st.markdown(
-            '<p class="section-note">Adjust assumptions to explore a planning scenario. '
-            "This is a transparent scenario model—not the trained XGBoost forecast yet.</p>",
-            unsafe_allow_html=True,
+    _pred_df = None
+    if _predictions_path and _predictions_path.exists():
+        _pred_df = pd.read_parquet(_predictions_path)
+
+    if _pred_df is not None and not _pred_df.empty:
+        # ── Model KPIs ──
+        mae = (_pred_df["trips"] - _pred_df["predicted"]).abs().mean()
+        daily_agg = _pred_df.groupby("date", as_index=False).agg(
+            actual=("trips", "sum"), predicted=("predicted", "sum")
+        ).sort_values("date")
+        corr = daily_agg["actual"].corr(daily_agg["predicted"])
+        total_actual = daily_agg["actual"].sum()
+        total_predicted = daily_agg["predicted"].sum()
+        n_stations = _pred_df["station_name"].nunique()
+
+        pred_kpi_cols = st.columns(5)
+        pred_kpi_cols[0].metric("Model MAE", f"{mae:.1f} trips")
+        pred_kpi_cols[1].metric("Daily correlation", f"{corr:.3f}")
+        pred_kpi_cols[2].metric("Total actual trips", compact_number(total_actual))
+        pred_kpi_cols[3].metric("Total predicted trips", compact_number(total_predicted))
+        pred_kpi_cols[4].metric("Stations forecasted", f"{n_stations:,}")
+
+        st.markdown("")
+
+        # ── Actual vs Predicted daily chart ──
+        st.subheader("Actual vs predicted daily demand")
+        fig_avp = go.Figure()
+        fig_avp.add_trace(go.Scatter(
+            x=daily_agg["date"], y=daily_agg["actual"],
+            name="Actual", line=dict(color="#2D7FF9", width=2),
+        ))
+        fig_avp.add_trace(go.Scatter(
+            x=daily_agg["date"], y=daily_agg["predicted"],
+            name="Predicted", line=dict(color="#8B5CF6", width=2, dash="dot"),
+        ))
+        fig_avp.update_layout(
+            height=420, hovermode="x unified", legend_title_text="",
+            margin=dict(l=10, r=10, t=15, b=10),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+            xaxis_title="", yaxis_title="Total daily trips",
+            xaxis=dict(gridcolor="#F1F5F9"), yaxis=dict(gridcolor="#F1F5F9"),
         )
-        control_col, chart_col = st.columns([0.8, 2.2])
-        with control_col:
-            st.markdown("**Forecast geography:** New York City")
-            horizon = st.slider("Forecast horizon", 7, 60, 30)
-            weather_effect = st.slider("Weather effect", -30, 30, 0, format="%d%%")
-            event_effect = st.slider("Event / policy effect", -20, 40, 0, format="%d%%")
+        st.plotly_chart(fig_avp, use_container_width=True)
 
-        forecast_dates = pd.date_range(
-            _fc_city_history["date"].max() + pd.Timedelta(days=1), periods=horizon
+        # ── Weekday demand pattern from model ──
+        weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        _pred_df["weekday"] = _pred_df["date"].dt.dayofweek
+        weekday_agg = _pred_df.groupby("weekday", as_index=False).agg(
+            actual=("trips", "mean"), predicted=("predicted", "mean")
         )
-        scenario_factor = (1 + weather_effect / 100) * (1 + event_effect / 100)
-        forecast_values = [
-            _fc_baseline * _fc_weekday_factors.get(date.dayofweek, 1.0) * scenario_factor
-            for date in forecast_dates
-        ]
-        forecast_frame = pd.DataFrame(
-            {"date": forecast_dates, "forecast": forecast_values}
+        weekday_agg["day"] = weekday_agg["weekday"].map(dict(enumerate(weekday_names)))
+
+        wd_col, res_col = st.columns(2)
+
+        with wd_col:
+            st.markdown("#### Weekday demand pattern")
+            fig_wd = go.Figure()
+            fig_wd.add_trace(go.Bar(
+                x=weekday_agg["day"], y=weekday_agg["actual"],
+                name="Actual", marker_color="#2D7FF9",
+            ))
+            fig_wd.add_trace(go.Bar(
+                x=weekday_agg["day"], y=weekday_agg["predicted"],
+                name="Predicted", marker_color="#8B5CF6",
+            ))
+            fig_wd.update_layout(
+                height=350, barmode="group", legend_title_text="",
+                margin=dict(l=10, r=10, t=10, b=10),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+                yaxis_title="Avg trips/station",
+            )
+            st.plotly_chart(fig_wd, use_container_width=True)
+
+        with res_col:
+            st.markdown("#### Residual distribution")
+            fig_res = go.Figure(go.Histogram(
+                x=_pred_df["residual"], nbinsx=80,
+                marker_color="#8B5CF6", opacity=0.8,
+            ))
+            fig_res.update_layout(
+                height=350,
+                margin=dict(l=10, r=10, t=10, b=10),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+                xaxis_title="Residual (actual - predicted)",
+                yaxis_title="Station-days",
+            )
+            st.plotly_chart(fig_res, use_container_width=True)
+            mean_res = _pred_df["residual"].mean()
+            std_res = _pred_df["residual"].std()
+            st.caption(f"Mean residual: **{mean_res:.2f}** | Std: **{std_res:.2f}**")
+
+        # ── Top stations: highest predicted demand & biggest growth signals ──
+        st.subheader("Station-level predictions")
+        station_pred = _pred_df.groupby("station_name", as_index=False).agg(
+            avg_actual=("trips", "mean"),
+            avg_predicted=("predicted", "mean"),
         )
-        forecast_frame["lower"] = forecast_frame["forecast"] * 0.86
-        forecast_frame["upper"] = forecast_frame["forecast"] * 1.14
+        station_pred["gap"] = station_pred["avg_predicted"] - station_pred["avg_actual"]
+        station_pred["gap_pct"] = (
+            (station_pred["gap"] / station_pred["avg_actual"].replace(0, np.nan)) * 100
+        ).fillna(0)
 
-        with chart_col:
-            figure = go.Figure()
-            figure.add_trace(
-                go.Scatter(
-                    x=_fc_city_history.tail(60)["date"],
-                    y=_fc_city_history.tail(60)["trips"],
-                    name="Actual",
-                    line=dict(color="#94A3B8", width=2),
+        top_col, growth_col = st.columns(2)
+        with top_col:
+            st.markdown("**Highest predicted demand**")
+            for _, row in station_pred.nlargest(8, "avg_predicted").iterrows():
+                st.metric(
+                    row["station_name"][:40],
+                    f"{row['avg_predicted']:.0f} trips/day",
+                    f"{row['gap']:+.1f} vs actual",
                 )
-            )
-            figure.add_trace(
-                go.Scatter(
-                    x=pd.concat([forecast_frame["date"], forecast_frame["date"][::-1]]),
-                    y=pd.concat([forecast_frame["upper"], forecast_frame["lower"][::-1]]),
-                    fill="toself",
-                    fillcolor="rgba(45,127,249,.14)",
-                    line=dict(color="rgba(255,255,255,0)"),
-                    hoverinfo="skip",
-                    name="Scenario range",
-                )
-            )
-            figure.add_trace(
-                go.Scatter(
-                    x=forecast_frame["date"],
-                    y=forecast_frame["forecast"],
-                    name="Scenario",
-                    line=dict(color="#2D7FF9", width=3),
-                )
-            )
-            figure.update_layout(
-                height=410,
-                hovermode="x unified",
-                legend_title_text="",
-                margin=dict(l=10, r=10, t=15, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="white",
-                xaxis_title="",
-                yaxis_title="Trips",
-            )
-            st.plotly_chart(figure, use_container_width=True)
-            projected = forecast_frame["forecast"].sum()
-            base_projected = _fc_baseline * horizon
-            st.metric(
-                f"Projected {horizon}-day trips",
-                compact_number(projected),
-                f"{projected / base_projected - 1:+.1%} vs recent baseline",
-            )
 
-    forecast_scenario()
+        with growth_col:
+            st.markdown("**Largest growth signals** (predicted > actual)")
+            growth = station_pred[station_pred["avg_actual"] >= 5].nlargest(8, "gap_pct")
+            for _, row in growth.iterrows():
+                st.metric(
+                    row["station_name"][:40],
+                    f"{row['avg_predicted']:.0f} trips/day",
+                    f"+{row['gap_pct']:.0f}% above actual",
+                )
+    else:
+        st.info(
+            "XGBoost predictions not available. Run `python backend/demand_forecast_xgboost.py` to train the model."
+        )
 
 with mta_tab:
     st.markdown(
