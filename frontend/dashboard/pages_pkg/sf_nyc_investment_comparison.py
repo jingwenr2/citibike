@@ -24,7 +24,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from components.styles import CITY_COLORS, apply_layout
+from components.styles import apply_layout
 
 INVESTMENT_AMOUNT = 16_000_000
 
@@ -142,11 +142,26 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     station_growth_pct = _pct_change(len(feb2023_stations), len(latest_stations))
 
     # ── KPI summary ──
-    kpi_cols = st.columns(4)
-    kpi_cols[0].metric("Trips/Station Growth", f"{trips_per_station_growth:+.0f}%")
-    kpi_cols[1].metric("Total Daily Trips Growth", f"{total_trips_growth:+.0f}%")
-    kpi_cols[2].metric("Station Network Growth", f"{station_growth_pct:+.0f}%")
-    kpi_cols[3].metric("Stations Today", f"{len(latest_stations):,}")
+    # Page-scoped override: all KPI cards on this page use a single pink
+    # accent (matching the app's Lyft-pink theme) instead of app.py's global
+    # per-column blue/green/orange/pink border CSS.
+    st.markdown(
+        """
+        <style>
+        .st-key-sf_kpi_growth [data-testid="stMetric"],
+        .st-key-sf_kpi_roi [data-testid="stMetric"] {
+            border-left-color: #FF00BF !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    with st.container(key="sf_kpi_growth"):
+        kpi_cols = st.columns(4)
+        kpi_cols[0].metric("Trips/Station Growth", f"{trips_per_station_growth:+.0f}%")
+        kpi_cols[1].metric("Total Daily Trips Growth", f"{total_trips_growth:+.0f}%")
+        kpi_cols[2].metric("Station Network Growth", f"{station_growth_pct:+.0f}%")
+        kpi_cols[3].metric("Stations Today", f"{len(latest_stations):,}")
 
     # ── ROI estimate ──
     st.markdown("---")
@@ -169,22 +184,26 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         else float("inf")
     )
 
-    roi_cols = st.columns(3)
-    roi_cols[0].metric(
-        "Estimated annual incremental revenue",
-        f"${annualized_incremental_revenue:,.0f}",
-    )
-    roi_cols[1].metric("Investment amount", f"${INVESTMENT_AMOUNT:,.0f}")
-    roi_cols[2].metric(
-        "Estimated payback period",
-        f"{payback_years:.1f} years" if payback_years != float("inf") else "N/A",
-    )
+    with st.container(key="sf_kpi_roi"):
+        roi_cols = st.columns(3)
+        roi_cols[0].metric(
+            "Estimated annual incremental revenue",
+            f"${annualized_incremental_revenue:,.0f}",
+        )
+        roi_cols[1].metric("Investment amount", f"${INVESTMENT_AMOUNT:,.0f}")
+        roi_cols[2].metric(
+            "Estimated payback period",
+            f"{payback_years:.1f} years" if payback_years != float("inf") else "N/A",
+        )
 
-    st.warning(
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
         "Illustrative estimate only — uses the same revenue-per-trip assumption "
         "as the NYC model. Ridership growth likely reflects multiple factors "
         "beyond the investment alone (e-bike rollout, network expansion, "
         "post-pandemic recovery)."
+        "</p></div>",
+        unsafe_allow_html=True,
     )
 
     # ── Monthly trend chart ──
@@ -211,15 +230,15 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     fig.add_trace(go.Scatter(
         x=months_dt, y=monthly_trips.to_numpy(),
         mode="lines+markers",
-        line=dict(color=CITY_COLORS.get("San Francisco", "#F26B4A"), width=2),
+        line=dict(color="#FF00BF", width=2),
         name="Total trips",
     ))
     fig.add_vline(
-        x=pd.Timestamp("2023-02-01"), line_dash="dash", line_color="#DC2626",
+        x=pd.Timestamp("2023-02-01"), line_dash="dash", line_color="#2D7FF9",
         annotation_text="Feb 2023: MTC investment", annotation_position="top",
     )
     fig.add_vline(
-        x=pd.Timestamp("2023-11-01"), line_dash="dash", line_color="#059669",
+        x=pd.Timestamp("2023-11-01"), line_dash="dashdot", line_color="#9B4DCA",
         annotation_text="Nov 2023: price drop", annotation_position="bottom",
     )
     fig.update_xaxes(tickangle=-90, tickformat="%Y-%m", dtick="M1")
