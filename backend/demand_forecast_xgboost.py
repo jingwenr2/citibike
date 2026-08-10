@@ -4,9 +4,9 @@ Citi Bike Station Demand Forecasting — XGBoost (v3)
 Predicts daily trip counts per NYC Citi Bike station.
 Compares against a seasonal-naive (lag-7) baseline.
 
-Features (21):
+Features (23):
   - Station: lat, lon, capacity
-  - Calendar: day_of_week, month, is_weekend, is_holiday
+  - Calendar: day_of_week, month, quarter, year, is_weekend, is_holiday
   - Lag / rolling: lag_1d, lag_7d, roll_mean_7d, roll_mean_28d, roll_std_7d
   - Composition: electric_share, member_share
   - Transit (MTA): mta_daily_riders, mta_delay_rate, nearest_mta_distance_km
@@ -55,6 +55,8 @@ FEATURES = [
     # Calendar
     "day_of_week",
     "month",
+    "quarter",
+    "year",
     "is_weekend",
     "is_holiday",
     # Lag / rolling window
@@ -199,6 +201,8 @@ def add_features(
     # Calendar features
     df["day_of_week"] = df["date"].dt.dayofweek
     df["month"] = df["date"].dt.month
+    df["quarter"] = df["date"].dt.quarter
+    df["year"] = df["date"].dt.year
     df["is_weekend"] = df["day_of_week"].isin([5, 6]).astype(int)
     df["is_holiday"] = (
         df["date"].dt.strftime("%Y-%m-%d").isin(US_HOLIDAYS).astype(int)
@@ -295,8 +299,15 @@ def seasonal_naive_predict(test: pd.DataFrame) -> np.ndarray:
 def train_model(train: pd.DataFrame) -> XGBRegressor:
     X_train = train[FEATURES]
     y_train = train[TARGET]
+
+    # Hold out the last 20% of training data chronologically for early stopping
+    es_cutoff = train["date"].quantile(0.8)
+    es_mask = train["date"] > es_cutoff
+    X_es, y_es = X_train[es_mask], y_train[es_mask]
+    X_fit, y_fit = X_train[~es_mask], y_train[~es_mask]
+
     model = XGBRegressor(
-        n_estimators=500,
+        n_estimators=1000,
         max_depth=7,
         learning_rate=0.05,
         subsample=0.8,
@@ -305,8 +316,14 @@ def train_model(train: pd.DataFrame) -> XGBRegressor:
         reg_alpha=0.1,
         reg_lambda=1.0,
         random_state=42,
+        early_stopping_rounds=30,
     )
-    model.fit(X_train, y_train, verbose=False)
+    model.fit(
+        X_fit, y_fit,
+        eval_set=[(X_es, y_es)],
+        verbose=False,
+    )
+    print(f"  Early stopping: best iteration {model.best_iteration} / {model.n_estimators}")
     return model
 
 
@@ -343,6 +360,22 @@ def evaluate(model: XGBRegressor, test: pd.DataFrame, city: str) -> dict:
         improvement = (naive_val - xgb_val) / naive_val * 100 if naive_val else 0
         print(f"  {metric:<8} {xgb_val:>10.2f} {naive_val:>10.2f} {improvement:>+10.1f}%")
 
+    # Save actual vs predicted for dashboard visualization
+    predictions_df = test[["date", "station_name", "lat", "lon", TARGET]].copy()
+    predictions_df["predicted"] = xgb_preds
+    predictions_df["residual"] = predictions_df[TARGET] - predictions_df["predicted"]
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    pred_path = MODELS_DIR / "forecast_predictions.parquet"
+    predictions_df.to_parquet(pred_path, index=False)
+    print(f"  Saved predictions to {pred_path}")
+
+    # Save feature importance as JSON for dashboard
+    importance = dict(zip(FEATURES, [float(v) for v in model.feature_importances_]))
+    importance_path = MODELS_DIR / "feature_importance.json"
+    with open(importance_path, "w") as f:
+        json.dump(importance, f, indent=2)
+    print(f"  Saved feature importance to {importance_path}")
+
     return {
         "city": city,
         "test_station_days": len(test),
@@ -351,6 +384,40 @@ def evaluate(model: XGBRegressor, test: pd.DataFrame, city: str) -> dict:
         "xgboost": xgb_metrics,
         "seasonal_naive": naive_metrics,
     }
+
+
+def time_series_cv(df: pd.DataFrame, n_splits: int = 3, test_days: int = 60) -> list[dict]:
+    """Run time-series cross-validation with expanding window."""
+    dates = sorted(df["date"].unique())
+    total_test = n_splits * test_days
+    if len(dates) < total_test + 90:
+        print("  Insufficient data for cross-validation — skipping")
+        return []
+
+    results = []
+    for i in range(n_splits):
+        # Each fold's test end moves backward
+        test_end_idx = len(dates) - (n_splits - 1 - i) * test_days
+        test_start_idx = test_end_idx - test_days
+        cutoff_date = dates[test_start_idx]
+        end_date = dates[min(test_end_idx, len(dates) - 1)]
+
+        train_fold = df[df["date"] < cutoff_date].dropna(subset=FEATURES)
+        test_fold = df[(df["date"] >= cutoff_date) & (df["date"] <= end_date)].dropna(subset=FEATURES)
+
+        if train_fold.empty or test_fold.empty:
+            continue
+
+        model = train_model(train_fold)
+        preds = np.clip(model.predict(test_fold[FEATURES]), 0, None)
+        metrics = compute_metrics(test_fold[TARGET].values, preds)
+        metrics["fold"] = i + 1
+        metrics["train_rows"] = len(train_fold)
+        metrics["test_rows"] = len(test_fold)
+        results.append(metrics)
+        print(f"  Fold {i+1}: MAE={metrics['MAE']:.2f}, RMSE={metrics['RMSE']:.2f}, WAPE={metrics['WAPE']:.4f}")
+
+    return results
 
 
 def save_feature_importance(model: XGBRegressor, city: str) -> None:
@@ -442,6 +509,17 @@ def main() -> None:
     model = train_model(train)
     results = evaluate(model, test, args.city)
     save_feature_importance(model, args.city)
+
+    # Time-series cross-validation
+    print("\n>>> Running time-series cross-validation...")
+    cv_results = time_series_cv(daily, n_splits=3, test_days=args.test_days)
+    if cv_results:
+        avg_mae = np.mean([r["MAE"] for r in cv_results])
+        avg_rmse = np.mean([r["RMSE"] for r in cv_results])
+        avg_wape = np.mean([r["WAPE"] for r in cv_results])
+        print(f"\n  CV Average: MAE={avg_mae:.2f}, RMSE={avg_rmse:.2f}, WAPE={avg_wape:.4f}")
+        results["cv_results"] = cv_results
+        results["cv_avg"] = {"MAE": round(avg_mae, 2), "RMSE": round(avg_rmse, 2), "WAPE": round(avg_wape, 4)}
 
     # Save model
     MODELS_DIR.mkdir(parents=True, exist_ok=True)

@@ -27,7 +27,11 @@ import numpy as np
 import pandas as pd
 
 from backend.services.data_service import safe_divide
-from backend.utils.paths import PRICING_CONFIG_PATH
+from backend.utils.paths import (
+    PRICE_HISTORY_PATH,
+    PRICING_CONFIG_PATH,
+    RIDE_DURATION_STATS_PATH,
+)
 
 
 def load_pricing_assumptions(
@@ -36,6 +40,62 @@ def load_pricing_assumptions(
     path = path or PRICING_CONFIG_PATH
     with open(path) as f:
         return json.load(f)
+
+
+def load_annual_membership_price_history(
+    path: Path | None = None,
+) -> pd.DataFrame:
+    """Load Citi Bike's annual membership price history since its 2013 launch.
+
+    Nominal and inflation-adjusted figures are sourced from the NYC
+    Independent Budget Office; see citibike_price_history.json for citations.
+    """
+    path = path or PRICE_HISTORY_PATH
+    with open(path) as f:
+        payload = json.load(f)
+
+    df = pd.DataFrame(payload["history"])
+    df["effective_date"] = pd.to_datetime(df["effective_date"])
+    return df.sort_values("effective_date").reset_index(drop=True)
+
+
+def load_ride_duration_stats(path: Path | None = None) -> dict[str, Any]:
+    """Load average trip duration stats computed from raw trip data.
+
+    See backend/scripts/compute_ride_duration_stats.py — this isn't an
+    external figure, it's derived directly from started_at/ended_at in
+    the raw monthly Citi Bike trip files.
+    """
+    path = path or RIDE_DURATION_STATS_PATH
+    with open(path) as f:
+        return json.load(f)
+
+
+def estimate_average_single_ride(
+    assumptions: dict[str, Any] | None = None,
+    duration_stats: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Estimate what an average casual single ride actually costs.
+
+    Blends the average recorded casual-ride duration against the base
+    unlock price and per-minute overage rate.
+    """
+    if assumptions is None:
+        assumptions = load_pricing_assumptions()
+    if duration_stats is None:
+        duration_stats = load_ride_duration_stats()
+
+    avg_minutes = duration_stats["by_rider_type"]["casual"]["avg_minutes"]
+    included_minutes = assumptions["included_ride_minutes_casual"]
+    overage_minutes = max(0.0, avg_minutes - included_minutes)
+    price = assumptions["single_ride_price"] + overage_minutes * assumptions["overage_per_minute_casual"]
+
+    return {
+        "avg_minutes": avg_minutes,
+        "included_minutes": included_minutes,
+        "overage_minutes": overage_minutes,
+        "price": price,
+    }
 
 
 def estimate_annual_revenue(

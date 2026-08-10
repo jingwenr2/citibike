@@ -1,0 +1,22 @@
+{
+  "_description": "Historical Citi Bike NYC annual membership prices since program launch. Nominal and inflation-adjusted (2024 USD, NY-Newark-Jersey City CPI) prices for 2013-2025 are taken directly from the NYC Independent Budget Office's November 2025 report. The 2026 price is not yet covered by an IBO report and is sourced from contemporaneous news coverage of Citi Bike's own announced price change; it has no inflation-adjusted figure yet.",
+  "_last_verified": "2026-08-10",
+  "_sources": [
+    "NYC Independent Budget Office, \"Citi Bike: Lessons for the Future of New York City's Bike Share,\" November 2025, Appendix Figure A2",
+    "NY1, \"New Citi Bike membership prices begin Wednesday,\" January 28, 2026",
+    "Time Out New York, \"Citi Bike prices will increase by 15% starting this week,\" January 2024"
+  ],
+  "history": [
+    {"effective_date": "2013-05-01", "price_nominal": 95.00, "price_real_2024usd": 124.00},
+    {"effective_date": "2014-11-01", "price_nominal": 149.00, "price_real_2024usd": 191.00},
+    {"effective_date": "2016-03-01", "price_nominal": 155.00, "price_real_2024usd": 197.00},
+    {"effective_date": "2017-06-01", "price_nominal": 163.00, "price_real_2024usd": 203.00},
+    {"effective_date": "2018-05-01", "price_nominal": 169.00, "price_real_2024usd": 206.00},
+    {"effective_date": "2020-09-01", "price_nominal": 179.00, "price_real_2024usd": 211.00},
+    {"effective_date": "2022-01-01", "price_nominal": 185.00, "price_real_2024usd": 199.00},
+    {"effective_date": "2023-02-01", "price_nominal": 205.00, "price_real_2024usd": 213.00},
+    {"effective_date": "2024-02-01", "price_nominal": 220.00, "price_real_2024usd": 220.00},
+    {"effective_date": "2025-01-01", "price_nominal": 220.00, "price_real_2024usd": 220.00},
+    {"effective_date": "2026-01-28", "price_nominal": 239.00, "price_real_2024usd": null}
+  ]
+}
