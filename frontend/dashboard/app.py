@@ -202,10 +202,15 @@ st.markdown(
     .hero p {font-size: 1.05rem; color: #D6E4FF; margin: 0; max-width: 760px;}
     .eyebrow {font-size: .78rem; letter-spacing: .15em; text-transform: uppercase; color: #7DD3FC;}
     div[data-testid="stMetric"] {
-        background: white; border: 1px solid #E5E7EB; padding: 1rem 1.1rem;
+        background: white; padding: 1rem 1.1rem;
         border-radius: 16px; box-shadow: 0 6px 18px rgba(15,23,42,.05);
-        min-height: 112px;
+        min-height: 112px; border-left: 4px solid #2D7FF9;
+        border-top: 1px solid #E5E7EB; border-right: 1px solid #E5E7EB;
+        border-bottom: 1px solid #E5E7EB;
     }
+    div[data-testid="stMetric"]:nth-child(2) { border-left-color: #10B981; }
+    div[data-testid="stMetric"]:nth-child(3) { border-left-color: #F59E0B; }
+    div[data-testid="stMetric"]:nth-child(4) { border-left-color: #8B5CF6; }
     div[data-testid="stMetricLabel"] {color: #64748B;}
     .section-note {color: #64748B; margin-top: -.6rem;}
     .demo-pill {
@@ -517,7 +522,8 @@ metric_cols = st.columns(4)
 metric_cols[0].metric("NYC Average Annual Trips", compact_number(avg_annual_trips), f"{delta:+.1%} vs prior period")
 metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
 metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
-metric_cols[3].metric("NYC electric-bike share", f"{electric_share:.1%}")
+total_docks = nyc_filtered.groupby("station_name")["capacity"].first().sum()
+metric_cols[3].metric("NYC total docks", f"{int(total_docks):,}")
 
 st.markdown(
     """
