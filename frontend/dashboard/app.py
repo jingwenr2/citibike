@@ -560,7 +560,7 @@ st.markdown(
 ) = st.tabs(
     [
         "1. DOT support case",
-        "2. Overview",
+        "2. Citi Bike at a Glance",
         "3. Station explorer",
         "4. Forecast lab",
         "5. MTA connection",
