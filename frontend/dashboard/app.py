@@ -549,23 +549,23 @@ st.markdown(
 )
 
 (
+    dot_tab,
     overview_tab,
     stations_tab,
     forecast_tab,
     mta_tab,
     success_tab,
     investment_tab,
-    dot_tab,
     methods_tab,
 ) = st.tabs(
     [
-        "1. Overview",
-        "2. Station explorer",
-        "3. Forecast lab",
-        "4. MTA connection",
-        "5. Success stories",
-        "6. Government investment",
-        "7. DOT support case",
+        "1. DOT support case",
+        "2. Overview",
+        "3. Station explorer",
+        "4. Forecast lab",
+        "5. MTA connection",
+        "6. Success stories",
+        "7. Government investment",
         "8. Data & methods",
     ]
 )
