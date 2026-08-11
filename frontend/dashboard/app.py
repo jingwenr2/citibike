@@ -171,15 +171,27 @@ st.markdown(
     .hero p {font-size: 1.05rem; color: #D6E4FF; margin: 0; max-width: 760px;}
     .eyebrow {font-size: .78rem; letter-spacing: .15em; text-transform: uppercase; color: #FF6FD8;}
     div[data-testid="stMetric"] {
-        background: white; padding: 1rem 1.1rem;
+        background: white; padding: 1rem 1.1rem; height: 100%;
         border-radius: 16px; box-shadow: 0 6px 18px rgba(15,23,42,.05);
         min-height: 112px; border-left: 4px solid #2D7FF9;
         border-top: 1px solid #E5E7EB; border-right: 1px solid #E5E7EB;
         border-bottom: 1px solid #E5E7EB;
+        box-sizing: border-box;
     }
-    [data-testid="stColumn"]:nth-of-type(2) div[data-testid="stMetric"] { border-left-color: #10B981; }
-    [data-testid="stColumn"]:nth-of-type(3) div[data-testid="stMetric"] { border-left-color: #F59E0B; }
-    [data-testid="stColumn"]:nth-of-type(4) div[data-testid="stMetric"] { border-left-color: #FF00BF; }
+    [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] div[data-testid="stMetric"]) {
+        height: 100%;
+    }
+    /* Each KPI row gets ONE accent color for every tile in that row (each
+       row wrapped in st.container(key=...) below) — not a per-tile mix. */
+    .st-key-kpi-banner div[data-testid="stMetric"],
+    .st-key-kpi-payoff div[data-testid="stMetric"],
+    .st-key-kpi-irr div[data-testid="stMetric"],
+    .st-key-kpi-expand div[data-testid="stMetric"],
+    .st-key-kpi-govt div[data-testid="stMetric"] { border-left-color: #2D7FF9; }
+    .st-key-kpi-problem div[data-testid="stMetric"],
+    .st-key-kpi-mta div[data-testid="stMetric"],
+    .st-key-kpi-rev div[data-testid="stMetric"],
+    .st-key-kpi-value div[data-testid="stMetric"] { border-left-color: #FF00BF; }
     div[data-testid="stMetricLabel"] {color: #64748B;}
     .section-note {color: #64748B; margin-top: -.6rem;}
     .demo-pill {
@@ -228,10 +240,9 @@ st.markdown(
         text-transform: uppercase; margin-bottom: .4rem;
     }
     .section-label-blue { background: #DBEAFE; color: #1E40AF; }
-    .section-label-purple { background: #EDE9FE; color: #5B21B6; }
-    .section-label-green { background: #D1FAE5; color: #065F46; }
-    .section-label-amber { background: #FEF3C7; color: #92400E; }
+    .section-label-skyblue { background: #E0F2FE; color: #075985; }
     .section-label-pink { background: #FCE7F3; color: #9D174D; }
+    .section-label-hotpink { background: #FFE0F5; color: #9D0F82; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -492,25 +503,26 @@ avg_daily = demand_service.average_daily_trips(nyc_filtered)
 avg_annual_trips = avg_daily * 365
 delta = prior_period_delta(nyc_filtered)
 
-metric_cols = st.columns(4)
-metric_cols[0].metric("NYC Average Annual Trips", compact_number(avg_annual_trips), f"{delta:+.1%} vs prior period")
-metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
-metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
-# Fleet size isn't in the trip dataset (no bike-ID field to count) — this is
-# Citi Bike's own reported NYC fleet size, not derived from the filtered data.
-CITIBIKE_FLEET_SIZE = 37_000
-# NYC IBO, Nov. 2025: "e-bikes grew from a pilot of just 200 bikes to over
-# 16,000 today" — the rest of the reported 37,000-bike fleet is classic bikes.
-CITIBIKE_EBIKE_FLEET_COUNT = 16_000
-metric_cols[3].metric(
-    "NYC fleet size",
-    f"{CITIBIKE_FLEET_SIZE:,} bikes",
-    help=(
-        "Citi Bike's reported NYC fleet size as of 2024 (NYC Independent Budget "
-        "Office, Nov. 2025). Unlike the other KPIs, this is a fixed reported "
-        "figure — it doesn't respond to the date range filter."
-    ),
-)
+with st.container(key="kpi-banner"):
+    metric_cols = st.columns(4)
+    metric_cols[0].metric("NYC Average Annual Trips", compact_number(avg_annual_trips), f"{delta:+.1%} vs prior period")
+    metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
+    metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
+    # Fleet size isn't in the trip dataset (no bike-ID field to count) — this is
+    # Citi Bike's own reported NYC fleet size, not derived from the filtered data.
+    CITIBIKE_FLEET_SIZE = 37_000
+    # NYC IBO, Nov. 2025: "e-bikes grew from a pilot of just 200 bikes to over
+    # 16,000 today" — the rest of the reported 37,000-bike fleet is classic bikes.
+    CITIBIKE_EBIKE_FLEET_COUNT = 16_000
+    metric_cols[3].metric(
+        "NYC fleet size",
+        f"{CITIBIKE_FLEET_SIZE:,} bikes",
+        help=(
+            "Citi Bike's reported NYC fleet size as of 2024 (NYC Independent Budget "
+            "Office, Nov. 2025). Unlike the other KPIs, this is a fixed reported "
+            "figure — it doesn't respond to the date range filter."
+        ),
+    )
 
 st.markdown(
     """
@@ -624,36 +636,37 @@ with home_tab:
 
     st.markdown("---")
     st.markdown(
-        '<span class="section-label section-label-amber">The problem</span>',
+        '<span class="section-label section-label-hotpink">The problem</span>',
         unsafe_allow_html=True,
     )
     st.subheader("Riders are paying more for a system that's out of room")
 
     pct_strained = len(strained) / len(station_pressure) * 100 if len(station_pressure) > 0 else 0
     avg_ride = revenue_service.estimate_average_single_ride()
-    problem_cols = st.columns(3)
-    with problem_cols[0]:
-        st.metric("Annual membership", "$239/yr")
-    with problem_cols[1]:
-        st.metric(
-            f"Avg. single ride ({avg_ride['avg_minutes']:.0f} min)",
-            f"${avg_ride['price']:.2f}",
-            help=(
-                f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
-                "(computed directly from raw Citi Bike trip data). The base "
-                f"single-ride price includes {avg_ride['included_minutes']:.0f} minutes, "
-                "so the average ride costs the flat unlock price with no overage."
-                if avg_ride["overage_minutes"] == 0
-                else (
+    with st.container(key="kpi-problem"):
+        problem_cols = st.columns(3)
+        with problem_cols[0]:
+            st.metric("Annual membership", "$239/yr")
+        with problem_cols[1]:
+            st.metric(
+                f"Avg. single ride ({avg_ride['avg_minutes']:.0f} min)",
+                f"${avg_ride['price']:.2f}",
+                help=(
                     f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
-                    "(computed directly from raw Citi Bike trip data), which runs "
-                    f"{avg_ride['overage_minutes']:.1f} min past the "
-                    f"{avg_ride['included_minutes']:.0f}-min included window."
-                )
-            ),
-        )
-    with problem_cols[2]:
-        st.metric("Stations at/above capacity", f"{pct_strained:.0f}%")
+                    "(computed directly from raw Citi Bike trip data). The base "
+                    f"single-ride price includes {avg_ride['included_minutes']:.0f} minutes, "
+                    "so the average ride costs the flat unlock price with no overage."
+                    if avg_ride["overage_minutes"] == 0
+                    else (
+                        f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
+                        "(computed directly from raw Citi Bike trip data), which runs "
+                        f"{avg_ride['overage_minutes']:.1f} min past the "
+                        f"{avg_ride['included_minutes']:.0f}-min included window."
+                    )
+                ),
+            )
+        with problem_cols[2]:
+            st.metric("Stations at/above capacity", f"{pct_strained:.0f}%")
     st.markdown(
         f"Membership and per-ride prices are already a real cost barrier for many "
         f"New Yorkers — and **{pct_strained:.0f}% of stations are running at or above "
@@ -666,7 +679,7 @@ with home_tab:
 
     st.markdown("---")
     st.markdown(
-        '<span class="section-label section-label-green">The solution</span>',
+        '<span class="section-label section-label-skyblue">The solution</span>',
         unsafe_allow_html=True,
     )
     st.subheader("Invest to expand the system — and to make it cheaper")
@@ -682,7 +695,7 @@ with home_tab:
 
     st.markdown("---")
     st.markdown(
-        '<span class="section-label section-label-purple">The decision model</span>',
+        '<span class="section-label section-label-pink">The decision model</span>',
         unsafe_allow_html=True,
     )
     st.subheader("Data tells us where to build first")
@@ -698,20 +711,21 @@ with home_tab:
 
     st.markdown("---")
     st.markdown(
-        '<span class="section-label section-label-pink">The payoff</span>',
+        '<span class="section-label section-label-blue">The payoff</span>',
         unsafe_allow_html=True,
     )
     st.subheader("What the city and DOT stand to earn")
-    payoff_cols = st.columns(3)
-    with payoff_cols[0]:
-        st.metric("Public benefit / yr", f"${pub['total_public_benefit']:,.0f}")
-        st.caption("Health + congestion + emissions + tax revenue")
-    with payoff_cols[1]:
-        st.metric("DOT payback period", f"{pub['govt_payback_years']:.1f} yrs")
-        st.caption("Public benefit vs. install cost")
-    with payoff_cols[2]:
-        st.metric("5-yr upside vs. status quo", f"${cumulative_gap:,.0f}")
-        st.caption("Cumulative gain, invest vs. do nothing, through 2031")
+    with st.container(key="kpi-payoff"):
+        payoff_cols = st.columns(3)
+        with payoff_cols[0]:
+            st.metric("Public benefit / yr", f"${pub['total_public_benefit']:,.0f}")
+            st.caption("Health + congestion + emissions + tax revenue")
+        with payoff_cols[1]:
+            st.metric("DOT payback period", f"{pub['govt_payback_years']:.1f} yrs")
+            st.caption("Public benefit vs. install cost")
+        with payoff_cols[2]:
+            st.metric("5-yr upside vs. status quo", f"${cumulative_gap:,.0f}")
+            st.caption("Cumulative gain, invest vs. do nothing, through 2031")
     st.markdown(
         f"By 2031, investing rather than standing still is worth "
         f"**\\${gap_2031:,.0f}/year more** — and DOT's own share of that, in health, "
@@ -1327,12 +1341,13 @@ with mta_tab:
         avg_score = mta_opportunity["transit_opportunity_score"].mean()
         high_opp_count = len(mta_opportunity[mta_opportunity["transit_opportunity_score"] >= 60])
 
-        mta_kpi_cols = st.columns(5)
-        mta_kpi_cols[0].metric("Neighborhoods analyzed", f"{len(mta_opportunity):,}")
-        mta_kpi_cols[1].metric("Avg MTA delay rate", f"{avg_delay:.1%}")
-        mta_kpi_cols[2].metric("Total MTA riders/day", compact_number(total_mta_riders))
-        mta_kpi_cols[3].metric("Avg opportunity score", f"{avg_score:.1f}")
-        mta_kpi_cols[4].metric("High-opportunity zones", f"{high_opp_count}")
+        with st.container(key="kpi-mta"):
+            mta_kpi_cols = st.columns(5)
+            mta_kpi_cols[0].metric("Neighborhoods analyzed", f"{len(mta_opportunity):,}")
+            mta_kpi_cols[1].metric("Avg MTA delay rate", f"{avg_delay:.1%}")
+            mta_kpi_cols[2].metric("Total MTA riders/day", compact_number(total_mta_riders))
+            mta_kpi_cols[3].metric("Avg opportunity score", f"{avg_score:.1f}")
+            mta_kpi_cols[4].metric("High-opportunity zones", f"{high_opp_count}")
 
         st.markdown("")
 
@@ -1845,25 +1860,26 @@ with investment_tab:
                 total_irr = None
 
         # Display IRR KPIs
-        irr_cols = st.columns(4)
-        irr_cols[0].metric(
-            "Fiscal IRR",
-            f"{fiscal_irr:.1%}" if fiscal_irr is not None else "N/A",
-            "Return on capital (operating only)",
-        )
-        irr_cols[1].metric(
-            "Total IRR (incl. public value)",
-            f"{total_irr:.1%}" if total_irr is not None else "N/A",
-            "Return including public benefits",
-        )
-        irr_cols[2].metric(
-            "Total capital",
-            f"${compact_number(total_capital)}",
-        )
-        irr_cols[3].metric(
-            "Annual net cash flow",
-            f"${compact_number(net_annual_fiscal)}",
-        )
+        with st.container(key="kpi-irr"):
+            irr_cols = st.columns(4)
+            irr_cols[0].metric(
+                "Fiscal IRR",
+                f"{fiscal_irr:.1%}" if fiscal_irr is not None else "N/A",
+                "Return on capital (operating only)",
+            )
+            irr_cols[1].metric(
+                "Total IRR (incl. public value)",
+                f"{total_irr:.1%}" if total_irr is not None else "N/A",
+                "Return including public benefits",
+            )
+            irr_cols[2].metric(
+                "Total capital",
+                f"${compact_number(total_capital)}",
+            )
+            irr_cols[3].metric(
+                "Annual net cash flow",
+                f"${compact_number(net_annual_fiscal)}",
+            )
 
         # Cash flow chart
         fig_cf = go.Figure()
@@ -2028,39 +2044,40 @@ with dot_tab:
         "who currently waits underground or sits in traffic."
     )
 
-    value_cols = st.columns(3)
     nyc_trips_total = nyc_filtered["trips"].sum()
     nyc_electric = nyc_filtered["electric_trips"].sum()
     nyc_ebike_pct = nyc_electric / nyc_trips_total if nyc_trips_total > 0 else 0
 
-    with value_cols[0]:
-        st.markdown("**Zero emissions**")
-        st.metric("E-bike share in NYC", f"{nyc_ebike_pct:.0%}")
-        st.markdown(
-            f"**{nyc_electric:,.0f} electric trips** in our dataset alone. "
-            "Every e-bike trip replaces a car ride or rideshare — "
-            "zero tailpipe emissions, zero congestion contribution."
-        )
+    with st.container(key="kpi-value"):
+        value_cols = st.columns(3)
+        with value_cols[0]:
+            st.markdown("**Zero emissions**")
+            st.metric("E-bike share in NYC", f"{nyc_ebike_pct:.0%}")
+            st.markdown(
+                f"**{nyc_electric:,.0f} electric trips** in our dataset alone. "
+                "Every e-bike trip replaces a car ride or rideshare — "
+                "zero tailpipe emissions, zero congestion contribution."
+            )
 
-    with value_cols[1]:
-        st.markdown("**Saves riders money**")
-        st.metric("Citi Bike annual membership", "$239/yr")
-        st.metric("MTA monthly unlimited", "$132/mo ($1,584/yr)")
-        st.markdown(
-            "A Citi Bike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
-            "For casual riders, single trips cost \\$4.99 vs. \\$2.90 subway fare — "
-            "but with zero wait time and door-to-door service."
-        )
+        with value_cols[1]:
+            st.markdown("**Saves riders money**")
+            st.metric("Citi Bike annual membership", "$239/yr")
+            st.metric("MTA monthly unlimited", "$132/mo ($1,584/yr)")
+            st.markdown(
+                "A Citi Bike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
+                "For casual riders, single trips cost \\$4.99 vs. \\$2.90 subway fare — "
+                "but with zero wait time and door-to-door service."
+            )
 
-    with value_cols[2]:
-        st.markdown("**Reliable & fast**")
-        st.metric("Avg Citi Bike availability", "24/7")
-        st.metric("No signal failures", "Ever")
-        st.markdown(
-            "No track fires. No signal delays. No weekend service changes. "
-            "Bikes are available when you need them. For trips under 3 miles, "
-            "Citi Bike is often **faster than the subway** door-to-door."
-        )
+        with value_cols[2]:
+            st.markdown("**Reliable & fast**")
+            st.metric("Avg Citi Bike availability", "24/7")
+            st.metric("No signal failures", "Ever")
+            st.markdown(
+                "No track fires. No signal delays. No weekend service changes. "
+                "Bikes are available when you need them. For trips under 3 miles, "
+                "Citi Bike is often **faster than the subway** door-to-door."
+            )
 
     # ===================================================================
     # ARGUMENT 4: Capacity is maxed — demand screaming for investment
@@ -2122,22 +2139,23 @@ with dot_tab:
 
     st.markdown("#### Current Citi Bike revenue (estimated from our data)")
 
-    rev_cols = st.columns(4)
-    with rev_cols[0]:
-        st.metric("Annual memberships", f"${membership_revenue:,.0f}")
-        st.caption(f"{active_members:,} members x $239/yr")
-    with rev_cols[1]:
-        st.metric("Casual ride fees", f"${casual_ride_revenue:,.0f}")
-        st.caption(
-            f"{annual_casual_trips:,.0f} casual trips x "
-            f"${rev['assumptions_used']['single_ride_price']:.2f}"
-        )
-    with rev_cols[2]:
-        st.metric("E-bike overage fees", f"${ebike_overage_revenue:,.0f}")
-        st.caption(f"{annual_ebike_trips:,.0f} e-bike trips x $3.24 avg")
-    with rev_cols[3]:
-        st.metric("Title sponsorship", f"${sponsorship_revenue:,.0f}")
-        st.caption("Citigroup naming deal")
+    with st.container(key="kpi-rev"):
+        rev_cols = st.columns(4)
+        with rev_cols[0]:
+            st.metric("Annual memberships", f"${membership_revenue:,.0f}")
+            st.caption(f"{active_members:,} members x $239/yr")
+        with rev_cols[1]:
+            st.metric("Casual ride fees", f"${casual_ride_revenue:,.0f}")
+            st.caption(
+                f"{annual_casual_trips:,.0f} casual trips x "
+                f"${rev['assumptions_used']['single_ride_price']:.2f}"
+            )
+        with rev_cols[2]:
+            st.metric("E-bike overage fees", f"${ebike_overage_revenue:,.0f}")
+            st.caption(f"{annual_ebike_trips:,.0f} e-bike trips x $3.24 avg")
+        with rev_cols[3]:
+            st.metric("Title sponsorship", f"${sponsorship_revenue:,.0f}")
+            st.caption("Citigroup naming deal")
 
     st.markdown(
         f"### Total estimated annual revenue: **${total_current_revenue:,.0f}**"
@@ -2165,20 +2183,21 @@ with dot_tab:
     net_annual_profit = exp["net_annual_profit"]
     payback_months = exp["payback_months"]
 
-    expand_cols = st.columns(2)
-    with expand_cols[0]:
-        st.markdown("**New revenue (annual)**")
-        st.metric("New member subscriptions", f"${new_member_revenue:,.0f}")
-        st.metric("New casual ride fees", f"${new_casual_revenue:,.0f}")
-        st.metric("New e-bike overage fees", f"${new_ebike_revenue:,.0f}")
-        st.metric("Total new revenue/year", f"${new_total_revenue:,.0f}", delta=f"+{new_total_revenue/total_current_revenue*100:.0f}% revenue growth")
+    with st.container(key="kpi-expand"):
+        expand_cols = st.columns(2)
+        with expand_cols[0]:
+            st.markdown("**New revenue (annual)**")
+            st.metric("New member subscriptions", f"${new_member_revenue:,.0f}")
+            st.metric("New casual ride fees", f"${new_casual_revenue:,.0f}")
+            st.metric("New e-bike overage fees", f"${new_ebike_revenue:,.0f}")
+            st.metric("Total new revenue/year", f"${new_total_revenue:,.0f}", delta=f"+{new_total_revenue/total_current_revenue*100:.0f}% revenue growth")
 
-    with expand_cols[1]:
-        st.markdown("**Costs & payback**")
-        st.metric("One-time station install", f"${total_install:,.0f}")
-        st.metric("Annual operations", f"${total_annual_ops:,.0f}")
-        st.metric("Net profit/year (after ops)", f"${net_annual_profit:,.0f}")
-        st.metric("Payback period", f"{payback_months:.0f} months", delta="Investment recovered")
+        with expand_cols[1]:
+            st.markdown("**Costs & payback**")
+            st.metric("One-time station install", f"${total_install:,.0f}")
+            st.metric("Annual operations", f"${total_annual_ops:,.0f}")
+            st.metric("Net profit/year (after ops)", f"${net_annual_profit:,.0f}")
+            st.metric("Payback period", f"{payback_months:.0f} months", delta="Investment recovered")
 
     st.error(
         f"**250 new stations = \\${net_annual_profit:,.0f}/year in net profit.** "
@@ -2229,30 +2248,31 @@ with dot_tab:
     st.markdown("---")
     st.markdown("#### Why government should co-invest")
 
-    govt_cols = st.columns(3)
-    with govt_cols[0]:
-        st.markdown("**Public health**")
-        st.metric("Annual health benefit", f"${pub['health_benefit']:,.0f}")
-        st.markdown(
-            "Each bike trip reduces obesity, heart disease, and diabetes risk. "
-            "NYC DOH estimates cycling saves the city \\$0.50/trip in healthcare costs."
-        )
-    with govt_cols[1]:
-        st.markdown("**Congestion & emissions**")
-        st.metric("Congestion reduction", f"${pub['congestion_benefit']:,.0f}/yr")
-        st.metric("Emissions reduction", f"${pub['emissions_benefit']:,.0f}/yr")
-        st.markdown(
-            "Every bike trip replaces a car trip or rideshare. "
-            "Less traffic, less pollution, less road damage."
-        )
-    with govt_cols[2]:
-        st.markdown("**Tax revenue**")
-        st.metric("Additional tax revenue", f"${pub['tax_benefit']:,.0f}/yr")
-        st.metric("Total annual public benefit", f"${pub['total_public_benefit']:,.0f}")
-        st.markdown(
-            f"Government payback: **{pub['govt_payback_years']:.1f} years**. "
-            "Faster than any highway or subway project."
-        )
+    with st.container(key="kpi-govt"):
+        govt_cols = st.columns(3)
+        with govt_cols[0]:
+            st.markdown("**Public health**")
+            st.metric("Annual health benefit", f"${pub['health_benefit']:,.0f}")
+            st.markdown(
+                "Each bike trip reduces obesity, heart disease, and diabetes risk. "
+                "NYC DOH estimates cycling saves the city \\$0.50/trip in healthcare costs."
+            )
+        with govt_cols[1]:
+            st.markdown("**Congestion & emissions**")
+            st.metric("Congestion reduction", f"${pub['congestion_benefit']:,.0f}/yr")
+            st.metric("Emissions reduction", f"${pub['emissions_benefit']:,.0f}/yr")
+            st.markdown(
+                "Every bike trip replaces a car trip or rideshare. "
+                "Less traffic, less pollution, less road damage."
+            )
+        with govt_cols[2]:
+            st.markdown("**Tax revenue**")
+            st.metric("Additional tax revenue", f"${pub['tax_benefit']:,.0f}/yr")
+            st.metric("Total annual public benefit", f"${pub['total_public_benefit']:,.0f}")
+            st.markdown(
+                f"Government payback: **{pub['govt_payback_years']:.1f} years**. "
+                "Faster than any highway or subway project."
+            )
 
     # ===================================================================
     # ARGUMENT 6: Target market — MTA riders who need an alternative
