@@ -20,6 +20,7 @@ theme, since that theme's CSS is never injected by the live app.
 """
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -200,7 +201,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         '<div class="tab-takeaway"><p>'
         "Illustrative estimate only — uses the same revenue-per-trip assumption "
         "as the NYC model. Ridership growth likely reflects multiple factors "
-        "beyond the investment alone (e-bike rollout, network expansion, "
+        "beyond the investment alone (Electric rollout, network expansion, "
         "post-pandemic recovery)."
         "</p></div>",
         unsafe_allow_html=True,
@@ -226,6 +227,12 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     # (string) axis (tries to average x-values numerically).
     months_dt = monthly_trips.index.to_timestamp()
 
+    # Linear trend (OLS fit on month index vs. trips) — same amber-dashed
+    # "Trend" convention used for the MTA opportunity scatter in app.py.
+    month_ordinals = np.arange(len(months_dt))
+    slope, intercept = np.polyfit(month_ordinals, monthly_trips.to_numpy(), 1)
+    trend_y = slope * month_ordinals + intercept
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=months_dt, y=monthly_trips.to_numpy(),
@@ -233,24 +240,31 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         line=dict(color="#FF00BF", width=2),
         name="Total trips",
     ))
+    fig.add_trace(go.Scatter(
+        x=months_dt, y=trend_y,
+        mode="lines",
+        line=dict(color="#F59E0B", width=2, dash="dash"),
+        name="Trend",
+    ))
     fig.add_vline(
-        x=pd.Timestamp("2023-02-01"), line_dash="dash", line_color="#FF00BF",
+        x=pd.Timestamp("2023-02-01"), line_dash="dash", line_color="#1B3A6B",
         annotation_text="Feb 2023: MTC investment", annotation_position="top",
-        annotation_font_color="#FF00BF",
+        annotation_font_color="#1B3A6B",
     )
     fig.add_vline(
         x=pd.Timestamp("2023-11-01"), line_dash="dashdot", line_color="#7DD3FC",
         annotation_text="Nov 2023: price drop", annotation_position="bottom right",
         annotation_yshift=14, annotation_font_color="#7DD3FC",
     )
-    fig.update_xaxes(tickangle=-90, tickformat="%Y-%m", dtick="M1")
+    fig.update_xaxes(tickangle=-45, tickformat="%b %Y", dtick="M1")
+    fig.update_yaxes(tickangle=0)
     apply_layout(
         fig, height=440,
         title="San Francisco (Bay Wheels) — total trips per month",
         margin=dict(l=10, r=10, t=70, b=10),
-        plot_bgcolor="#FFF0FA",
+        plot_bgcolor="white",
     )
-    fig.update_layout(title_font_color="#FF00BF")
+    fig.update_layout(title_font_color="#0F172A")
     st.plotly_chart(fig, use_container_width=True)
 
     # ── Per-station before/after ──
@@ -323,7 +337,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         st.markdown("**Price history: the Nov 2023 fare change**")
         st.markdown(
             '<p class="section-note">Bay Wheels changed pricing on 2023-11-02: '
-            "annual membership $169 -> $150, e-bike per-minute rate $0.20 -> "
+            "annual membership $169 -> $150, Electric per-minute rate $0.20 -> "
             "$0.15. Published pricing, mapped onto each row by date via an "
             "explicit lookup table.</p>",
             unsafe_allow_html=True,
@@ -332,6 +346,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         price_check = (
             sf.groupby(["membership_price", "ebike_per_min_price"])["date"]
             .agg(["min", "max", "count"])
+            .rename_axis(index={"ebike_per_min_price": "Electric per-min price"})
         )
         st.dataframe(price_check, use_container_width=True)
 

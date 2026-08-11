@@ -43,7 +43,7 @@ SUCCESS_STORIES = [
         "stats": {
             "Investment model": "SFMTA and the Bay Area Air Quality Management District brought the system to San Francisco as a public partnership; Lyft now operates it under a contract managed by the Metropolitan Transportation Commission.",
             "Ridership growth": "Grew from a 350-bike, 35-station pilot in 2013 into a regional network that now reaches San Mateo County.",
-            "Infrastructure expansion": "A 2017 buildout funded by Ford's title sponsorship expanded the system to 320 stations and 4,500 bikes; MTC has since approved a further \\$16M expansion, and SFMTA struck a new deal for 4,000 shared e-bikes.",
+            "Infrastructure expansion": "A 2017 buildout funded by Ford's title sponsorship expanded the system to 320 stations and 4,500 bikes; MTC has since approved a further \\$16M expansion, and SFMTA struck a new deal for 4,000 shared Electric bikes.",
             "Financial sustainability": "The 2017 expansion was delivered \"at no capital or operational expense to taxpayers\" — sponsorship and operator capital funded the buildout.",
         },
     },
@@ -56,7 +56,7 @@ SUCCESS_STORIES = [
             "Investment model": "Jointly owned by eight local governments — the largest municipally-owned bike-share system in the United States.",
             "Ridership growth": "6+ million trips in 2024, up 36.9% year-over-year for a second consecutive annual record and up 79% since 2019 — enough to overtake Chicago's Divvy for the #2 spot nationally.",
             "Infrastructure expansion": "Stations nearly doubled over the past decade, alongside 55 miles of new bike lanes (35 protected) and a 67-mile regional trail network.",
-            "Financial sustainability": "E-bikes, added in 2018, now drive 60%+ of rides after a 143% jump in e-bike ridership in a single year.",
+            "Financial sustainability": "Electric bikes, added in 2018, now drive 60%+ of rides after a 143% jump in Electric ridership in a single year.",
         },
     },
     {
@@ -75,7 +75,7 @@ SUCCESS_STORIES = [
 
 CITY_META = {
     "New York City": {
-        "system": "Citi Bike",
+        "system": "CitiBike",
         "color": "#2D7FF9",
         "center": (40.7306, -73.9866),
         "base": 1180,
@@ -193,6 +193,7 @@ st.markdown(
     .st-key-kpi-rev div[data-testid="stMetric"],
     .st-key-kpi-value div[data-testid="stMetric"] { border-left-color: #FF00BF; }
     div[data-testid="stMetricLabel"] {color: #64748B;}
+    div[data-testid="stMetricValue"] {font-weight: 700;}
     .section-note {color: #64748B; margin-top: -.6rem;}
     .demo-pill {
         display: inline-block; padding: .28rem .65rem; border-radius: 999px;
@@ -421,7 +422,7 @@ with st.sidebar:
     city_options = list(CITY_META)
     selected_cities = city_options
     st.markdown("**Decision geography**")
-    st.markdown("New York City · Citi Bike")
+    st.markdown("New York City · CitiBike")
 
     # San Francisco's rows in `data` span further back than NYC's, so scope
     # the date picker to NYC-only dates rather than the full dataset's range.
@@ -480,7 +481,7 @@ st.markdown(
       </div>
       <div style="position:relative; z-index:1;">
         <div class="eyebrow">Capstone project · data-driven investment case</div>
-        <h1>Citi Bike is a $196M/yr business running at capacity.</h1>
+        <h1>CitiBike is a $196M/yr business running at capacity.</h1>
         <p>50% of stations are maxed out. Trains are failing. 250 new stations pay back in 17 months.
         This dashboard is the evidence — start with the Overview, then follow the tabs left to right.</p>
       </div>
@@ -509,7 +510,7 @@ with st.container(key="kpi-banner"):
     metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
     metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
     # Fleet size isn't in the trip dataset (no bike-ID field to count) — this is
-    # Citi Bike's own reported NYC fleet size, not derived from the filtered data.
+    # CitiBike's own reported NYC fleet size, not derived from the filtered data.
     CITIBIKE_FLEET_SIZE = 37_000
     # NYC IBO, Nov. 2025: "e-bikes grew from a pilot of just 200 bikes to over
     # 16,000 today" — the rest of the reported 37,000-bike fleet is classic bikes.
@@ -518,7 +519,7 @@ with st.container(key="kpi-banner"):
         "NYC fleet size",
         f"{CITIBIKE_FLEET_SIZE:,} bikes",
         help=(
-            "Citi Bike's reported NYC fleet size as of 2024 (NYC Independent Budget "
+            "CitiBike's reported NYC fleet size as of 2024 (NYC Independent Budget "
             "Office, Nov. 2025). Unlike the other KPIs, this is a fixed reported "
             "figure — it doesn't respond to the date range filter."
         ),
@@ -595,7 +596,7 @@ cumulative_gap = sum(
 ) = st.tabs(
     [
         "Home",
-        "Citi Bike at a Glance",
+        "CitiBike at a Glance",
         "Government Investment",
         "Station Explorer",
         "MTA Connection",
@@ -613,7 +614,7 @@ BIKE_COLORS = {"Electric": "#2D76A4", "Classic": "#48C4E4"}
 with home_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        "<strong>The short version:</strong> NYC's Citi Bike contract with DOT runs "
+        "<strong>The short version:</strong> NYC's CitiBike contract with DOT runs "
         "through May 2029. That gives the city a window to negotiate the next chapter now — "
         "before the system outgrows itself and before fares climb further out of reach."
         "</p></div>",
@@ -626,7 +627,7 @@ with home_tab:
     )
     st.subheader("The 2029 contract is the moment to act")
     st.markdown(
-        "Citi Bike operates in NYC under an agreement with the Department of "
+        "CitiBike operates in NYC under an agreement with the Department of "
         "Transportation that runs **through May 2029**. Every year between now and then "
         "is a year the city can shape what comes next — station density, fare "
         "structure, service guarantees — instead of inheriting whatever the system "
@@ -653,13 +654,13 @@ with home_tab:
                 f"${avg_ride['price']:.2f}",
                 help=(
                     f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
-                    "(computed directly from raw Citi Bike trip data). The base "
+                    "(computed directly from raw CitiBike trip data). The base "
                     f"single-ride price includes {avg_ride['included_minutes']:.0f} minutes, "
                     "so the average ride costs the flat unlock price with no overage."
                     if avg_ride["overage_minutes"] == 0
                     else (
                         f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
-                        "(computed directly from raw Citi Bike trip data), which runs "
+                        "(computed directly from raw CitiBike trip data), which runs "
                         f"{avg_ride['overage_minutes']:.1f} min past the "
                         f"{avg_ride['included_minutes']:.0f}-min included window."
                     )
@@ -674,7 +675,7 @@ with home_tab:
         "supply-constrained doesn't get cheaper on its own: without new investment, "
         "the pressure on fares only builds. **The affordability problem and the "
         "capacity problem are the same problem.** See the full price history on the "
-        "**Citi Bike at a Glance** tab."
+        "**CitiBike at a Glance** tab."
     )
 
     st.markdown("---")
@@ -689,7 +690,7 @@ with home_tab:
         f"today's estimated \\${rev['total_estimated_revenue']:,.0f}/yr — enough "
         "headroom that growth doesn't have to mean higher fares. That new margin "
         "can fund **lower membership and per-ride pricing** at the same time the "
-        "network gets bigger, turning Citi Bike into both a larger *and* a more "
+        "network gets bigger, turning CitiBike into both a larger *and* a more "
         "accessible system, not a choice between the two."
     )
 
@@ -744,15 +745,15 @@ with home_tab:
 with overview_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        '<strong>The big picture:</strong> NYC Citi Bike demand is massive and growing. '
-        'Members dominate ridership, e-bikes drive 70% of trips, and weekday rush hours '
+        '<strong>The big picture:</strong> NYC CitiBike demand is massive and growing. '
+        'Members dominate ridership, Electric bikes drive 70% of trips, and weekday rush hours '
         'show clear commuter patterns — this is transit infrastructure, not recreation.'
         '</p></div>',
         unsafe_allow_html=True,
     )
 
     st.subheader("Annual membership price, 2013–present")
-    st.caption("What Citi Bike has charged for an annual membership since launch.")
+    st.caption("What CitiBike has charged for an annual membership since launch.")
     price_history = load_price_history()
     price_history["price_label"] = price_history["price_nominal"].map(lambda v: f"${v:,.0f}")
     price_min = price_history["price_nominal"].min()
@@ -771,7 +772,7 @@ with overview_tab:
         line_width=3,
         marker=dict(size=9, color="#FF00BF"),
         textposition="top center",
-        textfont=dict(size=11, color="#4B5563"),
+        textfont=dict(size=20, color="#4B5563"),
     )
     price_chart.update_layout(
         height=380,
@@ -844,7 +845,7 @@ with overview_tab:
         st.plotly_chart(rider_donut, use_container_width=True)
 
     st.subheader("Weekly rhythm by bike type")
-    st.caption("Average NYC daily trips by weekday, electric vs. classic bikes.")
+    st.caption("Average NYC daily trips by weekday, Electric vs. Classic bikes.")
     weekday_summary = demand_service.weekday_bike_type_demand(nyc_filtered)
     weekday_chart = px.bar(
         weekday_summary,
@@ -877,7 +878,7 @@ with overview_tab:
         height=DONUT_HEIGHT,
         margin=dict(l=10, r=10, t=40, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
-        title=dict(text="E-bike vs. classic", font=dict(size=14)),
+        title=dict(text="Electric vs. Classic", font=dict(size=14)),
     )
 
     weekday_col, bike_col = st.columns([7, 3])
@@ -886,7 +887,7 @@ with overview_tab:
     with bike_col:
         st.plotly_chart(bike_donut, use_container_width=True)
 
-    st.subheader("The physical fleet: e-bike vs. classic bikes")
+    st.subheader("The physical fleet: Electric vs. Classic bikes")
     classic_fleet_count = CITIBIKE_FLEET_SIZE - CITIBIKE_EBIKE_FLEET_COUNT
     ebike_fleet_pct = CITIBIKE_EBIKE_FLEET_COUNT / CITIBIKE_FLEET_SIZE
     fleet_bar = go.Figure(
@@ -926,7 +927,7 @@ with overview_tab:
         / bike_mix["trips"].sum()
     )
     st.caption(
-        f"E-bikes are only {ebike_fleet_pct:.0%} of the physical fleet — but they "
+        f"Electric bikes are only {ebike_fleet_pct:.0%} of the physical fleet — but they "
         f"carry {electric_ride_share:.0%} of all trips (see the donut above). A "
         "minority of the bikes are doing the majority of the riding, which is "
         "exactly why the fleet mix, not just its size, matters for the next "
@@ -1085,7 +1086,7 @@ with overview_tab:
 with stations_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        '<strong>Where is demand highest?</strong> The map below shows every NYC Citi Bike station '
+        '<strong>Where is demand highest?</strong> The map below shows every NYC CitiBike station '
         'colored by demand pressure (trips vs. dock capacity). Dark magenta = maxed out. '
         'Over half the network is at or above capacity.'
         '</p></div>',
@@ -1316,7 +1317,7 @@ with mta_tab:
         '</p></div>',
         unsafe_allow_html=True,
     )
-    st.subheader("Where MTA demand and delays signal a Citi Bike opportunity")
+    st.subheader("Where MTA demand and delays signal a CitiBike opportunity")
     st.markdown(
         '<p class="section-note">High transit ridership paired with relatively low '
         "bike-share demand or weaker reliability can indicate a first/last-mile and "
@@ -1331,7 +1332,7 @@ with mta_tab:
         )
 
     if mta_opportunity.empty:
-        st.info("No Citi Bike stations match the current MTA opportunity table.")
+        st.info("No CitiBike stations match the current MTA opportunity table.")
     else:
         # ── MTA KPI summary cards ──
         avg_delay = mta_opportunity["mta_delay_rate"].mean()
@@ -1380,7 +1381,7 @@ with mta_tab:
             range_color=(0, opportunity_max),
             labels={
                 "mta_daily_riders": "MTA daily riders",
-                "bike_daily_trips": "Citi Bike daily trips",
+                "bike_daily_trips": "CitiBike daily trips",
                 "transit_opportunity_score": "Opportunity score",
             },
             trendline="ols",
@@ -1505,11 +1506,11 @@ with mta_tab:
                 <thead>
                     <tr>
                         <th>Neighborhood</th>
-                        <th>Citi Bike station</th>
+                        <th>CitiBike station</th>
                         <th>MTA riders/day</th>
                         <th>MTA delay rate</th>
                         <th>Bike trips/day</th>
-                        <th>Investment signal</th>
+                        <th>Investment signal (0&ndash;100)</th>
                     </tr>
                 </thead>
                 <tbody>{table_rows}</tbody>
@@ -1530,11 +1531,11 @@ with success_tab:
     )
     st.subheader("Success stories: what public investment already did elsewhere")
     st.markdown(
-        '<p class="section-note">Citi Bike is the target of this investment case, not a '
+        '<p class="section-note">CitiBike is the target of this investment case, not a '
         "success story — these six systems are independent, external evidence that "
         "sustained public investment and public-private partnerships reliably grow "
         "ridership, expand infrastructure, and put bike-share on stable financial "
-        "footing. None of the figures below are compared to NYC or Citi Bike.</p>",
+        "footing. None of the figures below are compared to NYC or CitiBike.</p>",
         unsafe_allow_html=True,
     )
 
@@ -1926,7 +1927,7 @@ with investment_tab:
 with dot_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        '<strong>The bottom line:</strong> Citi Bike is a $196M/yr business running at capacity '
+        '<strong>The bottom line:</strong> CitiBike is a $196M/yr business running at capacity '
         'in a city where 8.3M people are stuck with unreliable trains. 250 new stations = '
         '$11.3M/yr net profit, 17-month payback. This tab walks through the 6 arguments why.'
         '</p></div>',
@@ -1976,7 +1977,7 @@ with dot_tab:
     st.markdown(
         "MTA ridership is massive — millions rely on it daily. But delays are chronic, "
         "service is unreliable, and fares keep rising. **People are already switching to "
-        "Citi Bike when trains fail.** We can see it in the data."
+        "CitiBike when trains fail.** We can see it in the data."
     )
 
     mta_nyc_cols = st.columns(2)
@@ -2058,6 +2059,22 @@ with dot_tab:
             st.info("MTA opportunity data not available.")
 
     if not mta_opportunity.empty:
+        # Matches the top bucket ("30-35%") of the histogram above.
+        n_stations = len(mta_opportunity)
+        very_high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] >= 0.30]
+        very_high_pct = len(very_high_delay) / n_stations * 100
+        st.markdown(
+            '<div class="tab-takeaway"><p>'
+            f"<strong>{very_high_pct:.0f}%</strong> of stations "
+            f"(<strong>{len(very_high_delay)} of {n_stations}</strong>) have an MTA "
+            f"delay rate of <strong>30% or higher</strong>. Delay rate reflects the "
+            "subway line(s) serving each station (MTA publishes reliability by "
+            "line, not by individual station), so nearby stations on the same "
+            "line share an identical rate."
+            "</p></div>",
+            unsafe_allow_html=True,
+        )
+
         high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] > 0.05]
         if not high_delay.empty:
             avg_delay = high_delay["mta_delay_rate"].mean()
@@ -2066,7 +2083,7 @@ with dot_tab:
                 '<div class="tab-takeaway"><p>'
                 f"<strong>{len(high_delay)} neighborhoods</strong> have subway delay rates above 5%. "
                 f"That's <strong>{total_affected_riders:,.0f} daily MTA riders</strong> stuck waiting for trains "
-                f"that are late {avg_delay:.0%} of the time. Every one of them is a potential Citi Bike rider."
+                f"that are late {avg_delay:.0%} of the time. Every one of them is a potential CitiBike rider."
                 "</p></div>",
                 unsafe_allow_html=True,
             )
@@ -2076,7 +2093,7 @@ with dot_tab:
     # ===================================================================
     st.markdown("### 3. The value: green energy, lower cost, healthier city")
     st.markdown(
-        "Citi Bike isn't just a backup for broken trains — it's a better option for "
+        "CitiBike isn't just a backup for broken trains — it's a better option for "
         "millions of short urban trips. The target rider: anyone traveling 0.5-3 miles "
         "who currently waits underground or sits in traffic."
     )
@@ -2089,31 +2106,31 @@ with dot_tab:
         value_cols = st.columns(3)
         with value_cols[0]:
             st.markdown("**Zero emissions**")
-            st.metric("E-bike share in NYC", f"{nyc_ebike_pct:.0%}")
+            st.metric("Electric share in NYC", f"{nyc_ebike_pct:.0%}")
             st.markdown(
                 f"**{nyc_electric:,.0f} electric trips** in our dataset alone. "
-                "Every e-bike trip replaces a car ride or rideshare — "
+                "Every Electric trip replaces a car ride or rideshare — "
                 "zero tailpipe emissions, zero congestion contribution."
             )
 
         with value_cols[1]:
             st.markdown("**Saves riders money**")
-            st.metric("Citi Bike annual membership", "$239/yr")
-            st.metric("MTA monthly unlimited", "$132/mo ($1,584/yr)")
+            st.metric("CitiBike annual membership", "$239/yr")
+            st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
             st.markdown(
-                "A Citi Bike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
+                "A CitiBike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
                 "For casual riders, single trips cost \\$4.99 vs. \\$2.90 subway fare — "
                 "but with zero wait time and door-to-door service."
             )
 
         with value_cols[2]:
             st.markdown("**Reliable & fast**")
-            st.metric("Avg Citi Bike availability", "24/7")
+            st.metric("Avg CitiBike availability", "24/7")
             st.metric("No signal failures", "Ever")
             st.markdown(
                 "No track fires. No signal delays. No weekend service changes. "
                 "Bikes are available when you need them. For trips under 3 miles, "
-                "Citi Bike is often **faster than the subway** door-to-door."
+                "CitiBike is often **faster than the subway** door-to-door."
             )
 
     # ===================================================================
@@ -2157,7 +2174,7 @@ with dot_tab:
     # ===================================================================
     st.markdown("### 5. The money: why Lyft should fund this and how much they'll make")
     st.markdown(
-        "This isn't charity. Citi Bike is already a **\\$196M/year revenue engine**. "
+        "This isn't charity. CitiBike is already a **\\$196M/year revenue engine**. "
         "Expansion doesn't cost Lyft money — it **makes** Lyft money. Here's the math."
     )
 
@@ -2174,7 +2191,7 @@ with dot_tab:
     sponsorship_revenue = rev["sponsorship_revenue"]
     total_current_revenue = rev["total_estimated_revenue"]
 
-    st.markdown("#### Current Citi Bike revenue (estimated from our data)")
+    st.markdown("#### Current CitiBike revenue (estimated from our data)")
 
     with st.container(key="kpi-rev"):
         rev_cols = st.columns(4)
@@ -2188,8 +2205,8 @@ with dot_tab:
                 f"${rev['assumptions_used']['single_ride_price']:.2f}"
             )
         with rev_cols[2]:
-            st.metric("E-bike overage fees", f"${ebike_overage_revenue:,.0f}")
-            st.caption(f"{annual_ebike_trips:,.0f} e-bike trips x $3.24 avg")
+            st.metric("Electric overage fees", f"${ebike_overage_revenue:,.0f}")
+            st.caption(f"{annual_ebike_trips:,.0f} Electric trips x $3.24 avg")
         with rev_cols[3]:
             st.metric("Title sponsorship", f"${sponsorship_revenue:,.0f}")
             st.caption("Citigroup naming deal")
@@ -2199,7 +2216,7 @@ with dot_tab:
     )
     st.markdown(
         f"That's from **{nyc_annual_trips:,.0f} trips/year** across **{active_stations:,} stations**. "
-        f"The biggest revenue driver? **E-bike overage fees at "
+        f"The biggest revenue driver? **Electric overage fees at "
         f"\\${ebike_overage_revenue:,.0f}/yr** — "
         f"with {nyc_ebike_pct:.0%} of rides now electric, every trip generates "
         "\\$3.24 in usage fees on top of the membership or single-ride price."
@@ -2226,7 +2243,7 @@ with dot_tab:
             st.markdown("**New revenue (annual)**")
             st.metric("New member subscriptions", f"${new_member_revenue:,.0f}")
             st.metric("New casual ride fees", f"${new_casual_revenue:,.0f}")
-            st.metric("New e-bike overage fees", f"${new_ebike_revenue:,.0f}")
+            st.metric("New Electric overage fees", f"${new_ebike_revenue:,.0f}")
             st.metric("Total new revenue/year", f"${new_total_revenue:,.0f}", delta=f"+{new_total_revenue/total_current_revenue*100:.0f}% revenue growth")
 
         with expand_cols[1]:
@@ -2344,7 +2361,7 @@ with dot_tab:
         st.plotly_chart(resilience_chart, use_container_width=True)
         st.markdown(
             "**Top-right quadrant** = neighborhoods where the most people ride the worst trains. "
-            "These are the places where Citi Bike expansion will have the highest adoption rate. "
+            "These are the places where CitiBike expansion will have the highest adoption rate. "
             "Our XGBoost model predicts station-level demand with **32% better accuracy** than "
             "seasonal baselines — Lyft can place new stations with confidence, not guesswork."
         )
@@ -2360,16 +2377,16 @@ with dot_tab:
 |---|---|---|
 | **SF model works** | Comparable per-station utilization with 1/10th NYC's population | Replicate SFMTA partnership model with NYC DOT |
 | **NYC demand is massive** | 60.9M trips in our dataset, 5.4M in peak month alone | Invest in capacity — this market is supply-constrained, not demand-constrained |
-| **Trains are failing** | Chronic delays across dozens of neighborhoods | Position Citi Bike as transit resilience infrastructure, not recreation |
-| **E-bikes are winning** | 70% of NYC trips are now electric | Accelerate e-bike fleet + charging infra — this is where the growth is |
-| **Green + cheap** | Zero emissions, \\$1,345/yr savings vs MetroCard | Market Citi Bike as the smart commute, not a tourist product |
+| **Trains are failing** | Chronic delays across dozens of neighborhoods | Position CitiBike as transit resilience infrastructure, not recreation |
+| **Electric bikes are winning** | 70% of NYC trips are now electric | Accelerate Electric fleet + charging infra — this is where the growth is |
+| **Green + cheap** | Zero emissions, \\$1,345/yr savings vs MetroCard | Market CitiBike as the smart commute, not a tourist product |
 | **We can predict demand** | XGBoost model: 32% better than baselines across 2,466 stations | Use our forecasting engine to optimize fleet placement and expansion |
         """
     )
 
     st.markdown("#### The bottom line")
     st.warning(
-        "**Citi Bike is the largest bike-share system in the Americas, running at capacity, "
+        "**CitiBike is the largest bike-share system in the Americas, running at capacity, "
         "in a city where 8.3 million people are stuck with unreliable trains.** "
         "San Francisco proved that government partnership unlocks bike-share growth. "
         "NYC is 10x the market. Lyft has the infrastructure. The data says invest now — "
