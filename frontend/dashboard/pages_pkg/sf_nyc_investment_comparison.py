@@ -253,16 +253,14 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         line=dict(color="#F59E0B", width=2, dash="dash"),
         name="Trend",
     ))
-    fig.add_vline(
-        x="2023-02-01", line_dash="dash", line_color="#1B3A6B",
-        annotation_text="Feb 2023: MTC investment", annotation_position="top",
-        annotation_font_color="#1B3A6B",
-    )
-    fig.add_vline(
-        x="2023-11-01", line_dash="dashdot", line_color="#7DD3FC",
-        annotation_text="Nov 2023: price drop", annotation_position="top",
-        annotation_font_color="#7DD3FC",
-    )
+    fig.add_shape(type="line", x0="2023-02-01", x1="2023-02-01", y0=0, y1=1,
+                  yref="paper", line=dict(dash="dash", color="#1B3A6B", width=1))
+    fig.add_annotation(x="2023-02-01", y=1, yref="paper", text="Feb 2023: MTC investment",
+                       showarrow=False, font=dict(color="#1B3A6B", size=11), yshift=10)
+    fig.add_shape(type="line", x0="2023-11-01", x1="2023-11-01", y0=0, y1=1,
+                  yref="paper", line=dict(dash="dashdot", color="#7DD3FC", width=1))
+    fig.add_annotation(x="2023-11-01", y=1, yref="paper", text="Nov 2023: price drop",
+                       showarrow=False, font=dict(color="#7DD3FC", size=11), yshift=10)
     fig.update_xaxes(
         tickangle=0, tickmode="array",
         tickvals=quarter_starts, ticktext=quarter_ticktext,
