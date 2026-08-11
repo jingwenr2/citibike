@@ -2110,7 +2110,6 @@ with dot_tab:
         # edges aligned.
         value_cols = st.columns([1, 2])
         with value_cols[0]:
-            st.markdown("**Zero emissions**")
             st.metric("Electric share in NYC", f"{nyc_ebike_pct:.0%}")
             st.markdown(
                 f"**{nyc_electric:,.0f} electric trips** in our dataset alone. "
@@ -2119,11 +2118,6 @@ with dot_tab:
             )
 
         with value_cols[1]:
-            st.markdown(
-                '<p style="text-align:center; font-weight:700; margin-bottom:.5rem;">'
-                "Saves riders money</p>",
-                unsafe_allow_html=True,
-            )
             money_cols = st.columns(2)
             with money_cols[0]:
                 st.metric("CitiBike annual membership", "$239/yr")
