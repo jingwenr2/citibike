@@ -1235,7 +1235,8 @@ with forecast_tab:
 
     _fc_daily = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
     # Weekly aggregation for a cleaner chart
-    _fc_daily["week"] = _fc_daily["date"].dt.to_period("W").apply(lambda r: r.start_time)
+    _fc_daily["week"] = _fc_daily["date"].dt.isocalendar().week
+    _fc_daily["week"] = _fc_daily["date"] - pd.to_timedelta(_fc_daily["date"].dt.dayofweek, unit="D")
     _fc_weekly = _fc_daily.groupby("week", as_index=False)["trips"].sum().rename(columns={"week": "date"})
     _fc_recent_weeks = _fc_weekly.tail(min(8, len(_fc_weekly)))
     _fc_baseline_weekly = _fc_recent_weeks["trips"].mean()
