@@ -247,24 +247,24 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         name="Trend",
     ))
     fig.add_vline(
-        x=pd.Timestamp("2023-02-01"), line_dash="dash", line_color="#FF00BF",
+        x=pd.Timestamp("2023-02-01"), line_dash="dash", line_color="#1B3A6B",
         annotation_text="Feb 2023: MTC investment", annotation_position="top",
-        annotation_font_color="#FF00BF",
+        annotation_font_color="#1B3A6B",
     )
     fig.add_vline(
         x=pd.Timestamp("2023-11-01"), line_dash="dashdot", line_color="#7DD3FC",
         annotation_text="Nov 2023: price drop", annotation_position="bottom right",
         annotation_yshift=14, annotation_font_color="#7DD3FC",
     )
-    fig.update_xaxes(tickangle=-90, tickformat="%b %Y", dtick="M1")
-    fig.update_yaxes(tickangle=35)
+    fig.update_xaxes(tickangle=-45, tickformat="%b %Y", dtick="M1")
+    fig.update_yaxes(tickangle=0)
     apply_layout(
         fig, height=440,
         title="San Francisco (Bay Wheels) — total trips per month",
         margin=dict(l=10, r=10, t=70, b=10),
         plot_bgcolor="white",
     )
-    fig.update_layout(title_font_color="#FF00BF")
+    fig.update_layout(title_font_color="#0F172A")
     st.plotly_chart(fig, use_container_width=True)
 
     # ── Per-station before/after ──
