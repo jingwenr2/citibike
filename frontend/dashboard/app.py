@@ -1227,19 +1227,22 @@ with forecast_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         '<strong>Predicting demand:</strong> Our XGBoost model forecasts daily station-level trips '
-        'with 42.5% better accuracy than a naive baseline. Adjust the sliders to explore '
-        'what-if scenarios for weather and policy changes.'
+        'with 42.5% better accuracy than a naive baseline. Use the sliders to simulate '
+        'how adding new stations changes projected ridership.'
         '</p></div>',
         unsafe_allow_html=True,
     )
 
     _fc_daily = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
     # Weekly aggregation for a cleaner chart
-    _fc_daily["week"] = _fc_daily["date"].dt.isocalendar().week
     _fc_daily["week"] = _fc_daily["date"] - pd.to_timedelta(_fc_daily["date"].dt.dayofweek, unit="D")
     _fc_weekly = _fc_daily.groupby("week", as_index=False)["trips"].sum().rename(columns={"week": "date"})
-    _fc_recent_weeks = _fc_weekly.tail(min(8, len(_fc_weekly)))
-    _fc_baseline_weekly = _fc_recent_weeks["trips"].mean()
+    _fc_baseline_weekly = _fc_weekly.tail(min(8, len(_fc_weekly)))["trips"].mean()
+
+    # Build a lookup of same-week-of-year averages for seasonal shape
+    _fc_weekly_copy = _fc_weekly.copy()
+    _fc_weekly_copy["iso_week"] = _fc_weekly_copy["date"].dt.isocalendar().week.astype(int)
+    _fc_week_seasonal = _fc_weekly_copy.groupby("iso_week")["trips"].mean()
 
     @st.fragment
     def forecast_scenario():
@@ -1251,16 +1254,27 @@ with forecast_tab:
         chart_col, control_col = st.columns([2.2, 0.8])
         with control_col:
             st.markdown("**Forecast geography:** New York City")
-            horizon_weeks = st.slider("Forecast horizon (weeks)", 2, 12, 6)
-            weather_effect = st.slider("Weather effect", -30, 30, 0, format="%d%%")
-            event_effect = st.slider("Event / policy effect", -20, 40, 0, format="%d%%")
+            horizon_weeks = st.slider(
+                "How far ahead to forecast", 2, 12, 6,
+                help="Number of weeks into the future to project demand.",
+            )
+            new_stations = st.slider(
+                "New stations added", 0, 300, 0, step=25,
+                help="Simulate adding new Citi Bike stations. Each station adds ~55 trips/day based on current averages.",
+            )
 
         last_date = _fc_weekly["date"].max()
         forecast_dates = pd.date_range(
             last_date + pd.Timedelta(weeks=1), periods=horizon_weeks, freq="W-MON"
         )
-        scenario_factor = (1 + weather_effect / 100) * (1 + event_effect / 100)
-        forecast_values = [_fc_baseline_weekly * scenario_factor] * horizon_weeks
+        # Use seasonal pattern: look up same ISO week from historical data
+        station_boost = new_stations * 55 * 7  # ~55 trips/day/station × 7 days
+        forecast_values = []
+        for d in forecast_dates:
+            iso_w = int(d.isocalendar().week)
+            seasonal_val = _fc_week_seasonal.get(iso_w, _fc_baseline_weekly)
+            forecast_values.append(seasonal_val + station_boost)
+
         forecast_frame = pd.DataFrame(
             {"date": forecast_dates, "forecast": forecast_values}
         )
@@ -1287,7 +1301,7 @@ with forecast_tab:
             # Scenario line
             figure.add_trace(go.Scatter(
                 x=forecast_frame["date"], y=forecast_frame["forecast"],
-                name="Scenario", line=dict(color="#FF00BF", width=3),
+                name="Forecast", line=dict(color="#FF00BF", width=3),
                 mode="lines+markers", marker=dict(size=5),
             ))
             figure.update_layout(
