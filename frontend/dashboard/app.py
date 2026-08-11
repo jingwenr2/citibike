@@ -1957,12 +1957,15 @@ with dot_tab:
     with proof_cols[1]:
         st.markdown("**Financial sustainability**")
         st.markdown(bay_wheels_story["stats"]["Financial sustainability"])
-    st.info(
-        "Bay Wheels is one of three external case studies — see the **Success stories** "
-        "tab for the full evidence base (also Washington D.C. "
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        "Bay Wheels is one of three external case studies — see the <strong>Success "
+        "stories</strong> tab for the full evidence base (also Washington D.C. "
         "and Chicago), each showing what sustained public investment or a formal "
         "public-private partnership does for ridership, infrastructure, and financial "
-        "sustainability. **Imagine what NYC could do with the same backing.**"
+        "sustainability. <strong>Imagine what NYC could do with the same backing.</strong>"
+        "</p></div>",
+        unsafe_allow_html=True,
     )
 
     # ===================================================================
@@ -1977,19 +1980,27 @@ with dot_tab:
 
     mta_nyc_cols = st.columns(2)
     with mta_nyc_cols[0]:
+        # External markdown title (not the Plotly figure's own title=), so
+        # both columns' titles sit on the same baseline and both charts'
+        # top edges align — matches the right column's title pattern.
+        st.markdown("**Ridership scale: NYC dwarfs every other bike-share**")
         monthly_trend = demand_service.monthly_demand(filtered)
         monthly_chart = px.line(
             monthly_trend,
             x="month",
             y="trips",
             color="city",
-            color_discrete_map={city: meta["color"] for city, meta in CITY_META.items()},
+            # Page-scoped override of the app-wide CITY_META colors: pink for
+            # NYC, Citi Bike blue for SF, on this chart only.
+            color_discrete_map={
+                "New York City": "#FF00BF",
+                "San Francisco": CITY_META["New York City"]["color"],
+            },
             labels={"trips": "Monthly trips", "month": "", "city": "System"},
-            title="Ridership scale: NYC dwarfs every other bike-share",
         )
         monthly_chart.update_layout(
             height=350,
-            margin=dict(l=10, r=10, t=35, b=10),
+            margin=dict(l=10, r=10, t=40, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="white",
             legend_title_text="",
@@ -1998,39 +2009,81 @@ with dot_tab:
 
     with mta_nyc_cols[1]:
         if not mta_opportunity.empty:
-            delay_chart = px.bar(
-                mta_opportunity.sort_values("mta_delay_rate", ascending=False).head(20),
-                x="neighborhood",
-                y="mta_delay_rate",
-                color="bike_daily_trips",
-                color_continuous_scale=["#CBD5E1", "#EF4444"],
-                labels={
-                    "mta_delay_rate": "MTA delay rate",
-                    "neighborhood": "",
-                    "bike_daily_trips": "Bike trips/day",
-                },
-                title="Where trains fail, bikes fill the gap",
+            st.markdown("**Where trains fail, bikes fill the gap**")
+
+            # Delay rates cluster tightly (17.7%-33.8%) rather than spanning
+            # 0-100%, so buckets are sized to where the real data lives
+            # rather than generic 10-point deciles.
+            bucket_edges = [0.15, 0.20, 0.25, 0.30, 0.35]
+            bucket_labels = ["15-20%", "20-25%", "25-30%", "30-35%"]
+            n_stations = len(mta_opportunity)
+            bucket_counts = (
+                pd.cut(
+                    mta_opportunity["mta_delay_rate"],
+                    bins=bucket_edges,
+                    labels=bucket_labels,
+                    include_lowest=True,
+                )
+                .value_counts()
+                .reindex(bucket_labels)
+                .fillna(0)
+                .astype(int)
             )
-            delay_chart.update_layout(
-                height=350,
-                margin=dict(l=10, r=10, t=35, b=10),
+            bucket_pct = bucket_counts / n_stations * 100
+
+            hist_chart = go.Figure(go.Bar(
+                x=bucket_labels,
+                y=bucket_counts.to_numpy(),
+                marker_color="#1E40AF",
+                text=[f"{c} stations" for c in bucket_counts.to_numpy()],
+                textposition="outside",
+                cliponaxis=False,
+            ))
+            hist_chart.update_layout(
+                height=380,
+                margin=dict(l=10, r=10, t=40, b=10),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="white",
-                yaxis_tickformat=".0%",
+                xaxis_title="MTA delay rate",
+                yaxis_title="Number of stations",
+                yaxis=dict(
+                    gridcolor="#F1F5F9",
+                    range=[0, float(bucket_counts.max()) * 1.25],
+                ),
+                xaxis=dict(categoryorder="array", categoryarray=bucket_labels),
             )
-            st.plotly_chart(delay_chart, use_container_width=True)
+            st.plotly_chart(hist_chart, use_container_width=True)
         else:
             st.info("MTA opportunity data not available.")
 
     if not mta_opportunity.empty:
+        # Matches the top bucket ("30-35%") of the histogram above.
+        n_stations = len(mta_opportunity)
+        very_high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] >= 0.30]
+        very_high_pct = len(very_high_delay) / n_stations * 100
+        st.markdown(
+            '<div class="tab-takeaway"><p>'
+            f"<strong>{very_high_pct:.0f}%</strong> of stations "
+            f"(<strong>{len(very_high_delay)} of {n_stations}</strong>) have an MTA "
+            f"delay rate of <strong>30% or higher</strong>. Delay rate reflects the "
+            "subway line(s) serving each station (MTA publishes reliability by "
+            "line, not by individual station), so nearby stations on the same "
+            "line share an identical rate."
+            "</p></div>",
+            unsafe_allow_html=True,
+        )
+
         high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] > 0.05]
         if not high_delay.empty:
             avg_delay = high_delay["mta_delay_rate"].mean()
             total_affected_riders = high_delay["mta_daily_riders"].sum()
-            st.error(
-                f"**{len(high_delay)} neighborhoods** have subway delay rates above 5%. "
-                f"That's **{total_affected_riders:,.0f} daily MTA riders** stuck waiting for trains "
+            st.markdown(
+                '<div class="tab-takeaway"><p>'
+                f"<strong>{len(high_delay)} neighborhoods</strong> have subway delay rates above 5%. "
+                f"That's <strong>{total_affected_riders:,.0f} daily MTA riders</strong> stuck waiting for trains "
                 f"that are late {avg_delay:.0%} of the time. Every one of them is a potential CitiBike rider."
+                "</p></div>",
+                unsafe_allow_html=True,
             )
 
     # ===================================================================
@@ -2048,7 +2101,12 @@ with dot_tab:
     nyc_ebike_pct = nyc_electric / nyc_trips_total if nyc_trips_total > 0 else 0
 
     with st.container(key="kpi-value"):
-        value_cols = st.columns(3)
+        # [1, 2] split: "Zero emissions" is one card-width; the money group
+        # is two card-widths so its centered header/description span the
+        # combined width of both money cards, and both card rows start
+        # right after a single header line, keeping all three cards' top
+        # edges aligned.
+        value_cols = st.columns([1, 2])
         with value_cols[0]:
             st.markdown("**Zero emissions**")
             st.metric("Electric share in NYC", f"{nyc_ebike_pct:.0%}")
@@ -2059,23 +2117,23 @@ with dot_tab:
             )
 
         with value_cols[1]:
-            st.markdown("**Saves riders money**")
-            st.metric("CitiBike annual membership", "$239/yr")
-            st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
             st.markdown(
-                "A CitiBike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
-                "For casual riders, single trips cost \\$4.99 vs. \\$2.90 subway fare — "
-                "but with zero wait time and door-to-door service."
+                '<p style="text-align:center; font-weight:700; margin-bottom:.5rem;">'
+                "Saves riders money</p>",
+                unsafe_allow_html=True,
             )
-
-        with value_cols[2]:
-            st.markdown("**Reliable & fast**")
-            st.metric("Avg CitiBike availability", "24/7")
-            st.metric("No signal failures", "Ever")
+            money_cols = st.columns(2)
+            with money_cols[0]:
+                st.metric("CitiBike annual membership", "$239/yr")
+            with money_cols[1]:
+                st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
             st.markdown(
-                "No track fires. No signal delays. No weekend service changes. "
-                "Bikes are available when you need them. For trips under 3 miles, "
-                "CitiBike is often **faster than the subway** door-to-door."
+                '<p style="text-align:center;">'
+                "A CitiBike member saves <strong>\\$1,345/year</strong> vs. an "
+                "unlimited MetroCard. For casual riders, single trips cost "
+                "\\$4.99 vs. \\$2.90 subway fare — but with zero wait time and "
+                "door-to-door service.</p>",
+                unsafe_allow_html=True,
             )
 
     # ===================================================================
