@@ -1233,16 +1233,37 @@ with forecast_tab:
         unsafe_allow_html=True,
     )
 
-    _fc_daily = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
-    # Weekly aggregation for a cleaner chart
-    _fc_daily["week"] = _fc_daily["date"] - pd.to_timedelta(_fc_daily["date"].dt.dayofweek, unit="D")
-    _fc_weekly = _fc_daily.groupby("week", as_index=False)["trips"].sum().rename(columns={"week": "date"})
-    _fc_baseline_weekly = _fc_weekly.tail(min(8, len(_fc_weekly)))["trips"].mean()
+    # Load real XGBoost predictions
+    _fc_predictions = pd.read_parquet(
+        Path(__file__).resolve().parents[1] / "models" / "forecast_predictions.parquet"
+    )
+    # Aggregate actual + predicted to daily city-level
+    _fc_pred_daily = _fc_predictions.groupby("date", as_index=False).agg(
+        actual=("trips", "sum"), predicted=("predicted", "sum")
+    ).sort_values("date")
+    # Weekly aggregation — drop last week if incomplete (< 5 days)
+    _fc_pred_daily["week"] = _fc_pred_daily["date"] - pd.to_timedelta(
+        _fc_pred_daily["date"].dt.dayofweek, unit="D"
+    )
+    _fc_week_counts = _fc_pred_daily.groupby("week").size()
+    _fc_full_weeks = _fc_week_counts[_fc_week_counts >= 5].index
+    _fc_pred_daily = _fc_pred_daily[_fc_pred_daily["week"].isin(_fc_full_weeks)]
+    _fc_weekly = _fc_pred_daily.groupby("week", as_index=False).agg(
+        actual=("actual", "sum"), predicted=("predicted", "sum")
+    ).rename(columns={"week": "date"}).sort_values("date")
 
-    # Build a lookup of same-week-of-year averages for seasonal shape
-    _fc_weekly_copy = _fc_weekly.copy()
-    _fc_weekly_copy["iso_week"] = _fc_weekly_copy["date"].dt.isocalendar().week.astype(int)
-    _fc_week_seasonal = _fc_weekly_copy.groupby("iso_week")["trips"].mean()
+    # Also load full history for the actual line before the prediction window
+    _fc_hist_daily = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
+    _fc_hist_daily["week"] = _fc_hist_daily["date"] - pd.to_timedelta(
+        _fc_hist_daily["date"].dt.dayofweek, unit="D"
+    )
+    _fc_hist_week_counts = _fc_hist_daily.groupby("week").size()
+    _fc_hist_full = _fc_hist_week_counts[_fc_hist_week_counts >= 5].index
+    _fc_hist_daily = _fc_hist_daily[_fc_hist_daily["week"].isin(_fc_hist_full)]
+    _fc_hist_weekly = _fc_hist_daily.groupby("week", as_index=False)["trips"].sum().rename(
+        columns={"week": "date"}
+    ).sort_values("date")
+    _fc_baseline_weekly = _fc_hist_weekly.tail(8)["trips"].mean()
 
     @st.fragment
     def forecast_scenario():
@@ -1254,54 +1275,45 @@ with forecast_tab:
         chart_col, control_col = st.columns([2.2, 0.8])
         with control_col:
             st.markdown("**Forecast geography:** New York City")
-            horizon_weeks = st.slider(
-                "How far ahead to forecast", 2, 12, 6,
-                help="Number of weeks into the future to project demand.",
-            )
             new_stations = st.slider(
                 "New stations added", 0, 300, 0, step=25,
                 help="Simulate adding new Citi Bike stations. Each station adds ~55 trips/day based on current averages.",
             )
 
-        last_date = _fc_weekly["date"].max()
-        forecast_dates = pd.date_range(
-            last_date + pd.Timedelta(weeks=1), periods=horizon_weeks, freq="W-MON"
-        )
-        # Use seasonal pattern: look up same ISO week from historical data
         station_boost = new_stations * 55 * 7  # ~55 trips/day/station × 7 days
-        forecast_values = []
-        for d in forecast_dates:
-            iso_w = int(d.isocalendar().week)
-            seasonal_val = _fc_week_seasonal.get(iso_w, _fc_baseline_weekly)
-            forecast_values.append(seasonal_val + station_boost)
-
-        forecast_frame = pd.DataFrame(
-            {"date": forecast_dates, "forecast": forecast_values}
-        )
-        forecast_frame["lower"] = forecast_frame["forecast"] * 0.86
-        forecast_frame["upper"] = forecast_frame["forecast"] * 1.14
 
         with chart_col:
             figure = go.Figure()
-            # Show last 16 weeks of actual data
-            actual_tail = _fc_weekly.tail(min(16, len(_fc_weekly)))
+            # Show historical actual before prediction window
+            pred_start = _fc_weekly["date"].min()
+            hist_before = _fc_hist_weekly[_fc_hist_weekly["date"] < pred_start].tail(12)
             figure.add_trace(go.Scatter(
-                x=actual_tail["date"], y=actual_tail["trips"],
+                x=hist_before["date"], y=hist_before["trips"],
                 name="Actual (weekly)", line=dict(color="#94A3B8", width=2),
                 mode="lines+markers", marker=dict(size=4),
             ))
+            # Actual during prediction window (test set)
+            figure.add_trace(go.Scatter(
+                x=_fc_weekly["date"], y=_fc_weekly["actual"],
+                name="Actual (test period)", line=dict(color="#94A3B8", width=2, dash="dot"),
+                mode="lines+markers", marker=dict(size=4),
+            ))
+            # XGBoost predicted + station boost
+            pred_values = _fc_weekly["predicted"] + station_boost
+            pred_lower = pred_values * 0.88
+            pred_upper = pred_values * 1.12
             # Confidence band
             figure.add_trace(go.Scatter(
-                x=pd.concat([forecast_frame["date"], forecast_frame["date"][::-1]]),
-                y=pd.concat([forecast_frame["upper"], forecast_frame["lower"][::-1]]),
+                x=pd.concat([_fc_weekly["date"], _fc_weekly["date"][::-1]]),
+                y=pd.concat([pred_upper, pred_lower[::-1]]),
                 fill="toself", fillcolor="rgba(255,0,191,.12)",
                 line=dict(color="rgba(255,255,255,0)"),
-                hoverinfo="skip", name="Scenario range",
+                hoverinfo="skip", name="Prediction range",
             ))
-            # Scenario line
+            # XGBoost prediction line
             figure.add_trace(go.Scatter(
-                x=forecast_frame["date"], y=forecast_frame["forecast"],
-                name="Forecast", line=dict(color="#FF00BF", width=3),
+                x=_fc_weekly["date"], y=pred_values,
+                name="XGBoost prediction", line=dict(color="#FF00BF", width=3),
                 mode="lines+markers", marker=dict(size=5),
             ))
             figure.update_layout(
@@ -1311,12 +1323,22 @@ with forecast_tab:
                 xaxis_title="", yaxis_title="Weekly trips",
             )
             st.plotly_chart(figure, use_container_width=True)
-            projected = forecast_frame["forecast"].sum()
-            base_projected = _fc_baseline_weekly * horizon_weeks
-            st.metric(
-                f"Projected {horizon_weeks}-week trips",
+
+            # Model accuracy + projection metrics
+            mae = float((_fc_weekly["actual"] - _fc_weekly["predicted"]).abs().mean())
+            projected = float(pred_values.sum())
+            actual_total = float(_fc_weekly["actual"].sum())
+            n_weeks = len(_fc_weekly)
+            col_a, col_b = st.columns(2)
+            col_a.metric(
+                f"XGBoost MAE (weekly)",
+                compact_number(mae),
+                help="Mean absolute error between actual and predicted weekly trips",
+            )
+            col_b.metric(
+                f"Projected {n_weeks}-week trips",
                 compact_number(projected),
-                f"{projected / base_projected - 1:+.1%} vs recent baseline",
+                f"+{compact_number(station_boost * n_weeks)} from new stations" if new_stations > 0 else "baseline (no new stations)",
             )
 
     forecast_scenario()
