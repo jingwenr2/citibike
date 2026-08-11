@@ -233,6 +233,13 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     slope, intercept = np.polyfit(month_ordinals, monthly_trips.to_numpy(), 1)
     trend_y = slope * month_ordinals + intercept
 
+    # Quarter tick labels ("Q1" over "2023") — Plotly has no built-in
+    # quarter tickformat, so build explicit tick positions/labels instead.
+    quarter_starts = pd.period_range(
+        months_dt.min(), months_dt.max(), freq="Q"
+    ).to_timestamp()
+    quarter_ticktext = [f"Q{ts.quarter}<br>{ts.year}" for ts in quarter_starts]
+
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=months_dt, y=monthly_trips.to_numpy(),
@@ -253,10 +260,13 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     )
     fig.add_vline(
         x=pd.Timestamp("2023-11-01"), line_dash="dashdot", line_color="#7DD3FC",
-        annotation_text="Nov 2023: price drop", annotation_position="bottom right",
-        annotation_yshift=14, annotation_font_color="#7DD3FC",
+        annotation_text="Nov 2023: price drop", annotation_position="top",
+        annotation_font_color="#7DD3FC",
     )
-    fig.update_xaxes(tickangle=-45, tickformat="%b %Y", dtick="M1")
+    fig.update_xaxes(
+        tickangle=0, tickmode="array",
+        tickvals=quarter_starts, ticktext=quarter_ticktext,
+    )
     fig.update_yaxes(tickangle=0)
     apply_layout(
         fig, height=440,

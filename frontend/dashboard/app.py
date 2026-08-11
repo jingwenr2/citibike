@@ -183,16 +183,16 @@ st.markdown(
     }
     /* Each KPI row gets ONE accent color for every tile in that row (each
        row wrapped in st.container(key=...) below) — not a per-tile mix. */
-    .st-key-kpi-banner div[data-testid="stMetric"],
     .st-key-kpi-payoff div[data-testid="stMetric"],
     .st-key-kpi-irr div[data-testid="stMetric"],
     .st-key-kpi-expand div[data-testid="stMetric"],
     .st-key-kpi-govt div[data-testid="stMetric"] { border-left-color: #2D7FF9; }
+    .st-key-kpi-banner div[data-testid="stMetric"],
     .st-key-kpi-problem div[data-testid="stMetric"],
     .st-key-kpi-mta div[data-testid="stMetric"],
     .st-key-kpi-rev div[data-testid="stMetric"],
     .st-key-kpi-value div[data-testid="stMetric"] { border-left-color: #FF00BF; }
-    div[data-testid="stMetricLabel"] {color: #64748B;}
+    [data-testid="stMetricLabel"] {color: #64748B;}
     div[data-testid="stMetricValue"] {font-weight: 700;}
     .section-note {color: #64748B; margin-top: -.6rem;}
     .demo-pill {
@@ -214,7 +214,7 @@ st.markdown(
     }
     .guide-number {
         flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
-        background: #FF00BF; color: white; font-size: .75rem; font-weight: 700;
+        background: #2D7FF9; color: white; font-size: .75rem; font-weight: 700;
         display: flex; align-items: center; justify-content: center; margin-top: 1px;
     }
     .guide-text {
@@ -383,10 +383,6 @@ def compact_number(value: float) -> str:
     return f"{value:,.0f}"
 
 
-def prior_period_delta(frame: pd.DataFrame) -> float:
-    return demand_service.prior_period_delta(frame, load_data())
-
-
 @st.cache_data
 def filter_data(
     _data: pd.DataFrame,
@@ -445,7 +441,6 @@ with st.sidebar:
         options=sorted(data["rider_type"].unique()),
         default=sorted(data["rider_type"].unique()),
     )
-    smoothing = st.slider("Trend smoothing", 1, 28, 7, help="Rolling average in days")
     st.markdown("---")
 
 filtered = filter_data(
@@ -502,11 +497,10 @@ active_stations = nyc_filtered["station_name"].nunique()
 electric_share = demand_service.electric_bike_share(nyc_filtered)
 avg_daily = demand_service.average_daily_trips(nyc_filtered)
 avg_annual_trips = avg_daily * 365
-delta = prior_period_delta(nyc_filtered)
 
 with st.container(key="kpi-banner"):
     metric_cols = st.columns(4)
-    metric_cols[0].metric("NYC Average Annual Trips", compact_number(avg_annual_trips), f"{delta:+.1%} vs prior period")
+    metric_cols[0].metric("NYC Average Annual Trips", compact_number(avg_annual_trips))
     metric_cols[1].metric("NYC average daily demand", compact_number(avg_daily))
     metric_cols[2].metric("NYC active stations", f"{active_stations:,}")
     # Fleet size isn't in the trip dataset (no bike-ID field to count) — this is
@@ -524,35 +518,6 @@ with st.container(key="kpi-banner"):
             "figure — it doesn't respond to the date range filter."
         ),
     )
-
-st.markdown(
-    """
-    <div class="reading-guide">
-      <h3>How to read this dashboard</h3>
-      <div class="guide-step">
-        <div class="guide-number">1</div>
-        <div class="guide-text"><strong>Overview</strong> — See the big picture: how big is demand, who rides, and when.</div>
-      </div>
-      <div class="guide-step">
-        <div class="guide-number">2</div>
-        <div class="guide-text"><strong>Station explorer</strong> — Find which stations are over capacity and where the gaps are.</div>
-      </div>
-      <div class="guide-step">
-        <div class="guide-number">3</div>
-        <div class="guide-text"><strong>Forecast lab</strong> — Our XGBoost model predicts where demand will grow next.</div>
-      </div>
-      <div class="guide-step">
-        <div class="guide-number">4</div>
-        <div class="guide-text"><strong>MTA connection</strong> — Subway delays are pushing riders to bikes. Here's the proof.</div>
-      </div>
-      <div class="guide-step">
-        <div class="guide-number">5</div>
-        <div class="guide-text"><strong>Success stories → Government investment → DOT support case</strong> — The evidence, the math, and the pitch.</div>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
 
 # ---------------------------------------------------------------------
 # Shared investment-case figures — computed once here so the Home landing
@@ -585,25 +550,25 @@ cumulative_gap = sum(
 (
     home_tab,
     overview_tab,
+    sf_nyc_tab,
     investment_tab,
     stations_tab,
     mta_tab,
     dot_tab,
     forecast_tab,
     success_tab,
-    sf_nyc_tab,
     methods_tab,
 ) = st.tabs(
     [
         "Home",
         "CitiBike at a Glance",
+        "Case Study",
         "Government Investment",
         "Station Explorer",
         "MTA Connection",
         "DOT Support Case",
         "Forecast Lab",
         "Success Stories",
-        "SF vs NYC Comparison",
         "Data & Methods",
     ]
 )
@@ -612,6 +577,39 @@ RIDER_COLORS = {"Member": "#2D76A4", "Casual": "#48C4E4"}
 BIKE_COLORS = {"Electric": "#2D76A4", "Classic": "#48C4E4"}
 
 with home_tab:
+    st.markdown(
+        """
+        <div class="reading-guide">
+          <h3>How to read this dashboard</h3>
+          <div class="guide-step">
+            <div class="guide-number">1</div>
+            <div class="guide-text"><strong>CitiBike at a Glance</strong> — See the big picture: how big is demand, who rides, and when.</div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-number">2</div>
+            <div class="guide-text"><strong>Case Study</strong> — San Francisco's Bay Wheels investment outcome, used as supporting evidence for the NYC case.</div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-number">3</div>
+            <div class="guide-text"><strong>Station Explorer</strong> — Find which stations are over capacity and where the gaps are.</div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-number">4</div>
+            <div class="guide-text"><strong>Forecast Lab</strong> — Our XGBoost model predicts where demand will grow next.</div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-number">5</div>
+            <div class="guide-text"><strong>MTA Connection</strong> — Subway delays are pushing riders to bikes. Here's the proof.</div>
+          </div>
+          <div class="guide-step">
+            <div class="guide-number">6</div>
+            <div class="guide-text"><strong>Success Stories → Government Investment → DOT Support Case</strong> — The evidence, the math, and the pitch.</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         '<div class="tab-takeaway"><p>'
         "<strong>The short version:</strong> NYC's CitiBike contract with DOT runs "
@@ -798,7 +796,7 @@ with overview_tab:
     st.markdown("---")
     st.subheader("NYC demand over time")
     st.caption("Member vs. casual ridership, New York City only.")
-    trend = demand_service.daily_demand_trend(nyc_filtered, smoothing=smoothing)
+    trend = demand_service.daily_demand_trend(nyc_filtered, smoothing=7)
     trend_chart = px.line(
         trend,
         x="date",
