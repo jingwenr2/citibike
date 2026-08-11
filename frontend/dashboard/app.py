@@ -2103,7 +2103,12 @@ with dot_tab:
     nyc_ebike_pct = nyc_electric / nyc_trips_total if nyc_trips_total > 0 else 0
 
     with st.container(key="kpi-value"):
-        value_cols = st.columns(3)
+        # [1, 2] split: "Zero emissions" is one card-width; the money group
+        # is two card-widths so its centered header/description span the
+        # combined width of both money cards, and both card rows start
+        # right after a single header line, keeping all three cards' top
+        # edges aligned.
+        value_cols = st.columns([1, 2])
         with value_cols[0]:
             st.markdown("**Zero emissions**")
             st.metric("Electric share in NYC", f"{nyc_ebike_pct:.0%}")
@@ -2114,23 +2119,23 @@ with dot_tab:
             )
 
         with value_cols[1]:
-            st.markdown("**Saves riders money**")
-            st.metric("CitiBike annual membership", "$239/yr")
-            st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
             st.markdown(
-                "A CitiBike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
-                "For casual riders, single trips cost \\$4.99 vs. \\$2.90 subway fare — "
-                "but with zero wait time and door-to-door service."
+                '<p style="text-align:center; font-weight:700; margin-bottom:.5rem;">'
+                "Saves riders money</p>",
+                unsafe_allow_html=True,
             )
-
-        with value_cols[2]:
-            st.markdown("**Reliable & fast**")
-            st.metric("Avg CitiBike availability", "24/7")
-            st.metric("No signal failures", "Ever")
+            money_cols = st.columns(2)
+            with money_cols[0]:
+                st.metric("CitiBike annual membership", "$239/yr")
+            with money_cols[1]:
+                st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
             st.markdown(
-                "No track fires. No signal delays. No weekend service changes. "
-                "Bikes are available when you need them. For trips under 3 miles, "
-                "CitiBike is often **faster than the subway** door-to-door."
+                '<p style="text-align:center;">'
+                "A CitiBike member saves <strong>\\$1,345/year</strong> vs. an "
+                "unlimited MetroCard. For casual riders, single trips cost "
+                "\\$4.99 vs. \\$2.90 subway fare — but with zero wait time and "
+                "door-to-door service.</p>",
+                unsafe_allow_html=True,
             )
 
     # ===================================================================
