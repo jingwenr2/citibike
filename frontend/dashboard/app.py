@@ -2062,7 +2062,7 @@ with dot_tab:
         with value_cols[1]:
             st.markdown("**Saves riders money**")
             st.metric("Citi Bike annual membership", "$239/yr")
-            st.metric("MTA monthly unlimited", "$132/mo ($1,584/yr)")
+            st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
             st.markdown(
                 "A Citi Bike member saves **\\$1,345/year** vs. an unlimited MetroCard. "
                 "For casual riders, single trips cost \\$4.99 vs. \\$2.90 subway fare — "
