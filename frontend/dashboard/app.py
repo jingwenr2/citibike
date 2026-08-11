@@ -1233,15 +1233,12 @@ with forecast_tab:
         unsafe_allow_html=True,
     )
 
-    _fc_city_history = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
-    _fc_recent = _fc_city_history.tail(min(28, len(_fc_city_history)))
-    _fc_baseline = _fc_recent["trips"].mean()
-    _fc_weekday_factors = (
-        _fc_city_history.assign(weekday=_fc_city_history["date"].dt.dayofweek)
-        .groupby("weekday")["trips"]
-        .mean()
-        / _fc_city_history["trips"].mean()
-    )
+    _fc_daily = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
+    # Weekly aggregation for a cleaner chart
+    _fc_daily["week"] = _fc_daily["date"].dt.to_period("W").apply(lambda r: r.start_time)
+    _fc_weekly = _fc_daily.groupby("week", as_index=False)["trips"].sum().rename(columns={"week": "date"})
+    _fc_recent_weeks = _fc_weekly.tail(min(8, len(_fc_weekly)))
+    _fc_baseline_weekly = _fc_recent_weeks["trips"].mean()
 
     @st.fragment
     def forecast_scenario():
@@ -1253,18 +1250,16 @@ with forecast_tab:
         chart_col, control_col = st.columns([2.2, 0.8])
         with control_col:
             st.markdown("**Forecast geography:** New York City")
-            horizon = st.slider("Forecast horizon (days)", 7, 60, 30)
+            horizon_weeks = st.slider("Forecast horizon (weeks)", 2, 12, 6)
             weather_effect = st.slider("Weather effect", -30, 30, 0, format="%d%%")
             event_effect = st.slider("Event / policy effect", -20, 40, 0, format="%d%%")
 
+        last_date = _fc_weekly["date"].max()
         forecast_dates = pd.date_range(
-            _fc_city_history["date"].max() + pd.Timedelta(days=1), periods=horizon
+            last_date + pd.Timedelta(weeks=1), periods=horizon_weeks, freq="W-MON"
         )
         scenario_factor = (1 + weather_effect / 100) * (1 + event_effect / 100)
-        forecast_values = [
-            _fc_baseline * _fc_weekday_factors.get(date.dayofweek, 1.0) * scenario_factor
-            for date in forecast_dates
-        ]
+        forecast_values = [_fc_baseline_weekly * scenario_factor] * horizon_weeks
         forecast_frame = pd.DataFrame(
             {"date": forecast_dates, "forecast": forecast_values}
         )
@@ -1273,11 +1268,14 @@ with forecast_tab:
 
         with chart_col:
             figure = go.Figure()
+            # Show last 16 weeks of actual data
+            actual_tail = _fc_weekly.tail(min(16, len(_fc_weekly)))
             figure.add_trace(go.Scatter(
-                x=_fc_city_history.tail(60)["date"],
-                y=_fc_city_history.tail(60)["trips"],
-                name="Actual", line=dict(color="#94A3B8", width=2),
+                x=actual_tail["date"], y=actual_tail["trips"],
+                name="Actual (weekly)", line=dict(color="#94A3B8", width=2),
+                mode="lines+markers", marker=dict(size=4),
             ))
+            # Confidence band
             figure.add_trace(go.Scatter(
                 x=pd.concat([forecast_frame["date"], forecast_frame["date"][::-1]]),
                 y=pd.concat([forecast_frame["upper"], forecast_frame["lower"][::-1]]),
@@ -1285,21 +1283,23 @@ with forecast_tab:
                 line=dict(color="rgba(255,255,255,0)"),
                 hoverinfo="skip", name="Scenario range",
             ))
+            # Scenario line
             figure.add_trace(go.Scatter(
                 x=forecast_frame["date"], y=forecast_frame["forecast"],
                 name="Scenario", line=dict(color="#FF00BF", width=3),
+                mode="lines+markers", marker=dict(size=5),
             ))
             figure.update_layout(
                 height=410, hovermode="x unified", legend_title_text="",
                 margin=dict(l=10, r=10, t=15, b=10),
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                xaxis_title="", yaxis_title="Trips",
+                xaxis_title="", yaxis_title="Weekly trips",
             )
             st.plotly_chart(figure, use_container_width=True)
             projected = forecast_frame["forecast"].sum()
-            base_projected = _fc_baseline * horizon
+            base_projected = _fc_baseline_weekly * horizon_weeks
             st.metric(
-                f"Projected {horizon}-day trips",
+                f"Projected {horizon_weeks}-week trips",
                 compact_number(projected),
                 f"{projected / base_projected - 1:+.1%} vs recent baseline",
             )

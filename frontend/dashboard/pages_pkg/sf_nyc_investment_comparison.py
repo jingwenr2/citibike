@@ -254,12 +254,12 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         name="Trend",
     ))
     fig.add_vline(
-        x=pd.Timestamp("2023-02-01"), line_dash="dash", line_color="#1B3A6B",
+        x="2023-02-01", line_dash="dash", line_color="#1B3A6B",
         annotation_text="Feb 2023: MTC investment", annotation_position="top",
         annotation_font_color="#1B3A6B",
     )
     fig.add_vline(
-        x=pd.Timestamp("2023-11-01"), line_dash="dashdot", line_color="#7DD3FC",
+        x="2023-11-01", line_dash="dashdot", line_color="#7DD3FC",
         annotation_text="Nov 2023: price drop", annotation_position="top",
         annotation_font_color="#7DD3FC",
     )
