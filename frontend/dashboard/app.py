@@ -2143,7 +2143,17 @@ with dot_tab:
             pressure_dist,
             values="Stations",
             names="Category",
-            color_discrete_sequence=["#94A3B8", "#7DD3FC", "#F59E0B", "#EF4444"],
+            # color= is required for color_discrete_map to take effect on
+            # px.pie (silently ignored otherwise). Reuses HEATMAP_HEX (the
+            # "Trip demand by hour and day" heatmap's scale): light
+            # cyan-blue = low pressure, dark magenta = high.
+            color="Category",
+            color_discrete_map={
+                "Under-utilized (<0.5)": HEATMAP_HEX[0],
+                "Balanced (0.5-1.0)": HEATMAP_HEX[4],
+                "Strained (1.0-1.5)": HEATMAP_HEX[9],
+                "Critical (>1.5)": HEATMAP_HEX[13],
+            },
             hole=0.45,
             title="Station capacity pressure across NYC",
         )
@@ -2250,14 +2260,17 @@ with dot_tab:
             st.metric("Net profit/year (after ops)", f"${net_annual_profit:,.0f}")
             st.metric("Payback period", f"{payback_months:.0f} months", delta="Investment recovered")
 
-    st.error(
-        f"**250 new stations = \\${net_annual_profit:,.0f}/year in net profit.** "
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        f"<strong>250 new stations = \\${net_annual_profit:,.0f}/year in net profit.</strong> "
         f"The \\${total_install:,.0f} installation cost pays for itself in "
-        f"**{payback_months:.0f} months**. "
+        f"<strong>{payback_months:.0f} months</strong>. "
         f"After that, it's pure margin. And with {len(strained)} of "
         f"{len(station_pressure):,} current stations "
         "already running above capacity, this demand isn't hypothetical — "
         "it's riders who are already showing up and finding no bikes."
+        "</p></div>",
+        unsafe_allow_html=True,
     )
 
     # ---------- Revenue projection chart ----------
@@ -2271,7 +2284,13 @@ with dot_tab:
         x="Year",
         y="Annual Revenue",
         color="Scenario",
-        color_discrete_sequence=["#94A3B8", "#2D7FF9", "#10B981"],
+        # Reuses HEATMAP_HEX: light = lowest-investment scenario, dark
+        # magenta = highest-investment scenario.
+        color_discrete_map={
+            "Do nothing (3% organic growth)": HEATMAP_HEX[0],
+            "250 stations — Lyft self-funded": HEATMAP_HEX[7],
+            "500 stations + DOT partnership": HEATMAP_HEX[13],
+        },
         labels={"Annual Revenue": "Projected annual revenue ($)"},
         title="The cost of doing nothing vs. the return on investing",
     )
@@ -2286,13 +2305,16 @@ with dot_tab:
     )
     st.plotly_chart(proj_chart, use_container_width=True)
 
-    st.success(
-        f"**By 2031, the gap between investing and doing nothing is "
-        f"\\${gap_2031:,.0f}/year.** "
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        f"<strong>By 2031, the gap between investing and doing nothing is "
+        f"\\${gap_2031:,.0f}/year.</strong> "
         f"Over 5 years, the DOT partnership scenario generates "
-        f"**\\${cumulative_gap:,.0f} more** "
+        f"<strong>\\${cumulative_gap:,.0f} more</strong> "
         "than the status quo. That's not a projection — it's what happens "
         "when you add supply to a market where 50% of stations are already at capacity."
+        "</p></div>",
+        unsafe_allow_html=True,
     )
 
     # ---------- Government side ----------
@@ -2340,7 +2362,8 @@ with dot_tab:
             size="bike_daily_trips",
             hover_name="neighborhood",
             color="transit_opportunity_score",
-            color_continuous_scale=["#CBD5E1", "#F26B4A", "#0B1324"],
+            # Same HEATMAP_SCALE as the "Trip demand by hour and day" heatmap.
+            color_continuous_scale=HEATMAP_SCALE,
             labels={
                 "mta_delay_rate": "Subway delay rate (higher = worse service)",
                 "mta_daily_riders": "Daily MTA riders (market size)",
@@ -2382,12 +2405,15 @@ with dot_tab:
     )
 
     st.markdown("#### The bottom line")
-    st.warning(
-        "**CitiBike is the largest bike-share system in the Americas, running at capacity, "
-        "in a city where 8.3 million people are stuck with unreliable trains.** "
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        "<strong>CitiBike is the largest bike-share system in the Americas, running at capacity, "
+        "in a city where 8.3 million people are stuck with unreliable trains.</strong> "
         "San Francisco proved that government partnership unlocks bike-share growth. "
         "NYC is 10x the market. Lyft has the infrastructure. The data says invest now — "
         "every month of delay is millions of rides left on the table."
+        "</p></div>",
+        unsafe_allow_html=True,
     )
 
     st.markdown("#### What we need from Lyft")
