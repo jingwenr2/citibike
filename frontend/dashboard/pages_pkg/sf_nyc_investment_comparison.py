@@ -143,21 +143,9 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     station_growth_pct = _pct_change(len(feb2023_stations), len(latest_stations))
 
     # ── KPI summary ──
-    # Page-scoped override: all KPI cards on this page use a single pink
-    # accent (matching the app's Lyft-pink theme) instead of app.py's global
-    # per-column blue/green/orange/pink border CSS.
-    st.markdown(
-        """
-        <style>
-        .st-key-sf_kpi_growth [data-testid="stMetric"],
-        .st-key-sf_kpi_roi [data-testid="stMetric"] {
-            border-left-color: #FF00BF !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-    with st.container(key="sf_kpi_growth"):
+    # Keying these "kpi-..." routes them through app.py's shared KPI-row CSS
+    # (Ledger tile style, Lyft-pink accent) instead of needing a page-local override.
+    with st.container(key="kpi-sf-growth"):
         kpi_cols = st.columns(4)
         kpi_cols[0].metric("Trips/Station Growth", f"{trips_per_station_growth:+.0f}%")
         kpi_cols[1].metric("Total Daily Trips Growth", f"{total_trips_growth:+.0f}%")
@@ -185,7 +173,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         else float("inf")
     )
 
-    with st.container(key="sf_kpi_roi"):
+    with st.container(key="kpi-sf-roi"):
         roi_cols = st.columns(3)
         roi_cols[0].metric(
             "Estimated annual incremental revenue",

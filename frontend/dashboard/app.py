@@ -115,6 +115,11 @@ HEATMAP_HEX = [
 ]
 HEATMAP_SCALE = [[i / (len(HEATMAP_HEX) - 1), hex_] for i, hex_ in enumerate(HEATMAP_HEX)]
 
+# Blue-only sequential scale (light -> dark) for rank-within-top-N bar charts —
+# shared by the investment planner's public NPV chart and the Top 10 expansion
+# opportunities chart, so both read from the same brand-blue family.
+BLUE_SCALE_HEX = ["#D3F0FF", "#48C4E4", "#358DC3"]
+
 
 st.set_page_config(
     page_title="CityCycle Intelligence",
@@ -170,38 +175,65 @@ st.markdown(
     .hero h1 {font-size: 2.45rem; margin: 0 0 .35rem 0;}
     .hero p {font-size: 1.05rem; color: #D6E4FF; margin: 0; max-width: 760px;}
     .eyebrow {font-size: .78rem; letter-spacing: .15em; text-transform: uppercase; color: #FF6FD8;}
-    div[data-testid="stMetric"] {
-        background: white; padding: 1rem 1.1rem; height: 100%;
-        border-radius: 16px; box-shadow: 0 6px 18px rgba(15,23,42,.05);
-        min-height: 112px; border-left: 4px solid #2D7FF9;
-        border-top: 1px solid #E5E7EB; border-right: 1px solid #E5E7EB;
-        border-bottom: 1px solid #E5E7EB;
-        box-sizing: border-box;
-    }
-    [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] div[data-testid="stMetric"]) {
-        height: 100%;
-    }
-    /* Each KPI row gets ONE accent color for every tile in that row (each
-       row wrapped in st.container(key=...) below) — not a per-tile mix. */
-    .st-key-kpi-payoff div[data-testid="stMetric"],
-    .st-key-kpi-irr div[data-testid="stMetric"],
-    .st-key-kpi-expand div[data-testid="stMetric"],
-    .st-key-kpi-govt div[data-testid="stMetric"] { border-left-color: #2D7FF9; }
-    .st-key-kpi-banner div[data-testid="stMetric"],
-    .st-key-kpi-problem div[data-testid="stMetric"],
-    .st-key-kpi-mta div[data-testid="stMetric"],
-    .st-key-kpi-rev div[data-testid="stMetric"],
-    .st-key-kpi-value div[data-testid="stMetric"] { border-left-color: #FF00BF; }
-    [data-testid="stMetricLabel"] {color: #64748B;}
-    div[data-testid="stMetricValue"] {font-weight: 700;}
-    /* Delta sits beside the value instead of stacked underneath — label
-       still gets its own row via flex-basis:100%, value+delta share the
-       next row and wrap gracefully if the column is too narrow. */
+    /* ── KPI tiles: shared metric internals (label/value/delta layout) ── */
     div[data-testid="stMetric"] > div {
         display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .5rem;
     }
-    [data-testid="stMetricLabel"] {flex-basis: 100%;}
+    [data-testid="stMetricLabel"] {
+        flex-basis: 100%; color: #64748B; font-size: .72rem; font-weight: 600;
+        letter-spacing: .05em; text-transform: uppercase;
+    }
+    div[data-testid="stMetricValue"] {font-weight: 650; font-variant-numeric: normal;}
     [data-testid="stMetricDelta"] {white-space: normal;}
+    [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] div[data-testid="stMetric"]) {
+        height: 100%;
+    }
+
+    /* One shared Lyft-pink accent for every KPI row (each row wrapped in
+       st.container(key="kpi-...")) — feeds both tile styles beneath it. */
+    [class*="st-key-kpi-"] {
+        --row-accent: #FF00BF;
+    }
+
+    /* ── Signal: rows that stand alone rather than sitting in a tab's flow —
+       the static top-of-page banner, and the Government investment planner's
+       KPI groups. Hairline card, no shadow, no left-edge bar — the accent
+       moves onto a small corner dot and a short tick under the value. */
+    .st-key-kpi-banner div[data-testid="stMetric"],
+    [class*="st-key-kpi-planner-"] div[data-testid="stMetric"] {
+        position: relative; background: white; height: 100%;
+        border-radius: 6px; border: 1px solid #E2E6EC;
+        min-height: 112px; padding: 1rem 1.1rem 1rem 1.65rem;
+        box-sizing: border-box;
+    }
+    .st-key-kpi-banner div[data-testid="stMetric"]::before,
+    [class*="st-key-kpi-planner-"] div[data-testid="stMetric"]::before {
+        content: ""; position: absolute; top: 1.15rem; left: 1.1rem;
+        width: 6px; height: 6px; background: var(--row-accent);
+    }
+    .st-key-kpi-banner div[data-testid="stMetric"]::after,
+    [class*="st-key-kpi-planner-"] div[data-testid="stMetric"]::after {
+        content: ""; position: absolute; bottom: 1rem; left: 1.1rem;
+        width: 22px; height: 2px; background: var(--row-accent);
+    }
+
+    /* ── Ledger: every other KPI row throughout the tabs ── No card chrome —
+       tiles sit in one continuous strip separated by hairline dividers, with
+       a single accent rule across the top of the row instead of a border
+       on every tile. */
+    [class*="st-key-kpi-"]:not([class*="st-key-kpi-banner"]):not([class*="st-key-kpi-planner-"]) [data-testid="stHorizontalBlock"] {
+        border-top: 2px solid var(--row-accent); border-bottom: 1px solid #DDE2EA;
+    }
+    [class*="st-key-kpi-"]:not([class*="st-key-kpi-banner"]):not([class*="st-key-kpi-planner-"]) [data-testid="stColumn"] {
+        border-left: 1px solid #DDE2EA;
+    }
+    [class*="st-key-kpi-"]:not([class*="st-key-kpi-banner"]):not([class*="st-key-kpi-planner-"]) [data-testid="stColumn"]:first-child {
+        border-left: none;
+    }
+    [class*="st-key-kpi-"]:not([class*="st-key-kpi-banner"]):not([class*="st-key-kpi-planner-"]) div[data-testid="stMetric"] {
+        background: transparent; border: none; box-shadow: none; border-radius: 0;
+        padding: 1.1rem 1.3rem; min-height: auto;
+    }
     .section-note {color: #64748B; margin-top: -.6rem;}
     .demo-pill {
         display: inline-block; padding: .28rem .65rem; border-radius: 999px;
@@ -218,12 +250,12 @@ st.markdown(
         font-size: 1rem; color: #0F172A; margin: 0 0 .8rem 0; font-weight: 700;
     }
     .guide-step {
-        display: flex; align-items: flex-start; gap: .7rem; margin-bottom: .6rem;
+        display: flex; align-items: center; gap: .7rem; margin-bottom: .6rem;
     }
     .guide-number {
-        flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
-        background: #2D7FF9; color: white; font-size: .75rem; font-weight: 700;
-        display: flex; align-items: center; justify-content: center; margin-top: 1px;
+        flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+        background: #891D7D; color: white; font-size: .85rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
     }
     .guide-text {
         font-size: .88rem; color: #334155; line-height: 1.45;
@@ -232,13 +264,13 @@ st.markdown(
 
     /* ── Tab takeaway box ── */
     .tab-takeaway {
-        background: linear-gradient(135deg, #FFF0FA 0%, #FDF2F8 100%);
-        border-left: 4px solid #FF00BF;
+        background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+        border-left: 4px solid #0EA5E9;
         padding: 1rem 1.25rem; border-radius: 0 12px 12px 0;
         margin: 0 0 1.2rem 0;
     }
     .tab-takeaway p {
-        margin: 0; font-size: .95rem; color: #7A1263; line-height: 1.5;
+        margin: 0; font-size: .95rem; color: #075985; line-height: 1.5;
     }
     .tab-takeaway strong { color: #0F172A; }
 
@@ -247,11 +279,8 @@ st.markdown(
         display: inline-block; padding: .2rem .6rem; border-radius: 6px;
         font-size: .7rem; font-weight: 700; letter-spacing: .06em;
         text-transform: uppercase; margin-bottom: .4rem;
+        background: #FFE0F5; color: #9D0F82;
     }
-    .section-label-blue { background: #DBEAFE; color: #1E40AF; }
-    .section-label-skyblue { background: #E0F2FE; color: #075985; }
-    .section-label-pink { background: #FCE7F3; color: #9D174D; }
-    .section-label-hotpink { background: #FFE0F5; color: #9D0F82; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -628,7 +657,7 @@ with home_tab:
     )
 
     st.markdown(
-        '<span class="section-label section-label-blue">The opportunity</span>',
+        '<span class="section-label">The opportunity</span>',
         unsafe_allow_html=True,
     )
     st.subheader("The 2029 contract is the moment to act")
@@ -643,7 +672,7 @@ with home_tab:
 
     st.markdown("---")
     st.markdown(
-        '<span class="section-label section-label-hotpink">The problem</span>',
+        '<span class="section-label">The problem</span>',
         unsafe_allow_html=True,
     )
     st.subheader("Riders are paying more for a system that's out of room")
@@ -686,7 +715,7 @@ with home_tab:
 
     st.markdown("---")
     st.markdown(
-        '<span class="section-label section-label-skyblue">The solution</span>',
+        '<span class="section-label">The solution</span>',
         unsafe_allow_html=True,
     )
     st.subheader("Invest to expand the system — and to make it cheaper")
@@ -702,7 +731,7 @@ with home_tab:
 
     st.markdown("---")
     st.markdown(
-        '<span class="section-label section-label-pink">The decision model</span>',
+        '<span class="section-label">The decision model</span>',
         unsafe_allow_html=True,
     )
     st.subheader("Data tells us where to build first")
@@ -718,7 +747,7 @@ with home_tab:
 
     st.markdown("---")
     st.markdown(
-        '<span class="section-label section-label-blue">The payoff</span>',
+        '<span class="section-label">The payoff</span>',
         unsafe_allow_html=True,
     )
     st.subheader("What the city and DOT stand to earn")
@@ -1453,7 +1482,18 @@ with mta_tab:
         top10 = mta_opportunity.nlargest(10, "transit_opportunity_score").sort_values(
             "transit_opportunity_score", ascending=True
         )
-        bar_colors = [score_to_hex(s) for s in top10["transit_opportunity_score"]]
+        # These 10 scores are already the highest in the dataset, so they sit
+        # bunched at the top of the global 0-max scale score_to_hex uses
+        # elsewhere — every bar comes out the same near-max shade. Rescaling
+        # to this chart's own min-max spreads the blue scale across the full
+        # range, so shade actually tracks rank within the top 10.
+        top10_scores = top10["transit_opportunity_score"]
+        top10_span = max(float(top10_scores.max() - top10_scores.min()), 1e-9)
+        top10_cmap = LinearSegmentedColormap.from_list("blue_scale", BLUE_SCALE_HEX)
+        bar_colors = [
+            to_hex(top10_cmap((s - top10_scores.min()) / top10_span))
+            for s in top10_scores
+        ]
         fig_top10 = go.Figure(go.Bar(
             x=top10["transit_opportunity_score"],
             y=top10["neighborhood"].str.split("(").str[0].str.strip(),
@@ -1672,6 +1712,12 @@ with investment_tab:
             unsafe_allow_html=True,
         )
 
+        # Reserved now, filled in below once the sliders (read further down)
+        # have produced a recommendation — keeps the summary a full-width
+        # banner above the two-column layout instead of confined to the
+        # narrower results column.
+        kpi_banner_slot = st.container(key="kpi-planner-summary")
+
         assumption_col, results_col = st.columns([0.9, 2.1])
         with assumption_col:
             st.markdown("**Investment geography:** New York City")
@@ -1686,7 +1732,15 @@ with investment_tab:
                 "Installed cost per dock",
                 min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
             )
-            demand_uplift = st.slider("Demand captured after expansion", 5, 60, 20, format="%d%%")
+            demand_uplift = st.slider(
+                "Demand captured after expansion", 5, 60, 35, format="%d%%",
+                help=(
+                    "Defaults to 35% — modeled on Bay Wheels (SF): at the same "
+                    "$16M investment level, this produces an 11.1% membership "
+                    "price decrease, matching SF's actual $169->$150 cut (11.2%) "
+                    "after its Feb 2023 MTC investment."
+                ),
+            )
             net_revenue_trip = st.number_input(
                 "Net operating revenue per new trip",
                 min_value=0.0, max_value=20.0, value=DEFAULT_NET_REVENUE_PER_TRIP, step=0.25,
@@ -1750,37 +1804,38 @@ with investment_tab:
         ].head(maximum_projects).index
         investment_rank.loc[recommended_index, "recommended"] = True
 
-        with results_col:
-            recommended = investment_rank[investment_rank["recommended"]]
-            total_capital = recommended["capital_cost"].sum()
-            public_npv = recommended["public_npv"].sum()
-            new_trips = recommended["new_annual_trips"].sum()
-            portfolio_bcr = (
-                (public_npv + total_capital) / total_capital if total_capital else 0
-            )
+        recommended = investment_rank[investment_rank["recommended"]]
+        total_capital = recommended["capital_cost"].sum()
+        public_npv = recommended["public_npv"].sum()
+        new_trips = recommended["new_annual_trips"].sum()
+        portfolio_bcr = (
+            (public_npv + total_capital) / total_capital if total_capital else 0
+        )
 
+        with kpi_banner_slot:
             summary_columns = st.columns(4)
             summary_columns[0].metric("Recommended projects", f"{len(recommended)}")
             summary_columns[1].metric("Capital deployed", f"${compact_number(total_capital)}")
             summary_columns[2].metric("New annual trips", compact_number(new_trips))
             summary_columns[3].metric(
                 "Public benefit-cost ratio", f"{portfolio_bcr:.2f}×",
-                "Above 1.0× creates modeled public value",
+                help="Above 1.0× creates modeled public value.",
             )
 
+        with results_col:
             value_chart_data = investment_rank.head(10).copy()
             value_chart = px.bar(
                 value_chart_data, x="public_npv", y="station_name",
-                orientation="h", color="recommended",
-                color_discrete_map={True: "#48C4E4", False: "#358DC3"},
+                orientation="h", color="public_npv",
+                color_continuous_scale=BLUE_SCALE_HEX,
                 labels={
                     "public_npv": f"{analysis_years}-year public NPV ($)",
-                    "station_name": "", "recommended": "Within budget",
+                    "station_name": "",
                 },
             )
             value_chart.update_layout(
                 height=410, yaxis={"categoryorder": "total ascending"},
-                legend_title_text="", margin=dict(l=10, r=10, t=20, b=10),
+                coloraxis_showscale=False, margin=dict(l=10, r=10, t=20, b=10),
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
             )
             st.plotly_chart(value_chart, use_container_width=True)
@@ -1956,21 +2011,22 @@ with investment_tab:
         potential_price = max(0.0, current_price - price_relief_per_member)
         price_reduction_pct = price_relief_per_member / current_price if current_price else 0.0
 
-        afford_cols = st.columns(3)
-        afford_cols[0].metric("Current annual membership", f"${current_price:,.0f}")
-        afford_cols[1].metric(
-            "Potential new price",
-            f"${potential_price:,.0f}",
-            f"-{price_reduction_pct:.1%}" if price_relief_per_member > 0 else "No surplus to redirect",
-        )
-        afford_cols[2].metric(
-            "Annual fiscal surplus", f"${compact_number(net_annual_fiscal)}",
-            help=(
-                "The recommended portfolio's net fiscal cash flow (revenue minus "
-                "operating cost) — excludes public-benefit externalities, since "
-                "those aren't cash available to subsidize pricing."
-            ),
-        )
+        with st.container(key="kpi-afford"):
+            afford_cols = st.columns(3)
+            afford_cols[0].metric("Current annual membership", f"${current_price:,.0f}")
+            afford_cols[1].metric(
+                "Potential new price",
+                f"${potential_price:,.0f}",
+                f"-{price_reduction_pct:.1%}" if price_relief_per_member > 0 else "No surplus to redirect",
+            )
+            afford_cols[2].metric(
+                "Annual fiscal surplus", f"${compact_number(net_annual_fiscal)}",
+                help=(
+                    "The recommended portfolio's net fiscal cash flow (revenue minus "
+                    "operating cost) — excludes public-benefit externalities, since "
+                    "those aren't cash available to subsidize pricing."
+                ),
+            )
 
         price_fig = go.Figure(go.Bar(
             x=[current_price, potential_price],
@@ -2029,10 +2085,14 @@ with investment_tab:
                 "transit_opportunity_score": st.column_config.ProgressColumn("MTA opportunity", min_value=0, max_value=100, format="%.1f"),
             },
         )
-        st.info(
-            "**Public-sector decision rule:** prioritize positive public NPV and a benefit-cost "
-            "ratio above 1.0, then confirm the annual operating support fits the agency budget. "
-            "Fiscal return remains visible as a sustainability constraint—not the sole goal."
+        st.markdown(
+            '<div class="tab-takeaway"><p>'
+            "<strong>Public-sector decision rule:</strong> prioritize positive public NPV and a "
+            "benefit-cost ratio above 1.0, then confirm the annual operating support fits the "
+            "agency budget. Fiscal return remains visible as a sustainability constraint—not "
+            "the sole goal."
+            "</p></div>",
+            unsafe_allow_html=True,
         )
 
     investment_planner()
@@ -2114,11 +2174,15 @@ with dot_tab:
             labels={"trips": "Monthly trips", "month": "", "city": "System"},
         )
         monthly_chart.update_layout(
-            height=350,
+            height=380,
             margin=dict(l=10, r=10, t=40, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="white",
             legend_title_text="",
+            # Horizontal legend above the plot instead of Plotly's default
+            # right-side column — in this narrow half-width chart, the
+            # right-side legend was eating into the plot area itself.
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         )
         st.plotly_chart(monthly_chart, use_container_width=True)
 
@@ -2176,6 +2240,19 @@ with dot_tab:
         n_stations = len(mta_opportunity)
         very_high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] >= 0.30]
         very_high_pct = len(very_high_delay) / n_stations * 100
+
+        high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] > 0.05]
+        broader_context = ""
+        if not high_delay.empty:
+            avg_delay = high_delay["mta_delay_rate"].mean()
+            total_affected_riders = high_delay["mta_daily_riders"].sum()
+            broader_context = (
+                f" More broadly, <strong>{len(high_delay)} neighborhoods</strong> have "
+                f"subway delay rates above 5% — <strong>{total_affected_riders:,.0f} daily "
+                f"MTA riders</strong> stuck waiting for trains that are late "
+                f"{avg_delay:.0%} of the time. Every one of them is a potential CitiBike rider."
+            )
+
         st.markdown(
             '<div class="tab-takeaway"><p>'
             f"<strong>{very_high_pct:.0f}%</strong> of stations "
@@ -2183,23 +2260,10 @@ with dot_tab:
             f"delay rate of <strong>30% or higher</strong>. Delay rate reflects the "
             "subway line(s) serving each station (MTA publishes reliability by "
             "line, not by individual station), so nearby stations on the same "
-            "line share an identical rate."
+            f"line share an identical rate.{broader_context}"
             "</p></div>",
             unsafe_allow_html=True,
         )
-
-        high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] > 0.05]
-        if not high_delay.empty:
-            avg_delay = high_delay["mta_delay_rate"].mean()
-            total_affected_riders = high_delay["mta_daily_riders"].sum()
-            st.markdown(
-                '<div class="tab-takeaway"><p>'
-                f"<strong>{len(high_delay)} neighborhoods</strong> have subway delay rates above 5%. "
-                f"That's <strong>{total_affected_riders:,.0f} daily MTA riders</strong> stuck waiting for trains "
-                f"that are late {avg_delay:.0%} of the time. Every one of them is a potential CitiBike rider."
-                "</p></div>",
-                unsafe_allow_html=True,
-            )
 
     # ===================================================================
     # ARGUMENT 3: Green energy, saves money, healthier city
@@ -2238,9 +2302,9 @@ with dot_tab:
                 st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
             st.markdown(
                 '<p style="text-align:center;">'
-                "A CitiBike member saves <strong>\\$1,345/year</strong> vs. an "
+                "A CitiBike member saves <strong>$1,345/year</strong> vs. an "
                 "unlimited MetroCard. For casual riders, single trips cost "
-                "\\$4.99 vs. \\$2.90 subway fare — but with zero wait time and "
+                "$4.99 vs. $2.90 subway fare — but with zero wait time and "
                 "door-to-door service.</p>",
                 unsafe_allow_html=True,
             )
@@ -2264,10 +2328,20 @@ with dot_tab:
             # cyan-blue = low pressure, dark magenta = high.
             color="Category",
             color_discrete_map={
-                "Under-utilized (<0.5)": HEATMAP_HEX[0],
+                "Under-utilized (<0.5)": HEATMAP_HEX[2],
                 "Balanced (0.5-1.0)": HEATMAP_HEX[4],
                 "Strained (1.0-1.5)": HEATMAP_HEX[9],
                 "Critical (>1.5)": HEATMAP_HEX[13],
+            },
+            # Legend follows the severity ramp (light -> dark) instead of
+            # value_counts()'s frequency order.
+            category_orders={
+                "Category": [
+                    "Under-utilized (<0.5)",
+                    "Balanced (0.5-1.0)",
+                    "Strained (1.0-1.5)",
+                    "Critical (>1.5)",
+                ]
             },
             hole=0.45,
             title="Station capacity pressure across NYC",
@@ -2377,8 +2451,8 @@ with dot_tab:
 
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        f"<strong>250 new stations = \\${net_annual_profit:,.0f}/year in net profit.</strong> "
-        f"The \\${total_install:,.0f} installation cost pays for itself in "
+        f"<strong>250 new stations = ${net_annual_profit:,.0f}/year in net profit.</strong> "
+        f"The ${total_install:,.0f} installation cost pays for itself in "
         f"<strong>{payback_months:.0f} months</strong>. "
         f"After that, it's pure margin. And with {len(strained)} of "
         f"{len(station_pressure):,} current stations "
@@ -2402,9 +2476,18 @@ with dot_tab:
         # Reuses HEATMAP_HEX: light = lowest-investment scenario, dark
         # magenta = highest-investment scenario.
         color_discrete_map={
-            "Do nothing (3% organic growth)": HEATMAP_HEX[0],
-            "250 stations — Lyft self-funded": HEATMAP_HEX[7],
-            "500 stations + DOT partnership": HEATMAP_HEX[13],
+            "Do nothing (3% organic growth)": HEATMAP_HEX[13],
+            "250 stations — Lyft self-funded": LYFT_PINK,
+            "500 stations + DOT partnership": HEATMAP_HEX[7]
+        },
+        # Legend order matches how the lines actually stack at the right
+        # edge (highest revenue on top) instead of dataframe insertion order.
+        category_orders={
+            "Scenario": [
+                "500 stations + DOT partnership",
+                "250 stations — Lyft self-funded",
+                "Do nothing (3% organic growth)",
+            ]
         },
         labels={"Annual Revenue": "Projected annual revenue ($)"},
         title="The cost of doing nothing vs. the return on investing",
@@ -2423,9 +2506,9 @@ with dot_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         f"<strong>By 2031, the gap between investing and doing nothing is "
-        f"\\${gap_2031:,.0f}/year.</strong> "
+        f"${gap_2031:,.0f}/year.</strong> "
         f"Over 5 years, the DOT partnership scenario generates "
-        f"<strong>\\${cumulative_gap:,.0f} more</strong> "
+        f"<strong>${cumulative_gap:,.0f} more</strong> "
         "than the status quo. That's not a projection — it's what happens "
         "when you add supply to a market where 50% of stations are already at capacity."
         "</p></div>",
