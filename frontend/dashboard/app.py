@@ -1197,31 +1197,34 @@ with stations_tab:
         )
 
     with detail_col:
-        st.subheader("Inspect a station")
-        station_options = sorted(nyc_filtered["station_name"].unique())
-        selected_station = st.selectbox("Station", station_options)
-        station_daily = (
-            nyc_filtered[nyc_filtered["station_name"] == selected_station]
-            .groupby("date", as_index=False)["trips"]
-            .sum()
-        )
-        station_daily["7-day average"] = station_daily["trips"].rolling(
-            7, min_periods=1
-        ).mean()
-        station_chart = px.area(
-            station_daily,
-            x="date",
-            y="7-day average",
-            labels={"7-day average": "Trips", "date": ""},
-            color_discrete_sequence=["#2D7FF9"],
-        )
-        station_chart.update_layout(
-            height=310,
-            margin=dict(l=10, r=10, t=15, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-        )
-        st.plotly_chart(station_chart, use_container_width=True)
+        @st.fragment
+        def _station_detail():
+            st.subheader("Inspect a station")
+            station_options = sorted(nyc_filtered["station_name"].unique())
+            selected_station = st.selectbox("Station", station_options)
+            station_daily = (
+                nyc_filtered[nyc_filtered["station_name"] == selected_station]
+                .groupby("date", as_index=False)["trips"]
+                .sum()
+            )
+            station_daily["7-day average"] = station_daily["trips"].rolling(
+                7, min_periods=1
+            ).mean()
+            station_chart = px.area(
+                station_daily,
+                x="date",
+                y="7-day average",
+                labels={"7-day average": "Trips", "date": ""},
+                color_discrete_sequence=["#2D7FF9"],
+            )
+            station_chart.update_layout(
+                height=310,
+                margin=dict(l=10, r=10, t=15, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="white",
+            )
+            st.plotly_chart(station_chart, use_container_width=True)
+        _station_detail()
 
 with forecast_tab:
     st.markdown(
