@@ -194,6 +194,14 @@ st.markdown(
     .st-key-kpi-value div[data-testid="stMetric"] { border-left-color: #FF00BF; }
     [data-testid="stMetricLabel"] {color: #64748B;}
     div[data-testid="stMetricValue"] {font-weight: 700;}
+    /* Delta sits beside the value instead of stacked underneath — label
+       still gets its own row via flex-basis:100%, value+delta share the
+       next row and wrap gracefully if the column is too narrow. */
+    div[data-testid="stMetric"] > div {
+        display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .5rem;
+    }
+    [data-testid="stMetricLabel"] {flex-basis: 100%;}
+    [data-testid="stMetricDelta"] {white-space: normal;}
     .section-note {color: #64748B; margin-top: -.6rem;}
     .demo-pill {
         display: inline-block; padding: .28rem .65rem; border-radius: 999px;
@@ -1630,8 +1638,9 @@ with investment_tab:
             st.markdown("**Investment geography:** New York City")
             public_budget = st.number_input(
                 "Available capital budget",
-                min_value=50_000, max_value=20_000_000, value=1_000_000,
+                min_value=50_000, max_value=50_000_000, value=16_000_000,
                 step=50_000, format="%d",
+                help="Defaults to $16M — what MTC invested in Bay Wheels (SF) in Feb 2023.",
             )
             docks_added = st.slider("Docks added per station", 4, 40, 16)
             cost_per_dock = st.number_input(
@@ -1724,7 +1733,7 @@ with investment_tab:
             value_chart = px.bar(
                 value_chart_data, x="public_npv", y="station_name",
                 orientation="h", color="recommended",
-                color_discrete_map={True: "#2D7FF9", False: "#CBD5E1"},
+                color_discrete_map={True: "#48C4E4", False: "#358DC3"},
                 labels={
                     "public_npv": f"{analysis_years}-year public NPV ($)",
                     "station_name": "", "recommended": "Within budget",
@@ -1740,40 +1749,6 @@ with investment_tab:
                 f"Selected projects are estimated to add {compact_number(new_trips)} "
                 "annual trips under the current assumptions."
             )
-
-        st.subheader("Project-level recommendation table")
-        planner_table = investment_rank[
-            [
-                "recommended", "station_name", "daily_trips", "new_annual_trips",
-                "capital_cost", "annual_operating_return", "annual_operating_support_needed",
-                "fiscal_payback_years", "five_year_fiscal_npv", "public_npv",
-                "public_benefit_cost_ratio", "capital_cost_per_new_trip",
-                "transit_opportunity_score",
-            ]
-        ].copy()
-        st.dataframe(
-            planner_table, hide_index=True, use_container_width=True,
-            column_config={
-                "recommended": st.column_config.CheckboxColumn("Fund"),
-                "station_name": "Station",
-                "daily_trips": st.column_config.NumberColumn("Daily demand", format="%.0f"),
-                "new_annual_trips": st.column_config.NumberColumn("New trips/year", format="%.0f"),
-                "capital_cost": st.column_config.NumberColumn("Capital cost", format="$%.0f"),
-                "annual_operating_return": st.column_config.NumberColumn("Annual operating return", format="$%.0f"),
-                "annual_operating_support_needed": st.column_config.NumberColumn("Annual support needed", format="$%.0f"),
-                "fiscal_payback_years": st.column_config.NumberColumn("Fiscal payback", format="%.1f years"),
-                "five_year_fiscal_npv": st.column_config.NumberColumn(f"{analysis_years}-yr fiscal NPV", format="$%.0f"),
-                "public_npv": st.column_config.NumberColumn(f"{analysis_years}-yr public NPV", format="$%.0f"),
-                "public_benefit_cost_ratio": st.column_config.NumberColumn("Public BCR", format="%.2f×"),
-                "capital_cost_per_new_trip": st.column_config.NumberColumn("Capital/new trip", format="$%.2f"),
-                "transit_opportunity_score": st.column_config.ProgressColumn("MTA opportunity", min_value=0, max_value=100, format="%.1f"),
-            },
-        )
-        st.info(
-            "**Public-sector decision rule:** prioritize positive public NPV and a benefit-cost "
-            "ratio above 1.0, then confirm the annual operating support fits the agency budget. "
-            "Fiscal return remains visible as a sustainability constraint—not the sole goal."
-        )
 
         # ── Cash Flow & IRR ──
         st.subheader("Portfolio cash flow & IRR")
@@ -1864,12 +1839,12 @@ with investment_tab:
             irr_cols[0].metric(
                 "Fiscal IRR",
                 f"{fiscal_irr:.1%}" if fiscal_irr is not None else "N/A",
-                "Return on capital (operating only)",
+                "Operating only",
             )
             irr_cols[1].metric(
                 "Total IRR (incl. public value)",
                 f"{total_irr:.1%}" if total_irr is not None else "N/A",
-                "Return including public benefits",
+                "Incl. benefits",
             )
             irr_cols[2].metric(
                 "Total capital",
@@ -1880,44 +1855,145 @@ with investment_tab:
                 f"${compact_number(net_annual_fiscal)}",
             )
 
-        # Cash flow chart
-        fig_cf = go.Figure()
-        fig_cf.add_trace(go.Bar(
-            x=cf_df["Year"], y=cf_df["Net Fiscal"],
-            name="Net fiscal", marker_color="#2D7FF9",
-        ))
-        fig_cf.add_trace(go.Bar(
-            x=cf_df["Year"], y=cf_df["Public Benefit"],
-            name="Public benefit", marker_color="#10B981",
-        ))
-        fig_cf.add_trace(go.Scatter(
-            x=cf_df["Year"], y=cf_df["Cumulative Fiscal"],
-            name="Cumulative fiscal", line=dict(color="#F59E0B", width=3),
-        ))
-        fig_cf.update_layout(
-            height=420, barmode="relative",
-            hovermode="x unified", legend_title_text="",
-            margin=dict(l=10, r=10, t=30, b=10),
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-            xaxis_title="Year", yaxis_title="Cash flow ($)",
-            yaxis_tickformat="$,.0f",
+        # Cash flow chart / table — same space, toggled instead of stacked
+        cf_view = st.radio(
+            "View", ["Chart", "Table"], horizontal=True, key="cf_view_toggle",
+            label_visibility="collapsed",
         )
-        st.plotly_chart(fig_cf, use_container_width=True)
+        if cf_view == "Chart":
+            fig_cf = go.Figure()
+            fig_cf.add_trace(go.Bar(
+                x=cf_df["Year"], y=cf_df["Net Fiscal"],
+                name="Net fiscal", marker_color="#48C4E4",
+            ))
+            fig_cf.add_trace(go.Bar(
+                x=cf_df["Year"], y=cf_df["Public Benefit"],
+                name="Public benefit", marker_color="#358DC3",
+            ))
+            fig_cf.add_trace(go.Scatter(
+                x=cf_df["Year"], y=cf_df["Cumulative Fiscal"],
+                name="Cumulative fiscal", line=dict(color="#F59E0B", width=3),
+            ))
+            fig_cf.update_layout(
+                height=420, barmode="relative",
+                hovermode="x unified", legend_title_text="",
+                margin=dict(l=10, r=10, t=30, b=10),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+                xaxis_title="Year", yaxis_title="Cash flow ($)",
+                yaxis_tickformat="$,.0f",
+            )
+            st.plotly_chart(fig_cf, use_container_width=True)
+        else:
+            st.dataframe(
+                cf_df, hide_index=True, use_container_width=True,
+                column_config={
+                    "Year": st.column_config.NumberColumn("Year", format="%d"),
+                    "Capital": st.column_config.NumberColumn("Capital", format="$%.0f"),
+                    "Revenue": st.column_config.NumberColumn("Revenue", format="$%.0f"),
+                    "Operating Cost": st.column_config.NumberColumn("Operating Cost", format="$%.0f"),
+                    "Public Benefit": st.column_config.NumberColumn("Public Benefit", format="$%.0f"),
+                    "Net Fiscal": st.column_config.NumberColumn("Net Fiscal", format="$%.0f"),
+                    "Net Total": st.column_config.NumberColumn("Net Total", format="$%.0f"),
+                    "Cumulative Fiscal": st.column_config.NumberColumn("Cumulative Fiscal", format="$%.0f"),
+                    "Cumulative Total": st.column_config.NumberColumn("Cumulative Total", format="$%.0f"),
+                },
+            )
 
-        # Cash flow table
+        # ── Effect on membership affordability ──
+        st.subheader("Effect on membership affordability")
+        st.markdown(
+            '<p class="section-note">If the recommended portfolio\'s net fiscal surplus were '
+            "redirected into lower membership pricing instead of pure profit, here's how far "
+            "it could stretch across today's active membership base.</p>",
+            unsafe_allow_html=True,
+        )
+
+        pricing_assumptions = revenue_service.load_pricing_assumptions()
+        current_price = pricing_assumptions["annual_membership_price"]
+        active_members_count = pricing_assumptions["estimated_active_annual_members"]
+        price_relief_per_member = (
+            max(0.0, net_annual_fiscal) / active_members_count if active_members_count else 0.0
+        )
+        potential_price = max(0.0, current_price - price_relief_per_member)
+        price_reduction_pct = price_relief_per_member / current_price if current_price else 0.0
+
+        afford_cols = st.columns(3)
+        afford_cols[0].metric("Current annual membership", f"${current_price:,.0f}")
+        afford_cols[1].metric(
+            "Potential new price",
+            f"${potential_price:,.0f}",
+            f"-{price_reduction_pct:.1%}" if price_relief_per_member > 0 else "No surplus to redirect",
+        )
+        afford_cols[2].metric(
+            "Annual fiscal surplus", f"${compact_number(net_annual_fiscal)}",
+            help=(
+                "The recommended portfolio's net fiscal cash flow (revenue minus "
+                "operating cost) — excludes public-benefit externalities, since "
+                "those aren't cash available to subsidize pricing."
+            ),
+        )
+
+        price_fig = go.Figure(go.Bar(
+            x=[current_price, potential_price],
+            y=["Current price", "With investment"],
+            orientation="h",
+            marker_color=["#358DC3", "#48C4E4"],
+            text=[f"${current_price:,.0f}", f"${potential_price:,.0f}"],
+            textposition="outside",
+        ))
+        price_fig.update_layout(
+            height=200,
+            margin=dict(l=10, r=60, t=10, b=10),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+            xaxis_title="Annual membership price ($)",
+            xaxis_range=[0, current_price * 1.15],
+            showlegend=False,
+        )
+        st.plotly_chart(price_fig, use_container_width=True)
+        st.caption(
+            f"Spreading \\${compact_number(max(0.0, net_annual_fiscal))}/yr in modeled surplus "
+            f"across {compact_number(active_members_count)} active members works out to "
+            f"\\${price_relief_per_member:,.2f} per member per year"
+            + (
+                f" — a {price_reduction_pct:.1%} price cut, from \\${current_price:,.0f} to "
+                f"\\${potential_price:,.0f}/yr."
+                if price_relief_per_member > 0
+                else ", not enough to lower pricing at this budget and assumption level."
+            )
+        )
+
+        st.subheader("Project-level recommendation table")
+        planner_table = investment_rank[
+            [
+                "recommended", "station_name", "daily_trips", "new_annual_trips",
+                "capital_cost", "annual_operating_return", "annual_operating_support_needed",
+                "fiscal_payback_years", "five_year_fiscal_npv", "public_npv",
+                "public_benefit_cost_ratio", "capital_cost_per_new_trip",
+                "transit_opportunity_score",
+            ]
+        ].copy()
         st.dataframe(
-            cf_df, hide_index=True, use_container_width=True,
+            planner_table, hide_index=True, use_container_width=True,
             column_config={
-                "Year": st.column_config.NumberColumn("Year", format="%d"),
-                "Capital": st.column_config.NumberColumn("Capital", format="$%.0f"),
-                "Revenue": st.column_config.NumberColumn("Revenue", format="$%.0f"),
-                "Operating Cost": st.column_config.NumberColumn("Operating Cost", format="$%.0f"),
-                "Public Benefit": st.column_config.NumberColumn("Public Benefit", format="$%.0f"),
-                "Net Fiscal": st.column_config.NumberColumn("Net Fiscal", format="$%.0f"),
-                "Net Total": st.column_config.NumberColumn("Net Total", format="$%.0f"),
-                "Cumulative Fiscal": st.column_config.NumberColumn("Cumulative Fiscal", format="$%.0f"),
-                "Cumulative Total": st.column_config.NumberColumn("Cumulative Total", format="$%.0f"),
+                "recommended": st.column_config.CheckboxColumn("Fund"),
+                "station_name": "Station",
+                "daily_trips": st.column_config.NumberColumn("Daily demand", format="%.0f"),
+                "new_annual_trips": st.column_config.NumberColumn("New trips/year", format="%.0f"),
+                "capital_cost": st.column_config.NumberColumn("Capital cost", format="$%.0f"),
+                "annual_operating_return": st.column_config.NumberColumn("Annual operating return", format="$%.0f"),
+                "annual_operating_support_needed": st.column_config.NumberColumn("Annual support needed", format="$%.0f"),
+                "fiscal_payback_years": st.column_config.NumberColumn("Fiscal payback", format="%.1f years"),
+                "five_year_fiscal_npv": st.column_config.NumberColumn(f"{analysis_years}-yr fiscal NPV", format="$%.0f"),
+                "public_npv": st.column_config.NumberColumn(f"{analysis_years}-yr public NPV", format="$%.0f"),
+                "public_benefit_cost_ratio": st.column_config.NumberColumn("Public BCR", format="%.2f×"),
+                "capital_cost_per_new_trip": st.column_config.NumberColumn("Capital/new trip", format="$%.2f"),
+                "transit_opportunity_score": st.column_config.ProgressColumn("MTA opportunity", min_value=0, max_value=100, format="%.1f"),
             },
+        )
+        st.info(
+            "**Public-sector decision rule:** prioritize positive public NPV and a benefit-cost "
+            "ratio above 1.0, then confirm the annual operating support fits the agency budget. "
+            "Fiscal return remains visible as a sustainability constraint—not the sole goal."
         )
 
     investment_planner()
