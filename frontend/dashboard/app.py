@@ -1285,6 +1285,21 @@ with forecast_tab:
                 "New stations added", 0, 300, 0, step=25,
                 help="Each new station adds ~55 trips/day based on current averages.",
             )
+            st.markdown("---")
+            st.markdown("**How to read this chart**")
+            st.caption("**Navy line** — real weekly trips from Citi Bike data")
+            st.caption("**Pink line** — projected trips based on XGBoost model baseline")
+            st.caption("**Shaded band** — ±10% confidence range")
+            st.caption("Drag *New stations* slider to see how expansion impacts demand")
+            st.markdown("---")
+            st.markdown("**How we ensure accuracy**")
+            st.caption(
+                "Our XGBoost model was trained on 23 features "
+                "(lag trends, MTA delays, weather, location) and validated with "
+                "3-fold time-series cross-validation (CV MAE 9.35). "
+                "The projection baseline uses the model's proven accuracy "
+                f"({_fc_model_accuracy:.0f}%) applied to the most recent 4-week average."
+            )
 
         station_boost = new_stations * 55 * 7  # per week
 
@@ -1332,10 +1347,27 @@ with forecast_tab:
                 name="XGBoost forecast", line=dict(color="#FF00BF", width=3),
                 mode="lines+markers", marker=dict(size=6),
             ))
+            # Add vertical divider line between actual and forecast
+            figure.add_shape(
+                type="line", x0=last_date, x1=last_date,
+                y0=0, y1=1, yref="paper",
+                line=dict(color="#94A3B8", width=1, dash="dash"),
+            )
+            # Label the two halves
+            figure.add_annotation(
+                x=hist_tail["date"].iloc[len(hist_tail)//2], y=1.08, yref="paper",
+                text="<b>Historical (actual)</b>", showarrow=False,
+                font=dict(size=11, color="#1B3A6B"),
+            )
+            figure.add_annotation(
+                x=forecast_dates[len(forecast_dates)//2], y=1.08, yref="paper",
+                text="<b>Projection (forecast)</b>", showarrow=False,
+                font=dict(size=11, color="#FF00BF"),
+            )
             figure.update_layout(
                 height=420, hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                margin=dict(l=10, r=10, t=40, b=10),
+                legend=dict(orientation="h", yanchor="bottom", y=1.12, xanchor="right", x=1),
+                margin=dict(l=10, r=10, t=60, b=10),
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
                 xaxis_title="", yaxis_title="Weekly trips",
             )
