@@ -253,16 +253,14 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         line=dict(color="#F59E0B", width=2, dash="dash"),
         name="Trend",
     ))
-    fig.add_vline(
-        x=pd.Timestamp("2023-02-01"), line_dash="dash", line_color="#1B3A6B",
-        annotation_text="Feb 2023: MTC investment", annotation_position="top",
-        annotation_font_color="#1B3A6B",
-    )
-    fig.add_vline(
-        x=pd.Timestamp("2023-11-01"), line_dash="dashdot", line_color="#7DD3FC",
-        annotation_text="Nov 2023: price drop", annotation_position="top",
-        annotation_font_color="#7DD3FC",
-    )
+    fig.add_shape(type="line", x0="2023-02-01", x1="2023-02-01", y0=0, y1=1,
+                  yref="paper", line=dict(dash="dash", color="#1B3A6B", width=1))
+    fig.add_annotation(x="2023-02-01", y=1, yref="paper", text="Feb 2023: MTC investment",
+                       showarrow=False, font=dict(color="#1B3A6B", size=11), yshift=10)
+    fig.add_shape(type="line", x0="2023-11-01", x1="2023-11-01", y0=0, y1=1,
+                  yref="paper", line=dict(dash="dashdot", color="#7DD3FC", width=1))
+    fig.add_annotation(x="2023-11-01", y=1, yref="paper", text="Nov 2023: price drop",
+                       showarrow=False, font=dict(color="#7DD3FC", size=11), yshift=10)
     fig.update_xaxes(
         tickangle=0, tickmode="array",
         tickvals=quarter_starts, ticktext=quarter_ticktext,
@@ -289,10 +287,9 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     )
     st.dataframe(headline, use_container_width=True)
 
-    # ── Station network size ──
+    # ── Station network size + Findings (side by side) ──
     st.markdown("---")
-    st.subheader("Station network size: Feb 2023 vs now")
-    station_summary = pd.DataFrame(
+    network_row = pd.DataFrame(
         {
             "metric": [
                 "Stations active in Feb 2023",
@@ -309,14 +306,44 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
                 round(station_growth_pct, 1),
             ],
         }
-    ).set_index("metric")
-    st.dataframe(station_summary, use_container_width=True)
+    )
+    network_cols = st.columns([1, 2])
+    with network_cols[0]:
+        st.subheader("Station network size: Feb 2023 vs now")
+        network_rows_html = "".join(
+            f"""
+            <tr>
+                <td>{row.metric}</td>
+                <td style="text-align:right;">{row.value:,.1f}</td>
+            </tr>
+            """
+            for row in network_row.itertuples()
+        )
+        st.markdown(
+            f"""
+            <style>
+            .sf-network-table {{ width: 100%; border-collapse: collapse; font-size: .85rem; }}
+            .sf-network-table th {{
+                text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #E5E7EB;
+                color: #64748B; font-weight: 600; font-size: .72rem;
+                text-transform: uppercase; letter-spacing: .03em;
+            }}
+            .sf-network-table td {{
+                padding: .35rem .5rem; border-bottom: 1px solid #F1F5F9; color: #0F172A;
+            }}
+            </style>
+            <table class="sf-network-table">
+                <thead><tr><th>Metric</th><th style="text-align:right;">Value</th></tr></thead>
+                <tbody>{network_rows_html}</tbody>
+            </table>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # ── Findings ──
-    st.markdown("---")
-    st.subheader("Findings")
-    st.markdown(
-        f"""
+    with network_cols[1]:
+        st.subheader("Findings")
+        st.markdown(
+            f"""
 - **Ridership per station grew {trips_per_station_growth:+.0f}%** from the
   post-Feb-2023 window to the most recent window — per-station, so it isn't
   just "more stations means more trips."
@@ -330,8 +357,9 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
   and the no-change control year — the data doesn't support a "the price
   drop grew ridership" claim, though it's weakly consistent with the drop
   softening the usual seasonal decline.
-        """
-    )
+            """
+        )
+
     st.caption(
         "Note: the Jan–May 2024 gap that previously affected this dataset has "
         "been backfilled. The Nov 2023 \"after\" window is still kept at 2 "

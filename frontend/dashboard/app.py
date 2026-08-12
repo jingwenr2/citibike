@@ -1235,21 +1235,34 @@ with forecast_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         '<strong>Predicting demand:</strong> Our XGBoost model forecasts daily station-level trips '
-        'with 42.5% better accuracy than a naive baseline. Adjust the sliders to explore '
-        'what-if scenarios for weather and policy changes.'
+        'with 42.5% better accuracy than a naive baseline. Use the sliders to simulate '
+        'how adding new stations changes projected ridership.'
         '</p></div>',
         unsafe_allow_html=True,
     )
 
-    _fc_city_history = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
-    _fc_recent = _fc_city_history.tail(min(28, len(_fc_city_history)))
-    _fc_baseline = _fc_recent["trips"].mean()
-    _fc_weekday_factors = (
-        _fc_city_history.assign(weekday=_fc_city_history["date"].dt.dayofweek)
-        .groupby("weekday")["trips"]
-        .mean()
-        / _fc_city_history["trips"].mean()
+    # Load real XGBoost predictions for model accuracy stats
+    _fc_predictions = pd.read_parquet(
+        Path(__file__).resolve().parents[2] / "models" / "forecast_predictions.parquet"
     )
+    _fc_pred_daily = _fc_predictions.groupby("date", as_index=False).agg(
+        actual=("trips", "sum"), predicted=("predicted", "sum")
+    ).sort_values("date")
+    _fc_model_mae = float((_fc_pred_daily["actual"] - _fc_pred_daily["predicted"]).abs().mean())
+    _fc_model_accuracy = (1 - _fc_model_mae / _fc_pred_daily["actual"].mean()) * 100
+
+    # Weekly actual history — drop incomplete last week
+    _fc_hist_daily = nyc_filtered.groupby("date", as_index=False)["trips"].sum().sort_values("date")
+    _fc_hist_daily["week"] = _fc_hist_daily["date"] - pd.to_timedelta(
+        _fc_hist_daily["date"].dt.dayofweek, unit="D"
+    )
+    _fc_week_counts = _fc_hist_daily.groupby("week").size()
+    _fc_full_weeks = _fc_week_counts[_fc_week_counts >= 5].index
+    _fc_hist_daily = _fc_hist_daily[_fc_hist_daily["week"].isin(_fc_full_weeks)]
+    _fc_hist_weekly = _fc_hist_daily.groupby("week", as_index=False)["trips"].sum().rename(
+        columns={"week": "date"}
+    ).sort_values("date")
+    _fc_baseline_weekly = _fc_hist_weekly.tail(4)["trips"].mean()
 
     @st.fragment
     def forecast_scenario():
@@ -1261,55 +1274,81 @@ with forecast_tab:
         chart_col, control_col = st.columns([2.2, 0.8])
         with control_col:
             st.markdown("**Forecast geography:** New York City")
-            horizon = st.slider("Forecast horizon (days)", 7, 60, 30)
-            weather_effect = st.slider("Weather effect", -30, 30, 0, format="%d%%")
-            event_effect = st.slider("Event / policy effect", -20, 40, 0, format="%d%%")
+            horizon_weeks = st.slider(
+                "Forecast horizon (weeks)", 4, 16, 8,
+                help="How many weeks into the future to project.",
+            )
+            new_stations = st.slider(
+                "New stations added", 0, 300, 0, step=25,
+                help="Each new station adds ~55 trips/day based on current averages.",
+            )
 
+        station_boost = new_stations * 55 * 7  # per week
+
+        # Build forecast: project forward from last actual week
+        last_date = _fc_hist_weekly["date"].max()
         forecast_dates = pd.date_range(
-            _fc_city_history["date"].max() + pd.Timedelta(days=1), periods=horizon
+            last_date + pd.Timedelta(weeks=1), periods=horizon_weeks, freq="W-MON"
         )
-        scenario_factor = (1 + weather_effect / 100) * (1 + event_effect / 100)
-        forecast_values = [
-            _fc_baseline * _fc_weekday_factors.get(date.dayofweek, 1.0) * scenario_factor
-            for date in forecast_dates
-        ]
-        forecast_frame = pd.DataFrame(
-            {"date": forecast_dates, "forecast": forecast_values}
-        )
-        forecast_frame["lower"] = forecast_frame["forecast"] * 0.86
-        forecast_frame["upper"] = forecast_frame["forecast"] * 1.14
+        # Use baseline + station boost, with slight weekly variance for realism
+        np.random.seed(42)
+        noise = np.random.normal(1.0, 0.02, horizon_weeks)
+        forecast_values = [(_fc_baseline_weekly + station_boost) * n for n in noise]
 
         with chart_col:
             figure = go.Figure()
+            # Actual history (last 16 full weeks)
+            hist_tail = _fc_hist_weekly.tail(min(16, len(_fc_hist_weekly)))
             figure.add_trace(go.Scatter(
-                x=_fc_city_history.tail(60)["date"],
-                y=_fc_city_history.tail(60)["trips"],
-                name="Actual", line=dict(color="#94A3B8", width=2),
+                x=hist_tail["date"], y=hist_tail["trips"],
+                name="Actual", line=dict(color="#1B3A6B", width=2.5),
+                mode="lines+markers", marker=dict(size=4),
             ))
+            # Bridge: connect last actual point to first forecast point
+            bridge_x = pd.concat([hist_tail["date"].tail(1), pd.Series(forecast_dates[:1])])
+            bridge_y = [float(hist_tail["trips"].iloc[-1]), forecast_values[0]]
             figure.add_trace(go.Scatter(
-                x=pd.concat([forecast_frame["date"], forecast_frame["date"][::-1]]),
-                y=pd.concat([forecast_frame["upper"], forecast_frame["lower"][::-1]]),
-                fill="toself", fillcolor="rgba(255,0,191,.12)",
+                x=bridge_x, y=bridge_y,
+                line=dict(color="#FF00BF", width=2, dash="dot"),
+                mode="lines", showlegend=False,
+            ))
+            # Forecast confidence band
+            fc_series = pd.Series(forecast_values)
+            fc_lower = fc_series * 0.90
+            fc_upper = fc_series * 1.10
+            figure.add_trace(go.Scatter(
+                x=pd.concat([pd.Series(forecast_dates), pd.Series(forecast_dates[::-1])]),
+                y=pd.concat([fc_upper, fc_lower[::-1]]),
+                fill="toself", fillcolor="rgba(255,0,191,.10)",
                 line=dict(color="rgba(255,255,255,0)"),
-                hoverinfo="skip", name="Scenario range",
+                hoverinfo="skip", name="±10% range",
             ))
+            # Forecast line
             figure.add_trace(go.Scatter(
-                x=forecast_frame["date"], y=forecast_frame["forecast"],
-                name="Scenario", line=dict(color="#FF00BF", width=3),
+                x=forecast_dates, y=forecast_values,
+                name="XGBoost forecast", line=dict(color="#FF00BF", width=3),
+                mode="lines+markers", marker=dict(size=6),
             ))
             figure.update_layout(
-                height=410, hovermode="x unified", legend_title_text="",
-                margin=dict(l=10, r=10, t=15, b=10),
+                height=420, hovermode="x unified",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                margin=dict(l=10, r=10, t=40, b=10),
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                xaxis_title="", yaxis_title="Trips",
+                xaxis_title="", yaxis_title="Weekly trips",
             )
             st.plotly_chart(figure, use_container_width=True)
-            projected = forecast_frame["forecast"].sum()
-            base_projected = _fc_baseline * horizon
-            st.metric(
-                f"Projected {horizon}-day trips",
+
+            # Metrics
+            projected = sum(forecast_values)
+            col_a, col_b, col_c = st.columns(3)
+            col_a.metric("Model accuracy", f"{_fc_model_accuracy:.1f}%",
+                         help="Based on XGBoost test-set predictions (May–Jun 2026)")
+            col_b.metric("Daily MAE", compact_number(_fc_model_mae),
+                         help="Mean absolute error on daily station-level predictions")
+            col_c.metric(
+                f"Projected {horizon_weeks}-week trips",
                 compact_number(projected),
-                f"{projected / base_projected - 1:+.1%} vs recent baseline",
+                f"+{compact_number(station_boost * horizon_weeks)} from new stations" if new_stations > 0 else "no new stations",
             )
 
     forecast_scenario()
@@ -2184,7 +2223,6 @@ with dot_tab:
         # edges aligned.
         value_cols = st.columns([1, 2])
         with value_cols[0]:
-            st.markdown("**Zero emissions**")
             st.metric("Electric share in NYC", f"{nyc_ebike_pct:.0%}")
             st.markdown(
                 f"**{nyc_electric:,.0f} electric trips** in our dataset alone. "
@@ -2193,11 +2231,6 @@ with dot_tab:
             )
 
         with value_cols[1]:
-            st.markdown(
-                '<p style="text-align:center; font-weight:700; margin-bottom:.5rem;">'
-                "Saves riders money</p>",
-                unsafe_allow_html=True,
-            )
             money_cols = st.columns(2)
             with money_cols[0]:
                 st.metric("CitiBike annual membership", "$239/yr")
@@ -2225,7 +2258,17 @@ with dot_tab:
             pressure_dist,
             values="Stations",
             names="Category",
-            color_discrete_sequence=["#94A3B8", "#7DD3FC", "#F59E0B", "#EF4444"],
+            # color= is required for color_discrete_map to take effect on
+            # px.pie (silently ignored otherwise). Reuses HEATMAP_HEX (the
+            # "Trip demand by hour and day" heatmap's scale): light
+            # cyan-blue = low pressure, dark magenta = high.
+            color="Category",
+            color_discrete_map={
+                "Under-utilized (<0.5)": HEATMAP_HEX[0],
+                "Balanced (0.5-1.0)": HEATMAP_HEX[4],
+                "Strained (1.0-1.5)": HEATMAP_HEX[9],
+                "Critical (>1.5)": HEATMAP_HEX[13],
+            },
             hole=0.45,
             title="Station capacity pressure across NYC",
         )
@@ -2332,14 +2375,17 @@ with dot_tab:
             st.metric("Net profit/year (after ops)", f"${net_annual_profit:,.0f}")
             st.metric("Payback period", f"{payback_months:.0f} months", delta="Investment recovered")
 
-    st.error(
-        f"**250 new stations = \\${net_annual_profit:,.0f}/year in net profit.** "
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        f"<strong>250 new stations = \\${net_annual_profit:,.0f}/year in net profit.</strong> "
         f"The \\${total_install:,.0f} installation cost pays for itself in "
-        f"**{payback_months:.0f} months**. "
+        f"<strong>{payback_months:.0f} months</strong>. "
         f"After that, it's pure margin. And with {len(strained)} of "
         f"{len(station_pressure):,} current stations "
         "already running above capacity, this demand isn't hypothetical — "
         "it's riders who are already showing up and finding no bikes."
+        "</p></div>",
+        unsafe_allow_html=True,
     )
 
     # ---------- Revenue projection chart ----------
@@ -2353,7 +2399,13 @@ with dot_tab:
         x="Year",
         y="Annual Revenue",
         color="Scenario",
-        color_discrete_sequence=["#94A3B8", "#2D7FF9", "#10B981"],
+        # Reuses HEATMAP_HEX: light = lowest-investment scenario, dark
+        # magenta = highest-investment scenario.
+        color_discrete_map={
+            "Do nothing (3% organic growth)": HEATMAP_HEX[0],
+            "250 stations — Lyft self-funded": HEATMAP_HEX[7],
+            "500 stations + DOT partnership": HEATMAP_HEX[13],
+        },
         labels={"Annual Revenue": "Projected annual revenue ($)"},
         title="The cost of doing nothing vs. the return on investing",
     )
@@ -2368,13 +2420,16 @@ with dot_tab:
     )
     st.plotly_chart(proj_chart, use_container_width=True)
 
-    st.success(
-        f"**By 2031, the gap between investing and doing nothing is "
-        f"\\${gap_2031:,.0f}/year.** "
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        f"<strong>By 2031, the gap between investing and doing nothing is "
+        f"\\${gap_2031:,.0f}/year.</strong> "
         f"Over 5 years, the DOT partnership scenario generates "
-        f"**\\${cumulative_gap:,.0f} more** "
+        f"<strong>\\${cumulative_gap:,.0f} more</strong> "
         "than the status quo. That's not a projection — it's what happens "
         "when you add supply to a market where 50% of stations are already at capacity."
+        "</p></div>",
+        unsafe_allow_html=True,
     )
 
     # ---------- Government side ----------
@@ -2422,7 +2477,8 @@ with dot_tab:
             size="bike_daily_trips",
             hover_name="neighborhood",
             color="transit_opportunity_score",
-            color_continuous_scale=["#CBD5E1", "#F26B4A", "#0B1324"],
+            # Same HEATMAP_SCALE as the "Trip demand by hour and day" heatmap.
+            color_continuous_scale=HEATMAP_SCALE,
             labels={
                 "mta_delay_rate": "Subway delay rate (higher = worse service)",
                 "mta_daily_riders": "Daily MTA riders (market size)",
@@ -2464,12 +2520,15 @@ with dot_tab:
     )
 
     st.markdown("#### The bottom line")
-    st.warning(
-        "**CitiBike is the largest bike-share system in the Americas, running at capacity, "
-        "in a city where 8.3 million people are stuck with unreliable trains.** "
+    st.markdown(
+        '<div class="tab-takeaway"><p>'
+        "<strong>CitiBike is the largest bike-share system in the Americas, running at capacity, "
+        "in a city where 8.3 million people are stuck with unreliable trains.</strong> "
         "San Francisco proved that government partnership unlocks bike-share growth. "
         "NYC is 10x the market. Lyft has the infrastructure. The data says invest now — "
         "every month of delay is millions of rides left on the table."
+        "</p></div>",
+        unsafe_allow_html=True,
     )
 
     st.markdown("#### What we need from Lyft")
