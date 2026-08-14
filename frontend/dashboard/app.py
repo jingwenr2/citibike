@@ -1799,47 +1799,44 @@ with investment_tab:
             # narrower results column.
             kpi_banner_slot = st.container(key="kpi-planner-summary")
 
-            assumption_col, results_col = st.columns([0.8, 2.2])
+            assumption_col, results_col = st.columns([0.9, 2.1])
             with assumption_col:
                 st.markdown("**Investment geography:** New York City")
-                controls_left, controls_right = st.columns(2)
-                with controls_left:
-                    public_budget = st.number_input(
-                        "Available capital budget",
-                        min_value=50_000, max_value=50_000_000, value=16_000_000,
-                        step=50_000, format="%d",
-                        help="Defaults to $16M — what MTC invested in Bay Wheels (SF) in Feb 2023.",
-                    )
-                    docks_added = st.slider("Docks added per station", 4, 40, 16)
-                    cost_per_dock = st.number_input(
-                        "Installed cost per dock",
-                        min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
-                    )
-                    demand_uplift = st.slider(
-                        "Demand captured after expansion", 5, 60, 35, format="%d%%",
-                        help=(
-                            "Defaults to 35% — modeled on Bay Wheels (SF): at the same "
-                            "$16M investment level, this produces an 11.1% membership "
-                            "price decrease, matching SF's actual $169->$150 cut (11.2%) "
-                            "after its Feb 2023 MTC investment."
-                        ),
-                    )
-                with controls_right:
-                    net_revenue_trip = st.number_input(
-                        "Net operating revenue per new trip",
-                        min_value=0.0, max_value=20.0, value=DEFAULT_NET_REVENUE_PER_TRIP, step=0.25,
-                    )
-                    public_value_trip = st.number_input(
-                        "Estimated public value per new trip",
-                        min_value=0.0, max_value=30.0, value=4.00, step=0.25,
-                        help="Editable proxy for congestion, access, health, and emissions benefits.",
-                    )
-                    annual_station_cost = st.number_input(
-                        "Annual added station operating cost",
-                        min_value=0, max_value=250_000, value=28_000, step=2_000, format="%d",
-                    )
-                    analysis_years = st.slider("Analysis period", 3, 15, 5)
-                    discount_rate = st.slider("Discount rate", 0, 15, 5, format="%d%%")
+                public_budget = st.number_input(
+                    "Available capital budget",
+                    min_value=50_000, max_value=50_000_000, value=16_000_000,
+                    step=50_000, format="%d",
+                    help="Defaults to $16M — what MTC invested in Bay Wheels (SF) in Feb 2023.",
+                )
+                docks_added = st.slider("Docks added per station", 4, 40, 16)
+                cost_per_dock = st.number_input(
+                    "Installed cost per dock",
+                    min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
+                )
+                demand_uplift = st.slider(
+                    "Demand captured after expansion", 5, 60, 35, format="%d%%",
+                    help=(
+                        "Defaults to 35% — modeled on Bay Wheels (SF): at the same "
+                        "$16M investment level, this produces an 11.1% membership "
+                        "price decrease, matching SF's actual $169->$150 cut (11.2%) "
+                        "after its Feb 2023 MTC investment."
+                    ),
+                )
+                net_revenue_trip = st.number_input(
+                    "Net operating revenue per new trip",
+                    min_value=0.0, max_value=20.0, value=DEFAULT_NET_REVENUE_PER_TRIP, step=0.25,
+                )
+                public_value_trip = st.number_input(
+                    "Estimated public value per new trip",
+                    min_value=0.0, max_value=30.0, value=4.00, step=0.25,
+                    help="Editable proxy for congestion, access, health, and emissions benefits.",
+                )
+                annual_station_cost = st.number_input(
+                    "Annual added station operating cost",
+                    min_value=0, max_value=250_000, value=28_000, step=2_000, format="%d",
+                )
+                analysis_years = st.slider("Analysis period", 3, 15, 5)
+                discount_rate = st.slider("Discount rate", 0, 15, 5, format="%d%%")
 
             investment_rank = _inv_base.copy()
             investment_rank["new_annual_trips"] = (
