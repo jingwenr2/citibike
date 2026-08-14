@@ -37,6 +37,7 @@ def compute_stats() -> dict:
     total_minutes = 0.0
     total_count = 0
     per_rider_type: dict[str, tuple[float, int]] = {}
+    per_rider_and_bike_type: dict[tuple[str, str], tuple[float, int]] = {}
 
     for zp in zips:
         print(f"processing: {zp.name}")
@@ -46,7 +47,7 @@ def compute_stats() -> dict:
                 with zf.open(name) as f:
                     for chunk in pd.read_csv(
                         f,
-                        usecols=["started_at", "ended_at", "member_casual"],
+                        usecols=["started_at", "ended_at", "member_casual", "rideable_type"],
                         chunksize=500_000,
                     ):
                         started = pd.to_datetime(chunk["started_at"], format="mixed", errors="coerce")
@@ -54,6 +55,10 @@ def compute_stats() -> dict:
                         minutes = (ended - started).dt.total_seconds() / 60
                         valid = (minutes >= MIN_PLAUSIBLE_MINUTES) & (minutes <= MAX_PLAUSIBLE_MINUTES)
                         rider_type = chunk["member_casual"].str.lower()
+                        # Older exports used "docked_bike" for classic bikes.
+                        bike_type = chunk["rideable_type"].str.lower().replace(
+                            {"docked_bike": "classic_bike"}
+                        )
 
                         for label in ("casual", "member"):
                             mask = valid & (rider_type == label)
@@ -61,6 +66,14 @@ def compute_stats() -> dict:
                             c = int(mask.sum())
                             prev_s, prev_c = per_rider_type.get(label, (0.0, 0))
                             per_rider_type[label] = (prev_s + s, prev_c + c)
+
+                            for bike_label in ("classic_bike", "electric_bike"):
+                                bmask = mask & (bike_type == bike_label)
+                                bs = minutes[bmask].sum()
+                                bc = int(bmask.sum())
+                                key = (label, bike_label)
+                                prev_bs, prev_bc = per_rider_and_bike_type.get(key, (0.0, 0))
+                                per_rider_and_bike_type[key] = (prev_bs + bs, prev_bc + bc)
 
                         total_minutes += minutes[valid].sum()
                         total_count += int(valid.sum())
@@ -81,6 +94,17 @@ def compute_stats() -> dict:
                 "trip_count": c,
             }
             for label, (s, c) in per_rider_type.items()
+        },
+        "by_rider_and_bike_type": {
+            rider_label: {
+                bike_label.replace("_bike", ""): {
+                    "avg_minutes": round(s / c, 2) if c else None,
+                    "trip_count": c,
+                }
+                for (r, bike_label), (s, c) in per_rider_and_bike_type.items()
+                if r == rider_label
+            }
+            for rider_label in ("casual", "member")
         },
     }
     return result

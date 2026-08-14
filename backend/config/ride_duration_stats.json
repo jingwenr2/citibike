@@ -1,6 +1,6 @@
 {
   "_description": "Average Citi Bike NYC trip duration, computed directly from raw monthly trip data (started_at/ended_at), not from an external source. Trips outside [1, 180] minutes are excluded as data errors.",
-  "_computed_at": "2026-08-10T18:47:24.600868+00:00",
+  "_computed_at": "2026-08-14T19:11:20.282239+00:00",
   "_source_files": [
     "202407-citibike-tripdata.zip",
     "202408-citibike-tripdata.zip",
@@ -37,6 +37,28 @@
     "member": {
       "avg_minutes": 11.08,
       "trip_count": 74801606
+    }
+  },
+  "by_rider_and_bike_type": {
+    "casual": {
+      "classic": {
+        "avg_minutes": 20.05,
+        "trip_count": 4106604
+      },
+      "electric": {
+        "avg_minutes": 17.06,
+        "trip_count": 12159582
+      }
+    },
+    "member": {
+      "classic": {
+        "avg_minutes": 10.72,
+        "trip_count": 23313507
+      },
+      "electric": {
+        "avg_minutes": 11.24,
+        "trip_count": 51488099
+      }
     }
   }
 }

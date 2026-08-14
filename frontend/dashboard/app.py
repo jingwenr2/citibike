@@ -678,30 +678,43 @@ with home_tab:
     st.subheader("Riders are paying more for a system that's out of room")
 
     pct_strained = len(strained) / len(station_pressure) * 100 if len(station_pressure) > 0 else 0
-    avg_ride = revenue_service.estimate_average_single_ride()
+    avg_ride_by_bike = revenue_service.estimate_average_single_ride_by_bike_type()
     with st.container(key="kpi-problem"):
-        problem_cols = st.columns(3)
+        problem_cols = st.columns(4)
         with problem_cols[0]:
             st.metric("Annual membership", "$239/yr")
         with problem_cols[1]:
+            classic_ride = avg_ride_by_bike["classic"]
             st.metric(
-                f"Avg. single ride ({avg_ride['avg_minutes']:.0f} min)",
-                f"${avg_ride['price']:.2f}",
+                f"Avg. single ride, Manual ({classic_ride['avg_minutes']:.0f} min)",
+                f"${classic_ride['price']:.2f}",
                 help=(
-                    f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
-                    "(computed directly from raw CitiBike trip data). The base "
-                    f"single-ride price includes {avg_ride['included_minutes']:.0f} minutes, "
+                    f"Casual riders average a {classic_ride['avg_minutes']:.1f}-minute trip on "
+                    "classic bikes (computed directly from raw CitiBike trip data). The base "
+                    f"single-ride price includes {classic_ride['included_minutes']:.0f} minutes, "
                     "so the average ride costs the flat unlock price with no overage."
-                    if avg_ride["overage_minutes"] == 0
+                    if classic_ride["overage_minutes"] == 0
                     else (
-                        f"Casual riders average a {avg_ride['avg_minutes']:.1f}-minute trip "
-                        "(computed directly from raw CitiBike trip data), which runs "
-                        f"{avg_ride['overage_minutes']:.1f} min past the "
-                        f"{avg_ride['included_minutes']:.0f}-min included window."
+                        f"Casual riders average a {classic_ride['avg_minutes']:.1f}-minute trip on "
+                        "classic bikes (computed directly from raw CitiBike trip data), which runs "
+                        f"{classic_ride['overage_minutes']:.1f} min past the "
+                        f"{classic_ride['included_minutes']:.0f}-min included window."
                     )
                 ),
             )
         with problem_cols[2]:
+            electric_ride = avg_ride_by_bike["electric"]
+            st.metric(
+                f"Avg. single ride, Electric ({electric_ride['avg_minutes']:.0f} min)",
+                f"${electric_ride['price']:.2f}",
+                help=(
+                    f"Casual riders average a {electric_ride['avg_minutes']:.1f}-minute trip on "
+                    "electric bikes (computed directly from raw CitiBike trip data). Electric "
+                    "bikes carry no included free minutes, so the price is the unlock fee plus "
+                    "the per-minute e-bike surcharge for the full ride."
+                ),
+            )
+        with problem_cols[3]:
             st.metric("Stations at/above capacity", f"{pct_strained:.0f}%")
     st.markdown(
         f"Membership and per-ride prices are already a real cost barrier for many "

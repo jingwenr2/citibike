@@ -98,6 +98,49 @@ def estimate_average_single_ride(
     }
 
 
+def estimate_average_single_ride_by_bike_type(
+    assumptions: dict[str, Any] | None = None,
+    duration_stats: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Estimate what an average casual single ride costs, split by bike type.
+
+    Classic bikes: unlock fee plus per-minute overage beyond the included
+    window. Electric bikes: unlock fee plus the per-minute e-bike surcharge
+    for the whole ride — Citi Bike's e-bikes carry no included free minutes.
+    """
+    if assumptions is None:
+        assumptions = load_pricing_assumptions()
+    if duration_stats is None:
+        duration_stats = load_ride_duration_stats()
+
+    by_bike_type = duration_stats["by_rider_and_bike_type"]["casual"]
+    included_minutes = assumptions["included_ride_minutes_casual"]
+
+    classic_minutes = by_bike_type["classic"]["avg_minutes"]
+    classic_overage = max(0.0, classic_minutes - included_minutes)
+    classic_price = (
+        assumptions["single_ride_price"] + classic_overage * assumptions["overage_per_minute_casual"]
+    )
+
+    electric_minutes = by_bike_type["electric"]["avg_minutes"]
+    electric_price = (
+        assumptions["single_ride_price"] + electric_minutes * assumptions["ebike_per_minute_nonmember"]
+    )
+
+    return {
+        "classic": {
+            "avg_minutes": classic_minutes,
+            "included_minutes": included_minutes,
+            "overage_minutes": classic_overage,
+            "price": classic_price,
+        },
+        "electric": {
+            "avg_minutes": electric_minutes,
+            "price": electric_price,
+        },
+    }
+
+
 def estimate_annual_revenue(
     df: pd.DataFrame,
     assumptions: dict[str, Any] | None = None,
