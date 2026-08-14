@@ -513,7 +513,7 @@ st.markdown(
       </div>
       <div style="position:relative; z-index:1;">
         <div class="eyebrow">Capstone project · data-driven investment case</div>
-        <h1>CitiBike is a $196M/yr business running at capacity.</h1>
+        <h1>CitiBike is a $200M/yr business running at capacity.</h1>
         <p>50% of stations are maxed out. Trains are failing. 250 new stations pay back in 17 months.
         This dashboard is the evidence — start with the Overview, then follow the tabs left to right.</p>
       </div>
@@ -2181,7 +2181,7 @@ with investment_tab:
 with dot_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        '<strong>The bottom line:</strong> CitiBike is a $196M/yr business running at capacity '
+        '<strong>The bottom line:</strong> CitiBike is a $200M/yr business running at capacity '
         'in a city where 8.3M people are stuck with unreliable trains. 250 new stations = '
         '$11.3M/yr net profit, 17-month payback. This tab walks through the 6 arguments why.'
         '</p></div>',
@@ -2451,7 +2451,7 @@ with dot_tab:
     # ===================================================================
     st.markdown("### 5. The money: why Lyft should fund this and how much they'll make")
     st.markdown(
-        "This isn't charity. CitiBike is already a **\\$196M/year revenue engine**. "
+        "This isn't charity. CitiBike is already a **\\$200M/year revenue engine**. "
         "Expansion doesn't cost Lyft money — it **makes** Lyft money. Here's the math."
     )
 
