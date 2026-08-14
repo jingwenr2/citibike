@@ -1348,8 +1348,8 @@ with forecast_tab:
             hist_tail = _fc_hist_weekly.tail(min(16, len(_fc_hist_weekly)))
             figure.add_trace(go.Scatter(
                 x=hist_tail["date"], y=hist_tail["trips"],
-                name="Actual", line=dict(color="#1B3A6B", width=2.5),
-                mode="lines+markers", marker=dict(size=4),
+                name="Actual", line=dict(color="#1B3A6B", width=3),
+                mode="lines+markers", marker=dict(size=6),
             ))
             # Bridge: connect last actual point to first forecast point
             bridge_x = pd.concat([hist_tail["date"].tail(1), pd.Series(forecast_dates[:1])])
@@ -1373,9 +1373,41 @@ with forecast_tab:
             # Forecast line
             figure.add_trace(go.Scatter(
                 x=forecast_dates, y=forecast_values,
-                name="XGBoost forecast", line=dict(color="#FF00BF", width=3),
-                mode="lines+markers", marker=dict(size=6),
+                name="XGBoost forecast", line=dict(color="#FF00BF", width=3.5),
+                mode="lines+markers", marker=dict(size=7),
             ))
+            # Before vs after annotation when stations are added
+            if new_stations > 0:
+                base_no_boost = [_fc_baseline_weekly * n for n in noise]
+                avg_before = sum(base_no_boost) / len(base_no_boost)
+                avg_after = sum(forecast_values) / len(forecast_values)
+                lift = avg_after - avg_before
+                lift_pct = lift / avg_before * 100
+                # Dashed "without expansion" reference line
+                figure.add_trace(go.Scatter(
+                    x=forecast_dates, y=base_no_boost,
+                    name="Without expansion",
+                    line=dict(color="#94A3B8", width=2, dash="dash"),
+                    mode="lines",
+                ))
+                # Arrow annotation showing the lift — placed below the lines
+                mid_idx = len(forecast_dates) // 2
+                figure.add_annotation(
+                    x=forecast_dates[mid_idx],
+                    y=base_no_boost[mid_idx],
+                    ay=60,
+                    text=f"<b>+{compact_number(lift)}/wk (+{lift_pct:.1f}%)</b><br>{new_stations} new stations",
+                    showarrow=True,
+                    arrowhead=2,
+                    arrowsize=1.2,
+                    arrowwidth=2,
+                    arrowcolor="#FF00BF",
+                    font=dict(size=14, color="#FF00BF"),
+                    bgcolor="rgba(255,255,255,0.9)",
+                    bordercolor="#FF00BF",
+                    borderwidth=1,
+                    borderpad=6,
+                )
             # Add vertical divider line between actual and forecast
             figure.add_shape(
                 type="line", x0=last_date, x1=last_date,
@@ -1386,19 +1418,33 @@ with forecast_tab:
             figure.add_annotation(
                 x=hist_tail["date"].iloc[len(hist_tail)//2], y=1.08, yref="paper",
                 text="<b>Historical (actual)</b>", showarrow=False,
-                font=dict(size=11, color="#1B3A6B"),
+                font=dict(size=13, color="#1B3A6B"),
             )
             figure.add_annotation(
                 x=forecast_dates[len(forecast_dates)//2], y=1.08, yref="paper",
                 text="<b>Projection (forecast)</b>", showarrow=False,
-                font=dict(size=11, color="#FF00BF"),
+                font=dict(size=13, color="#FF00BF"),
             )
             figure.update_layout(
-                height=420, hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.12, xanchor="right", x=1),
-                margin=dict(l=10, r=10, t=60, b=10),
+                height=480, hovermode="x unified",
+                legend=dict(orientation="h", yanchor="bottom", y=1.12, xanchor="right", x=1,
+                            font=dict(size=13)),
+                margin=dict(l=60, r=20, t=70, b=50),
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                xaxis_title="", yaxis_title="Weekly trips",
+                xaxis=dict(
+                    title=dict(text="Week", font=dict(size=14, color="#1B3A6B")),
+                    tickfont=dict(size=12, color="#4A4A4A"),
+                    tickformat="%b %d",
+                    gridcolor="#F0F0F0",
+                    showline=True, linewidth=1, linecolor="#CBD5E1",
+                ),
+                yaxis=dict(
+                    title=dict(text="Weekly Trips (total rides)", font=dict(size=14, color="#1B3A6B")),
+                    tickfont=dict(size=12, color="#4A4A4A"),
+                    gridcolor="#F0F0F0",
+                    showline=True, linewidth=1, linecolor="#CBD5E1",
+                    tickformat=",",
+                ),
             )
             st.plotly_chart(figure, use_container_width=True)
 

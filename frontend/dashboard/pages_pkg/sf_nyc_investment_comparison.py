@@ -89,6 +89,19 @@ def _pct_change(before: float, after: float) -> float:
     return (after - before) / before * 100
 
 
+def _display_labels(df: pd.DataFrame) -> pd.DataFrame:
+    """Snake_case index/column names -> Title Case, for display only.
+
+    Callers keep using the original (snake_case) frame for any further
+    lookups (.loc/.iloc by column name) — this returns a renamed copy.
+    """
+    out = df.copy()
+    if out.index.name:
+        out.index = out.index.rename(out.index.name.replace("_", " ").title())
+    out.columns = [str(c).replace("_", " ").title() for c in out.columns]
+    return out
+
+
 def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     st.subheader("San Francisco Case Study — Investment Outcome")
     st.markdown(
@@ -273,7 +286,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         "story.</p>",
         unsafe_allow_html=True,
     )
-    st.dataframe(headline, use_container_width=True)
+    st.dataframe(_display_labels(headline), use_container_width=True)
 
     # ── Station network size + Findings (side by side) ──
     st.markdown("---")
@@ -404,10 +417,10 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         price_col, control_col = st.columns(2)
         with price_col:
             st.markdown("**2023 price-drop window**")
-            st.dataframe(price_change_comparison, use_container_width=True)
+            st.dataframe(_display_labels(price_change_comparison), use_container_width=True)
         with control_col:
             st.markdown("**2025 seasonality control**")
-            st.dataframe(seasonal_control_comparison, use_container_width=True)
+            st.dataframe(_display_labels(seasonal_control_comparison), use_container_width=True)
 
         price_2023_before = price_change_comparison.iloc[0]["avg_daily_trips_per_station"]
         price_2023_after = price_change_comparison.iloc[1]["avg_daily_trips_per_station"]
@@ -416,14 +429,21 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         price_2023_pct = _pct_change(price_2023_before, price_2023_after)
         control_pct = _pct_change(control_before, control_after)
 
-        st.info(
-            f"**Reading the two tables together:** avg daily trips per station "
-            f"fell from Sep-Oct to Nov-Dec in *both* 2023 ({price_2023_before:.1f} "
+        st.markdown(
+            '<div style="background:#FDF1F8; border-left:4px solid #FF00BF; '
+            'padding:1rem 1.25rem; border-radius:0 12px 12px 0; margin:0 0 1.2rem 0;">'
+            '<p style="margin:0; font-size:.95rem; color:#334155; line-height:1.5;">'
+            '<strong style="color:#7A1263;">Reading the two tables together:</strong> '
+            "avg daily trips per station "
+            f"fell from Sep-Oct to Nov-Dec in <em>both</em> 2023 ({price_2023_before:.1f} "
             f"→ {price_2023_after:.1f}, about {price_2023_pct:+.0f}%) and 2025 "
             f"({control_before:.1f} → {control_after:.1f}, about "
             f"{control_pct:+.0f}%), even though 2025 had no price change at all "
-            f"in that window. That means the raw 2023 before/after **cannot be "
-            f"read as \"the price drop hurt ridership\"** — seasonality alone "
-            f"predicts a comparable or larger drop than what was actually "
-            f"observed."
+            "in that window. That means the raw 2023 before/after "
+            '<strong style="color:#7A1263;">cannot be '
+            'read as "the price drop hurt ridership"</strong> — seasonality alone '
+            "predicts a comparable or larger drop than what was actually "
+            "observed."
+            "</p></div>",
+            unsafe_allow_html=True,
         )
