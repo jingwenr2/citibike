@@ -1376,6 +1376,38 @@ with forecast_tab:
                 name="XGBoost forecast", line=dict(color="#FF00BF", width=3.5),
                 mode="lines+markers", marker=dict(size=7),
             ))
+            # Before vs after annotation when stations are added
+            if new_stations > 0:
+                base_no_boost = [_fc_baseline_weekly * n for n in noise]
+                avg_before = sum(base_no_boost) / len(base_no_boost)
+                avg_after = sum(forecast_values) / len(forecast_values)
+                lift = avg_after - avg_before
+                lift_pct = lift / avg_before * 100
+                # Dashed "without expansion" reference line
+                figure.add_trace(go.Scatter(
+                    x=forecast_dates, y=base_no_boost,
+                    name="Without expansion",
+                    line=dict(color="#94A3B8", width=2, dash="dash"),
+                    mode="lines",
+                ))
+                # Arrow annotation showing the lift — placed below the lines
+                mid_idx = len(forecast_dates) // 2
+                figure.add_annotation(
+                    x=forecast_dates[mid_idx],
+                    y=base_no_boost[mid_idx],
+                    ay=60,
+                    text=f"<b>+{compact_number(lift)}/wk (+{lift_pct:.1f}%)</b><br>{new_stations} new stations",
+                    showarrow=True,
+                    arrowhead=2,
+                    arrowsize=1.2,
+                    arrowwidth=2,
+                    arrowcolor="#FF00BF",
+                    font=dict(size=14, color="#FF00BF"),
+                    bgcolor="rgba(255,255,255,0.9)",
+                    bordercolor="#FF00BF",
+                    borderwidth=1,
+                    borderpad=6,
+                )
             # Add vertical divider line between actual and forecast
             figure.add_shape(
                 type="line", x0=last_date, x1=last_date,
