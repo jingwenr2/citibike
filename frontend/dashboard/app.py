@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import statsmodels.api as sm
 import streamlit as st
 from matplotlib.colors import LinearSegmentedColormap, to_hex
 
@@ -1526,7 +1527,7 @@ with mta_tab:
             fraction = max(0.0, min(1.0, score / opportunity_max))
             return to_hex(opportunity_cmap(fraction))
 
-        # ── Scatter plot with trend line ──
+        # ── Scatter plot with trend line + 95% CI band ──
         signal_chart = px.scatter(
             mta_opportunity,
             x="mta_daily_riders",
@@ -1544,26 +1545,64 @@ with mta_tab:
             color_continuous_scale=HEATMAP_SCALE,
             range_color=(0, opportunity_max),
             labels={
-                "mta_daily_riders": "MTA daily riders",
-                "bike_daily_trips": "CitiBike daily trips",
+                "mta_daily_riders": "MTA daily riders (log scale)",
+                "bike_daily_trips": "CitiBike daily trips (log scale)",
                 "transit_opportunity_score": "Opportunity score",
             },
-            trendline="ols",
+            log_x=True,
+            log_y=True,
+            title="MTA ridership vs. CitiBike demand, by neighborhood",
         )
-        # Style the trend line
-        for trace in signal_chart.data:
-            if hasattr(trace, "mode") and trace.mode == "lines":
-                trace.line = dict(color="#F59E0B", width=2, dash="dash")
-                trace.name = "Trend"
-                trace.showlegend = True
+
+        # Fit the trend in log-log space (a straight line there is a
+        # power-law relationship in the original units), matching the log
+        # axes above, then map the fitted line and its 95% confidence band
+        # for the mean back to plot coordinates.
+        trend_points = mta_opportunity[
+            (mta_opportunity["mta_daily_riders"] > 0) & (mta_opportunity["bike_daily_trips"] > 0)
+        ]
+        log_x = np.log10(trend_points["mta_daily_riders"])
+        log_y = np.log10(trend_points["bike_daily_trips"])
+        ols_model = sm.OLS(log_y, sm.add_constant(log_x)).fit()
+
+        grid_log_x = np.linspace(log_x.min(), log_x.max(), 100)
+        prediction = ols_model.get_prediction(
+            sm.add_constant(grid_log_x)
+        ).summary_frame(alpha=0.05)
+
+        grid_x = 10 ** grid_log_x
+        fit_y = 10 ** prediction["mean"]
+        lower_y = 10 ** prediction["mean_ci_lower"]
+        upper_y = 10 ** prediction["mean_ci_upper"]
+
+        signal_chart.add_trace(go.Scatter(
+            x=np.concatenate([grid_x, grid_x[::-1]]),
+            y=np.concatenate([upper_y, lower_y[::-1]]),
+            fill="toself",
+            fillcolor="rgba(255, 0, 191, 0.15)",
+            line=dict(width=0),
+            hoverinfo="skip",
+            name="95% confidence interval",
+        ))
+        signal_chart.add_trace(go.Scatter(
+            x=grid_x, y=fit_y, mode="lines",
+            line=dict(color=LYFT_PINK, width=4.5, dash="dash"),
+            name="Trend",
+        ))
 
         signal_chart.update_layout(
-            height=500,
-            margin=dict(l=10, r=10, t=30, b=10),
+            height=520,
+            margin=dict(l=10, r=10, t=50, b=60),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="white",
             xaxis=dict(gridcolor="#F1F5F9", zeroline=False),
             yaxis=dict(gridcolor="#F1F5F9", zeroline=False),
+            title=dict(x=0.02, xanchor="left"),
+            # Horizontal legend pinned below the plot so it never collides
+            # with the title above or the opportunity-score colorbar, which
+            # sits in its own default slot at the right edge.
+            legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="center", x=0.5),
+            coloraxis_colorbar=dict(y=0.4, len=0.8),
         )
         st.plotly_chart(signal_chart, use_container_width=True)
 
