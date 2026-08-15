@@ -1319,12 +1319,12 @@ with forecast_tab:
         chart_col, control_col = st.columns([2.2, 0.8])
         with control_col:
             st.markdown("**Forecast geography:** New York City")
-            horizon_weeks = st.slider(
-                "Forecast horizon (weeks)", 4, 16, 8,
+            horizon_weeks = st.number_input(
+                "Forecast horizon (weeks)", min_value=4, max_value=16, value=8, step=1,
                 help="How many weeks into the future to project.",
             )
-            new_stations = st.slider(
-                "New stations added", 0, 300, 0, step=25,
+            new_stations = st.number_input(
+                "New stations added", min_value=0, max_value=300, value=0, step=25,
                 help="Each new station adds ~55 trips/day based on current averages.",
             )
             st.markdown("---")
@@ -1332,7 +1332,7 @@ with forecast_tab:
             st.caption("**Navy line** — real weekly trips from Citi Bike data")
             st.caption("**Pink line** — projected trips based on XGBoost model baseline")
             st.caption("**Shaded band** — ±10% confidence range")
-            st.caption("Drag *New stations* slider to see how expansion impacts demand")
+            st.caption("Type a number in *New stations added* to see how expansion impacts demand")
             st.markdown("---")
             st.markdown("**How we ensure accuracy**")
             st.caption(
