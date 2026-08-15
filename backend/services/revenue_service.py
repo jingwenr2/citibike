@@ -308,7 +308,7 @@ def revenue_projection(
         "Do nothing (3% organic growth)": [
             current_revenue * (1.03 ** i) for i in range(len(years))
         ],
-        "250 stations — Lyft self-funded": [
+        "250 stations (Lyft self-funded)": [
             (current_revenue + new_station_revenue * min(i / 2, 1)) * (1.05 ** i)
             for i in range(len(years))
         ],

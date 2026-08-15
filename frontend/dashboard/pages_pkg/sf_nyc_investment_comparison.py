@@ -103,10 +103,10 @@ def _display_labels(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
-    st.subheader("San Francisco Case Study — Investment Outcome")
+    st.subheader("San Francisco Case Study: Investment Outcome")
     st.markdown(
         '<p class="section-note">How San Francisco\'s Bay Wheels network grew '
-        "after a $16M public investment from MTC in Feb 2023 — used here as "
+        "after a $16M public investment from MTC in Feb 2023, used here as "
         "supporting evidence, not a direct NYC comparison.</p>",
         unsafe_allow_html=True,
     )
@@ -200,7 +200,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
 
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        "Illustrative estimate only — uses the same revenue-per-trip assumption "
+        "Illustrative estimate only, uses the same revenue-per-trip assumption "
         "as the NYC model. Ridership growth likely reflects multiple factors "
         "beyond the investment alone (Electric rollout, network expansion, "
         "post-pandemic recovery)."
@@ -269,7 +269,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     fig.update_yaxes(tickangle=0)
     apply_layout(
         fig, height=440,
-        title="San Francisco (Bay Wheels) — total trips per month",
+        title="San Francisco (Bay Wheels): total trips per month",
         margin=dict(l=10, r=10, t=70, b=10),
         plot_bgcolor="white",
     )
@@ -346,7 +346,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         st.markdown(
             f"""
 - **Ridership per station grew {trips_per_station_growth:+.0f}%** from the
-  post-Feb-2023 window to the most recent window — per-station, so it isn't
+  post-Feb-2023 window to the most recent window, per-station, so it isn't
   just "more stations means more trips."
 - **Total daily ridership grew {total_trips_growth:+.0f}%** over the same
   period, reflecting both more trips per station and a larger network.
@@ -355,7 +355,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
   ({len(net_new)} net-new, {len(lost)} no longer active).
 - **The Nov 2023 price drop does not show a clean ridership response.**
   Seasonality dominates the Sep-Oct → Nov-Dec window in both the event year
-  and the no-change control year — the data doesn't support a "the price
+  and the no-change control year, the data doesn't support a "the price
   drop grew ridership" claim, though it's weakly consistent with the drop
   softening the usual seasonal decline.
             """
@@ -365,7 +365,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         "Note: the Jan–May 2024 gap that previously affected this dataset has "
         "been backfilled. The Nov 2023 \"after\" window is still kept at 2 "
         "months (Nov-Dec 2023) to match the 2-month \"before\" window "
-        "(Sep-Oct 2023) for a symmetric comparison — that's a methodology "
+        "(Sep-Oct 2023) for a symmetric comparison, that's a methodology "
         "choice now, not a data limitation."
     )
 
@@ -441,7 +441,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
             f"{control_pct:+.0f}%), even though 2025 had no price change at all "
             "in that window. That means the raw 2023 before/after "
             '<strong style="color:#7A1263;">cannot be '
-            'read as "the price drop hurt ridership"</strong> — seasonality alone '
+            'read as "the price drop hurt ridership"</strong>, seasonality alone '
             "predicts a comparable or larger drop than what was actually "
             "observed."
             "</p></div>",

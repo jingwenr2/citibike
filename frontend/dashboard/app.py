@@ -44,17 +44,17 @@ SUCCESS_STORIES = [
             "Investment model": "SFMTA and the Bay Area Air Quality Management District brought the system to San Francisco as a public partnership; Lyft now operates it under a contract managed by the Metropolitan Transportation Commission.",
             "Ridership growth": "Grew from a 350-bike, 35-station pilot in 2013 into a regional network that now reaches San Mateo County.",
             "Infrastructure expansion": "A 2017 buildout funded by Ford's title sponsorship expanded the system to 320 stations and 4,500 bikes; MTC has since approved a further \\$16M expansion, and SFMTA struck a new deal for 4,000 shared Electric bikes.",
-            "Financial sustainability": "The 2017 expansion was delivered \"at no capital or operational expense to taxpayers\" — sponsorship and operator capital funded the buildout.",
+            "Financial sustainability": "The 2017 expansion was delivered \"at no capital or operational expense to taxpayers\", sponsorship and operator capital funded the buildout.",
         },
     },
     {
         "flag": "🚲",
         "city": "Washington, D.C.",
         "system": "Capital Bikeshare",
-        "tagline": "The largest municipally-owned bike-share system in the U.S. — and one of its fastest-growing.",
+        "tagline": "The largest municipally-owned bike-share system in the U.S., and one of its fastest-growing.",
         "stats": {
-            "Investment model": "Jointly owned by eight local governments — the largest municipally-owned bike-share system in the United States.",
-            "Ridership growth": "6+ million trips in 2024, up 36.9% year-over-year for a second consecutive annual record and up 79% since 2019 — enough to overtake Chicago's Divvy for the #2 spot nationally.",
+            "Investment model": "Jointly owned by eight local governments, the largest municipally-owned bike-share system in the United States.",
+            "Ridership growth": "6+ million trips in 2024, up 36.9% year-over-year for a second consecutive annual record and up 79% since 2019, enough to overtake Chicago's Divvy for the #2 spot nationally.",
             "Infrastructure expansion": "Stations nearly doubled over the past decade, alongside 55 miles of new bike lanes (35 protected) and a 67-mile regional trail network.",
             "Financial sustainability": "Electric bikes, added in 2018, now drive 60%+ of rides after a 143% jump in Electric ridership in a single year.",
         },
@@ -68,7 +68,7 @@ SUCCESS_STORIES = [
             "Investment model": "Owned by the Chicago Department of Transportation, operated by Lyft since 2019 under a citywide-expansion partnership.",
             "Ridership growth": "A record 6.8+ million trips in 2025, the highest in the system's history.",
             "Infrastructure expansion": "Expanded to all 50 city wards by 2023, with 200 new or upgraded stations planned for 2026.",
-            "Financial sustainability": "Lyft's \\$50M capital investment in bikes, stations, and hardware is paired with \\$77M in direct revenue returned to the city over nine years — a self-funding expansion structure.",
+            "Financial sustainability": "Lyft's \\$50M capital investment in bikes, stations, and hardware is paired with \\$77M in direct revenue returned to the city over nine years, a self-funding expansion structure.",
         },
     },
 ]
@@ -515,7 +515,7 @@ st.markdown(
         <div class="eyebrow">Capstone project · data-driven investment case</div>
         <h1>CitiBike is a $200M/yr business running at capacity.</h1>
         <p>50% of stations are maxed out. Trains are failing. 250 new stations pay back in 17 months.
-        This dashboard is the evidence — start with the Overview, then follow the tabs left to right.</p>
+        This dashboard is the evidence, start with the Home tab, then follow the tabs left to right.</p>
       </div>
     </div>
     """,
@@ -552,7 +552,7 @@ with st.container(key="kpi-banner"):
         help=(
             "CitiBike's reported NYC fleet size as of 2024 (NYC Independent Budget "
             "Office, Nov. 2025). Unlike the other KPIs, this is a fixed reported "
-            "figure — it doesn't respond to the date range filter."
+            "figure, it doesn't respond to the date range filter."
         ),
     )
 
@@ -620,27 +620,27 @@ with home_tab:
           <h3>How to read this dashboard</h3>
           <div class="guide-step">
             <div class="guide-number">1</div>
-            <div class="guide-text"><strong>CitiBike at a Glance</strong> — See the big picture: how big is demand, who rides, and when.</div>
+            <div class="guide-text"><strong>CitiBike at a Glance.</strong> See the big picture: how big is demand, who rides, and when.</div>
           </div>
           <div class="guide-step">
             <div class="guide-number">2</div>
-            <div class="guide-text"><strong>Case Study</strong> — San Francisco's Bay Wheels investment outcome, used as supporting evidence for the NYC case.</div>
+            <div class="guide-text"><strong>Case Study.</strong> San Francisco's Bay Wheels investment outcome, used as supporting evidence for the NYC case.</div>
           </div>
           <div class="guide-step">
             <div class="guide-number">3</div>
-            <div class="guide-text"><strong>Station Explorer</strong> — Find which stations are over capacity and where the gaps are.</div>
+            <div class="guide-text"><strong>Station Explorer.</strong> Find which stations are over capacity and where the gaps are.</div>
           </div>
           <div class="guide-step">
             <div class="guide-number">4</div>
-            <div class="guide-text"><strong>Forecast Lab</strong> — Our XGBoost model predicts where demand will grow next.</div>
+            <div class="guide-text"><strong>Forecast Lab.</strong> Our XGBoost model predicts where demand will grow next.</div>
           </div>
           <div class="guide-step">
             <div class="guide-number">5</div>
-            <div class="guide-text"><strong>MTA Connection</strong> — Subway delays are pushing riders to bikes. Here's the proof.</div>
+            <div class="guide-text"><strong>MTA Connection.</strong> Subway delays are pushing riders to bikes. Here's the proof.</div>
           </div>
           <div class="guide-step">
             <div class="guide-number">6</div>
-            <div class="guide-text"><strong>Success Stories → Government Investment → DOT Support Case</strong> — The evidence, the math, and the pitch.</div>
+            <div class="guide-text"><strong>Success Stories → Government Investment → DOT Support Case.</strong> The evidence, the math, and the pitch.</div>
           </div>
         </div>
         """,
@@ -650,7 +650,7 @@ with home_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         "<strong>The short version:</strong> NYC's CitiBike contract with DOT runs "
-        "through May 2029. That gives the city a window to negotiate the next chapter now — "
+        "through May 2029. That gives the city a window to negotiate the next chapter now, "
         "before the system outgrows itself and before fares climb further out of reach."
         "</p></div>",
         unsafe_allow_html=True,
@@ -664,8 +664,8 @@ with home_tab:
     st.markdown(
         "CitiBike operates in NYC under an agreement with the Department of "
         "Transportation that runs **through May 2029**. Every year between now and then "
-        "is a year the city can shape what comes next — station density, fare "
-        "structure, service guarantees — instead of inheriting whatever the system "
+        "is a year the city can shape what comes next (station density, fare "
+        "structure, service guarantees) instead of inheriting whatever the system "
         "looks like when renewal talks start. **Acting early, while the case is "
         "strong, is the leverage.**"
     )
@@ -718,7 +718,7 @@ with home_tab:
             st.metric("Stations at/above capacity", f"{pct_strained:.0f}%")
     st.markdown(
         f"Membership and per-ride prices are already a real cost barrier for many "
-        f"New Yorkers — and **{pct_strained:.0f}% of stations are running at or above "
+        f"New Yorkers, and **{pct_strained:.0f}% of stations are running at or above "
         f"capacity** ({len(critical):,} of them critically so). A system this "
         "supply-constrained doesn't get cheaper on its own: without new investment, "
         "the pressure on fares only builds. **The affordability problem and the "
@@ -731,11 +731,11 @@ with home_tab:
         '<span class="section-label">The solution</span>',
         unsafe_allow_html=True,
     )
-    st.subheader("Invest to expand the system — and to make it cheaper")
+    st.subheader("Invest to expand the system, and to make it cheaper")
     st.markdown(
         f"Our proposal isn't just more stations. **250 new stations generate "
         f"\\${exp['net_annual_profit']:,.0f} in net profit a year**, on top of "
-        f"today's estimated \\${rev['total_estimated_revenue']:,.0f}/yr — enough "
+        f"today's estimated \\${rev['total_estimated_revenue']:,.0f}/yr, enough "
         "headroom that growth doesn't have to mean higher fares. That new margin "
         "can fund **lower membership and per-ride pricing** at the same time the "
         "network gets bigger, turning CitiBike into both a larger *and* a more "
@@ -754,7 +754,7 @@ with home_tab:
         "**32% more accurately** than a seasonal baseline, and our station-pressure "
         "index already flags exactly which parts of the network are maxed out "
         "today. Together they turn \"where should we build?\" from a guess into a "
-        "ranked, data-backed list — see the **Forecast lab** and **Station "
+        "ranked, data-backed list; see the **Forecast lab** and **Station "
         "explorer** tabs for the underlying model."
     )
 
@@ -777,7 +777,7 @@ with home_tab:
             st.caption("Cumulative gain, invest vs. do nothing, through 2031")
     st.markdown(
         f"By 2031, investing rather than standing still is worth "
-        f"**\\${gap_2031:,.0f}/year more** — and DOT's own share of that, in health, "
+        f"**\\${gap_2031:,.0f}/year more**. DOT's own share of that, in health, "
         f"congestion, emissions, and tax benefits, pays back the public cost of "
         f"expansion in **{pub['govt_payback_years']:.1f} years**. That's the case "
         "for negotiating the 2029 contract from a position of evidence, not "
@@ -785,17 +785,13 @@ with home_tab:
     )
 
     st.markdown("---")
-    st.caption(
-        "This is the summary. The full evidence, methodology, and detailed pitch "
-        "start with the **DOT support case** tab and continue left to right."
-    )
 
 with overview_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         '<strong>The big picture:</strong> NYC CitiBike demand is massive and growing. '
         'Members dominate ridership, Electric bikes drive 70% of trips, and weekday rush hours '
-        'show clear commuter patterns — this is transit infrastructure, not recreation.'
+        'show clear commuter patterns; this is transit infrastructure, not recreation.'
         '</p></div>',
         unsafe_allow_html=True,
     )
@@ -839,7 +835,7 @@ with overview_tab:
     nominal_increase = (last_price / first_price - 1) * 100
     st.caption(
         f"Nominal price is up {nominal_increase:.0f}% since the program's May 2013 launch "
-        "(from \\$95/yr to \\$239/yr) — and even adjusted for inflation, membership cost "
+        "(from \\$95/yr to \\$239/yr), and even adjusted for inflation, membership cost "
         "77% more in 2025 than it did in 2013 (NYC Independent Budget Office, Nov. 2025)."
     )
 
@@ -975,7 +971,7 @@ with overview_tab:
         / bike_mix["trips"].sum()
     )
     st.caption(
-        f"Electric bikes are only {ebike_fleet_pct:.0%} of the physical fleet — but they "
+        f"Electric bikes are only {ebike_fleet_pct:.0%} of the physical fleet, but they "
         f"carry {electric_ride_share:.0%} of all trips (see the donut above). A "
         "minority of the bikes are doing the majority of the riding, which is "
         "exactly why the fleet mix, not just its size, matters for the next "
@@ -1329,9 +1325,9 @@ with forecast_tab:
             )
             st.markdown("---")
             st.markdown("**How to read this chart**")
-            st.caption("**Navy line** — real weekly trips from Citi Bike data")
-            st.caption("**Pink line** — projected trips based on XGBoost model baseline")
-            st.caption("**Shaded band** — ±10% confidence range")
+            st.caption("**Navy line:** real weekly trips from Citi Bike data")
+            st.caption("**Pink line:** projected trips based on XGBoost model baseline")
+            st.caption("**Shaded band:** ±10% confidence range")
             st.caption("Type a number in *New stations added* to see how expansion impacts demand")
             st.markdown("---")
             st.markdown("**How we ensure accuracy**")
@@ -1480,7 +1476,7 @@ with mta_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         '<strong>The transit connection:</strong> Neighborhoods with the worst subway delays '
-        'show the strongest bike-share demand. Each dot below is a neighborhood — '
+        'show the strongest bike-share demand. Each dot below is a neighborhood, '
         'top-right means high MTA ridership + high bike usage. These are the priority zones for expansion.'
         '</p></div>',
         unsafe_allow_html=True,
@@ -1489,7 +1485,7 @@ with mta_tab:
     st.markdown(
         '<p class="section-note">High transit ridership paired with relatively low '
         "bike-share demand or weaker reliability can indicate a first/last-mile and "
-        "resilience investment gap. This is a prioritization signal—not evidence of "
+        "resilience investment gap. This is a prioritization signal, not evidence of "
         "causation.</p>",
         unsafe_allow_html=True,
     )
@@ -1506,7 +1502,7 @@ with mta_tab:
         avg_delay = mta_opportunity["mta_delay_rate"].mean()
         total_mta_riders = mta_opportunity["mta_daily_riders"].sum()
         top_opportunity = mta_opportunity.nlargest(1, "transit_opportunity_score")
-        top_neighborhood = top_opportunity["neighborhood"].iloc[0] if not top_opportunity.empty else "—"
+        top_neighborhood = top_opportunity["neighborhood"].iloc[0] if not top_opportunity.empty else "N/A"
         avg_score = mta_opportunity["transit_opportunity_score"].mean()
         high_opp_count = len(mta_opportunity[mta_opportunity["transit_opportunity_score"] >= 60])
 
@@ -1704,14 +1700,14 @@ with success_tab:
         '<div class="tab-takeaway"><p>'
         '<strong>It works elsewhere:</strong> Three cities prove that sustained public investment '
         'in bike-share grows ridership, expands infrastructure, and reaches financial sustainability. '
-        'SF is the closest model for NYC — government partnership unlocked scale.'
+        'SF is the closest model for NYC: government partnership unlocked scale.'
         '</p></div>',
         unsafe_allow_html=True,
     )
     st.subheader("Success stories: what public investment already did elsewhere")
     st.markdown(
         '<p class="section-note">CitiBike is the target of this investment case, not a '
-        "success story — these six systems are independent, external evidence that "
+        "success story; these six systems are independent, external evidence that "
         "sustained public investment and public-private partnerships reliably grow "
         "ridership, expand infrastructure, and put bike-share on stable financial "
         "footing. None of the figures below are compared to NYC or CitiBike.</p>",
@@ -1750,17 +1746,17 @@ with success_tab:
     st.markdown("#### What these systems have in common")
     st.markdown(
         """
-- **Public ownership or a formal public-private partnership** — every system here is
+- **Public ownership or a formal public-private partnership**: every system here is
   either government-owned (Capital Bikeshare, Divvy) or built on a long-term public
   or sponsorship contract (Vélib' Métropole, Santander Cycles, Bay Wheels), not a
   purely private, self-funded venture.
-- **Sustained, multi-year capital commitments** — buildouts and fleet upgrades are
+- **Sustained, multi-year capital commitments**: buildouts and fleet upgrades are
   funded in dedicated tranches (Bay Wheels' \\$16M expansion, Divvy's \\$50M citywide
   investment, Santander Cycles' new £220M contract), not one-off grants.
-- **Investment shows up directly in ridership and infrastructure** — every system
+- **Investment shows up directly in ridership and infrastructure**: every system
   posted double-digit ridership growth and station or fleet expansion in its most
   recent reporting period.
-- **Financial sustainability follows, not precedes, investment** — BIXI's non-profit
+- **Financial sustainability follows, not precedes, investment**: BIXI's non-profit
   restructuring and Divvy's revenue-sharing model show that public backing can turn
   into self-sustaining or even net-positive economics over time.
 
@@ -1773,7 +1769,7 @@ with investment_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
         '<strong>The financial model:</strong> Adjust the assumptions below to model '
-        'station expansion ROI. The default scenario shows positive public NPV — '
+        'station expansion ROI. The default scenario shows positive public NPV: '
         'every dollar invested returns more than a dollar in public value.'
         '</p></div>',
         unsafe_allow_html=True,
@@ -1798,148 +1794,147 @@ with investment_tab:
 
     @st.fragment
     def investment_planner():
-        with st.expander("Government & transportation investment planner", expanded=True):
-            st.markdown(
-                '<p class="section-note">Prioritize station expansions for public mobility impact, '
-                "budget efficiency, and long-term operating sustainability. Dollar values below "
-                "are editable planning assumptions, not official agency estimates.</p>",
-                unsafe_allow_html=True,
+        st.markdown(
+            '<p class="section-note">Prioritize station expansions for public mobility impact, '
+            "budget efficiency, and long-term operating sustainability. Dollar values below "
+            "are editable planning assumptions, not official agency estimates.</p>",
+            unsafe_allow_html=True,
+        )
+
+        # Reserved now, filled in below once the sliders (read further down)
+        # have produced a recommendation — keeps the summary a full-width
+        # banner above the two-column layout instead of confined to the
+        # narrower results column.
+        kpi_banner_slot = st.container(key="kpi-planner-summary")
+
+        assumption_col, results_col = st.columns([0.9, 2.1])
+        with assumption_col:
+            st.markdown("**Investment geography:** New York City")
+            public_budget = st.number_input(
+                "Available capital budget",
+                min_value=50_000, max_value=50_000_000, value=16_000_000,
+                step=50_000, format="%d",
+                help="Defaults to $16M, what MTC invested in Bay Wheels (SF) in Feb 2023.",
+            )
+            docks_added = st.slider("Docks added per station", 4, 40, 16)
+            cost_per_dock = st.number_input(
+                "Installed cost per dock",
+                min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
+            )
+            demand_uplift = st.slider(
+                "Demand captured after expansion", 5, 60, 35, format="%d%%",
+                help=(
+                    "Defaults to 35%, modeled on Bay Wheels (SF): at the same "
+                    "$16M investment level, this produces an 11.1% membership "
+                    "price decrease, matching SF's actual $169->$150 cut (11.2%) "
+                    "after its Feb 2023 MTC investment."
+                ),
+            )
+            net_revenue_trip = st.number_input(
+                "Net operating revenue per new trip",
+                min_value=0.0, max_value=20.0, value=DEFAULT_NET_REVENUE_PER_TRIP, step=0.25,
+            )
+            public_value_trip = st.number_input(
+                "Estimated public value per new trip",
+                min_value=0.0, max_value=30.0, value=4.00, step=0.25,
+                help="Editable proxy for congestion, access, health, and emissions benefits.",
+            )
+            annual_station_cost = st.number_input(
+                "Annual added station operating cost",
+                min_value=0, max_value=250_000, value=28_000, step=2_000, format="%d",
+            )
+            analysis_years = st.slider("Analysis period", 3, 15, 5)
+            discount_rate = st.slider("Discount rate", 0, 15, 5, format="%d%%")
+
+        investment_rank = _inv_base.copy()
+        investment_rank["new_annual_trips"] = (
+            investment_rank["daily_trips"] * 365 * demand_uplift / 100
+        )
+        investment_rank["capital_cost"] = docks_added * cost_per_dock
+        investment_rank["annual_operating_return"] = (
+            investment_rank["new_annual_trips"] * net_revenue_trip - annual_station_cost
+        )
+        investment_rank["annual_public_benefit"] = (
+            investment_rank["new_annual_trips"] * public_value_trip
+        )
+        discount = discount_rate / 100
+        annuity_factor = sum(1 / ((1 + discount) ** year) for year in range(1, analysis_years + 1))
+        investment_rank["five_year_fiscal_npv"] = (
+            investment_rank["annual_operating_return"] * annuity_factor
+            - investment_rank["capital_cost"]
+        )
+        investment_rank["public_npv"] = (
+            (investment_rank["annual_operating_return"] + investment_rank["annual_public_benefit"])
+            * annuity_factor - investment_rank["capital_cost"]
+        )
+        investment_rank["public_benefit_cost_ratio"] = (
+            (investment_rank["annual_operating_return"] + investment_rank["annual_public_benefit"])
+            * annuity_factor / investment_rank["capital_cost"]
+        )
+        investment_rank["capital_cost_per_new_trip"] = (
+            investment_rank["capital_cost"]
+            / (investment_rank["new_annual_trips"] * analysis_years)
+        )
+        investment_rank["annual_operating_support_needed"] = (
+            -investment_rank["annual_operating_return"].clip(upper=0)
+        )
+        investment_rank["fiscal_payback_years"] = np.where(
+            investment_rank["annual_operating_return"] > 0,
+            investment_rank["capital_cost"] / investment_rank["annual_operating_return"],
+            np.nan,
+        )
+        investment_rank = investment_rank.sort_values(
+            ["public_npv", "transit_opportunity_score"], ascending=[False, False],
+        )
+        maximum_projects = int(public_budget // (docks_added * cost_per_dock))
+        investment_rank["recommended"] = False
+        recommended_index = investment_rank[
+            investment_rank["public_npv"] > 0
+        ].head(maximum_projects).index
+        investment_rank.loc[recommended_index, "recommended"] = True
+
+        recommended = investment_rank[investment_rank["recommended"]]
+        total_capital = recommended["capital_cost"].sum()
+        public_npv = recommended["public_npv"].sum()
+        new_trips = recommended["new_annual_trips"].sum()
+        portfolio_bcr = (
+            (public_npv + total_capital) / total_capital if total_capital else 0
+        )
+
+        with kpi_banner_slot:
+            summary_columns = st.columns(4)
+            summary_columns[0].metric("Recommended projects", f"{len(recommended)}")
+            summary_columns[1].metric("Capital deployed", f"${compact_number(total_capital)}")
+            summary_columns[2].metric("New annual trips", compact_number(new_trips))
+            summary_columns[3].metric(
+                "Public benefit-cost ratio", f"{portfolio_bcr:.2f}×",
+                help="Above 1.0× creates modeled public value.",
             )
 
-            # Reserved now, filled in below once the sliders (read further down)
-            # have produced a recommendation — keeps the summary a full-width
-            # banner above the two-column layout instead of confined to the
-            # narrower results column.
-            kpi_banner_slot = st.container(key="kpi-planner-summary")
-
-            assumption_col, results_col = st.columns([0.9, 2.1])
-            with assumption_col:
-                st.markdown("**Investment geography:** New York City")
-                public_budget = st.number_input(
-                    "Available capital budget",
-                    min_value=50_000, max_value=50_000_000, value=16_000_000,
-                    step=50_000, format="%d",
-                    help="Defaults to $16M — what MTC invested in Bay Wheels (SF) in Feb 2023.",
-                )
-                docks_added = st.slider("Docks added per station", 4, 40, 16)
-                cost_per_dock = st.number_input(
-                    "Installed cost per dock",
-                    min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
-                )
-                demand_uplift = st.slider(
-                    "Demand captured after expansion", 5, 60, 35, format="%d%%",
-                    help=(
-                        "Defaults to 35% — modeled on Bay Wheels (SF): at the same "
-                        "$16M investment level, this produces an 11.1% membership "
-                        "price decrease, matching SF's actual $169->$150 cut (11.2%) "
-                        "after its Feb 2023 MTC investment."
-                    ),
-                )
-                net_revenue_trip = st.number_input(
-                    "Net operating revenue per new trip",
-                    min_value=0.0, max_value=20.0, value=DEFAULT_NET_REVENUE_PER_TRIP, step=0.25,
-                )
-                public_value_trip = st.number_input(
-                    "Estimated public value per new trip",
-                    min_value=0.0, max_value=30.0, value=4.00, step=0.25,
-                    help="Editable proxy for congestion, access, health, and emissions benefits.",
-                )
-                annual_station_cost = st.number_input(
-                    "Annual added station operating cost",
-                    min_value=0, max_value=250_000, value=28_000, step=2_000, format="%d",
-                )
-                analysis_years = st.slider("Analysis period", 3, 15, 5)
-                discount_rate = st.slider("Discount rate", 0, 15, 5, format="%d%%")
-
-            investment_rank = _inv_base.copy()
-            investment_rank["new_annual_trips"] = (
-                investment_rank["daily_trips"] * 365 * demand_uplift / 100
+        with results_col:
+            value_chart_data = investment_rank.head(10).copy()
+            value_chart = px.bar(
+                value_chart_data, x="public_npv", y="station_name",
+                orientation="h", color="public_npv",
+                color_continuous_scale=BLUE_SCALE_HEX,
+                labels={
+                    "public_npv": f"{analysis_years}-year public NPV ($)",
+                    "station_name": "",
+                },
             )
-            investment_rank["capital_cost"] = docks_added * cost_per_dock
-            investment_rank["annual_operating_return"] = (
-                investment_rank["new_annual_trips"] * net_revenue_trip - annual_station_cost
+            value_chart.update_layout(
+                height=410, yaxis={"categoryorder": "total ascending"},
+                coloraxis_showscale=False, margin=dict(l=10, r=10, t=20, b=10),
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
             )
-            investment_rank["annual_public_benefit"] = (
-                investment_rank["new_annual_trips"] * public_value_trip
+            st.plotly_chart(value_chart, use_container_width=True)
+            st.caption(
+                f"Selected projects are estimated to add {compact_number(new_trips)} "
+                "annual trips under the current assumptions."
             )
-            discount = discount_rate / 100
-            annuity_factor = sum(1 / ((1 + discount) ** year) for year in range(1, analysis_years + 1))
-            investment_rank["five_year_fiscal_npv"] = (
-                investment_rank["annual_operating_return"] * annuity_factor
-                - investment_rank["capital_cost"]
-            )
-            investment_rank["public_npv"] = (
-                (investment_rank["annual_operating_return"] + investment_rank["annual_public_benefit"])
-                * annuity_factor - investment_rank["capital_cost"]
-            )
-            investment_rank["public_benefit_cost_ratio"] = (
-                (investment_rank["annual_operating_return"] + investment_rank["annual_public_benefit"])
-                * annuity_factor / investment_rank["capital_cost"]
-            )
-            investment_rank["capital_cost_per_new_trip"] = (
-                investment_rank["capital_cost"]
-                / (investment_rank["new_annual_trips"] * analysis_years)
-            )
-            investment_rank["annual_operating_support_needed"] = (
-                -investment_rank["annual_operating_return"].clip(upper=0)
-            )
-            investment_rank["fiscal_payback_years"] = np.where(
-                investment_rank["annual_operating_return"] > 0,
-                investment_rank["capital_cost"] / investment_rank["annual_operating_return"],
-                np.nan,
-            )
-            investment_rank = investment_rank.sort_values(
-                ["public_npv", "transit_opportunity_score"], ascending=[False, False],
-            )
-            maximum_projects = int(public_budget // (docks_added * cost_per_dock))
-            investment_rank["recommended"] = False
-            recommended_index = investment_rank[
-                investment_rank["public_npv"] > 0
-            ].head(maximum_projects).index
-            investment_rank.loc[recommended_index, "recommended"] = True
-
-            recommended = investment_rank[investment_rank["recommended"]]
-            total_capital = recommended["capital_cost"].sum()
-            public_npv = recommended["public_npv"].sum()
-            new_trips = recommended["new_annual_trips"].sum()
-            portfolio_bcr = (
-                (public_npv + total_capital) / total_capital if total_capital else 0
-            )
-
-            with kpi_banner_slot:
-                summary_columns = st.columns(4)
-                summary_columns[0].metric("Recommended projects", f"{len(recommended)}")
-                summary_columns[1].metric("Capital deployed", f"${compact_number(total_capital)}")
-                summary_columns[2].metric("New annual trips", compact_number(new_trips))
-                summary_columns[3].metric(
-                    "Public benefit-cost ratio", f"{portfolio_bcr:.2f}×",
-                    help="Above 1.0× creates modeled public value.",
-                )
-
-            with results_col:
-                value_chart_data = investment_rank.head(10).copy()
-                value_chart = px.bar(
-                    value_chart_data, x="public_npv", y="station_name",
-                    orientation="h", color="public_npv",
-                    color_continuous_scale=BLUE_SCALE_HEX,
-                    labels={
-                        "public_npv": f"{analysis_years}-year public NPV ($)",
-                        "station_name": "",
-                    },
-                )
-                value_chart.update_layout(
-                    height=410, yaxis={"categoryorder": "total ascending"},
-                    coloraxis_showscale=False, margin=dict(l=10, r=10, t=20, b=10),
-                    paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                )
-                st.plotly_chart(value_chart, use_container_width=True)
-                st.caption(
-                    f"Selected projects are estimated to add {compact_number(new_trips)} "
-                    "annual trips under the current assumptions."
-                )
 
         # ── Cash Flow & IRR ──
-        with st.expander("Portfolio cash flow & IRR", expanded=True):
+        with st.expander("Portfolio cash flow & IRR", expanded=False):
             st.markdown(
                 '<p class="section-note">Year-by-year cash flow for all recommended projects combined. '
                 "IRR is the discount rate at which NPV equals zero.</p>",
@@ -2088,7 +2083,7 @@ with investment_tab:
                 )
 
         # ── Effect on membership affordability ──
-        with st.expander("Effect on membership affordability", expanded=True):
+        with st.expander("Effect on membership affordability", expanded=False):
             st.markdown(
                 '<p class="section-note">If the recommended portfolio\'s net fiscal surplus were '
                 "redirected into lower membership pricing instead of pure profit, here's how far "
@@ -2117,10 +2112,21 @@ with investment_tab:
                     "Annual fiscal surplus", f"${compact_number(net_annual_fiscal)}",
                     help=(
                         "The recommended portfolio's net fiscal cash flow (revenue minus "
-                        "operating cost) — excludes public-benefit externalities, since "
+                        "operating cost); excludes public-benefit externalities, since "
                         "those aren't cash available to subsidize pricing."
                     ),
                 )
+
+            st.markdown(
+                '<div class="tab-takeaway"><p>'
+                f"<strong>New membership price: a flat ${potential_price:,.0f}/year.</strong> "
+                f"Redirecting the portfolio's fiscal surplus into pricing instead of profit "
+                f"cuts the ${current_price:,.0f} membership by {price_reduction_pct:.1%}, "
+                "a clean, round number under the current assumptions. No surcharges for "
+                "Electric bikes or rides over 45 minutes: one flat rate, no fine print."
+                "</p></div>",
+                unsafe_allow_html=True,
+            )
 
             price_fig = go.Figure(go.Bar(
                 x=[current_price, potential_price],
@@ -2144,14 +2150,14 @@ with investment_tab:
                 f"across {compact_number(active_members_count)} active members works out to "
                 f"\\${price_relief_per_member:,.2f} per member per year"
                 + (
-                    f" — a {price_reduction_pct:.1%} price cut, from \\${current_price:,.0f} to "
+                    f", a {price_reduction_pct:.1%} price cut, from \\${current_price:,.0f} to "
                     f"\\${potential_price:,.0f}/yr."
                     if price_relief_per_member > 0
                     else ", not enough to lower pricing at this budget and assumption level."
                 )
             )
 
-        with st.expander("Project-level recommendation table", expanded=True):
+        with st.expander("Project-level recommendation table", expanded=False):
             planner_table = investment_rank[
                 [
                     "recommended", "station_name", "daily_trips", "new_annual_trips",
@@ -2183,7 +2189,7 @@ with investment_tab:
                 '<div class="tab-takeaway"><p>'
                 "<strong>Public-sector decision rule:</strong> prioritize positive public NPV and a "
                 "benefit-cost ratio above 1.0, then confirm the annual operating support fits the "
-                "agency budget. Fiscal return remains visible as a sustainability constraint—not "
+                "agency budget. Fiscal return remains visible as a sustainability constraint, not "
                 "the sole goal."
                 "</p></div>",
                 unsafe_allow_html=True,
@@ -2202,7 +2208,7 @@ with dot_tab:
     )
     st.subheader("The Pitch: Why Lyft Should Double Down on Bike-Share")
     st.markdown(
-        '<p class="section-note">A data-driven case for Lyft product leadership — '
+        '<p class="section-note">A data-driven case for Lyft product leadership: '
         "government investment works in SF, NYC is the biggest untapped market, and bike-share "
         "is the future of green urban mobility.</p>",
         unsafe_allow_html=True,
@@ -2212,511 +2218,511 @@ with dot_tab:
     # ARGUMENT 1: government investment works elsewhere (external evidence only —
     # see the Success stories tab; deliberately not benchmarked against NYC here)
     # ===================================================================
-    st.markdown("### 1. The proof: government investment works elsewhere")
-    bay_wheels_story = next(s for s in SUCCESS_STORIES if s["system"] == "Bay Wheels")
-    st.markdown(
-        f"{bay_wheels_story['tagline']} SFMTA treats Bay Wheels as public transit "
-        "infrastructure — integrated into route planning, subsidized station buildouts, "
-        "and protected bike lanes."
-    )
-    proof_cols = st.columns(2)
-    with proof_cols[0]:
-        st.markdown("**Infrastructure expansion**")
-        st.markdown(bay_wheels_story["stats"]["Infrastructure expansion"])
-    with proof_cols[1]:
-        st.markdown("**Financial sustainability**")
-        st.markdown(bay_wheels_story["stats"]["Financial sustainability"])
-    st.markdown(
-        '<div class="tab-takeaway"><p>'
-        "Bay Wheels is one of three external case studies — see the <strong>Success "
-        "stories</strong> tab for the full evidence base (also Washington D.C. "
-        "and Chicago), each showing what sustained public investment or a formal "
-        "public-private partnership does for ridership, infrastructure, and financial "
-        "sustainability. <strong>Imagine what NYC could do with the same backing.</strong>"
-        "</p></div>",
-        unsafe_allow_html=True,
-    )
-
-    # ===================================================================
-    # ARGUMENT 2: NYC is broken — MTA failing, people need alternatives
-    # ===================================================================
-    st.markdown("### 2. The problem: 8.3M New Yorkers deserve better than a broken subway")
-    st.markdown(
-        "MTA ridership is massive — millions rely on it daily. But delays are chronic, "
-        "service is unreliable, and fares keep rising. **People are already switching to "
-        "CitiBike when trains fail.** We can see it in the data."
-    )
-
-    mta_nyc_cols = st.columns(2)
-    with mta_nyc_cols[0]:
-        # External markdown title (not the Plotly figure's own title=), so
-        # both columns' titles sit on the same baseline and both charts'
-        # top edges align — matches the right column's title pattern.
-        st.markdown("**Ridership scale: NYC dwarfs every other bike-share**")
-        monthly_trend = demand_service.monthly_demand(filtered)
-        monthly_chart = px.line(
-            monthly_trend,
-            x="month",
-            y="trips",
-            color="city",
-            # Page-scoped override of the app-wide CITY_META colors: pink for
-            # NYC, Citi Bike blue for SF, on this chart only.
-            color_discrete_map={
-                "New York City": "#FF00BF",
-                "San Francisco": CITY_META["New York City"]["color"],
-            },
-            labels={"trips": "Monthly trips", "month": "", "city": "System"},
+    with st.expander("1. The proof: government investment works elsewhere", expanded=False):
+        bay_wheels_story = next(s for s in SUCCESS_STORIES if s["system"] == "Bay Wheels")
+        st.markdown(
+            f"{bay_wheels_story['tagline']} SFMTA treats Bay Wheels as public transit "
+            "infrastructure, integrated into route planning, subsidized station buildouts, "
+            "and protected bike lanes."
         )
-        monthly_chart.update_layout(
-            height=380,
-            margin=dict(l=10, r=10, t=40, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            legend_title_text="",
-            # Horizontal legend above the plot instead of Plotly's default
-            # right-side column — in this narrow half-width chart, the
-            # right-side legend was eating into the plot area itself.
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        )
-        st.plotly_chart(monthly_chart, use_container_width=True)
-
-    with mta_nyc_cols[1]:
-        if not mta_opportunity.empty:
-            st.markdown("**Where trains fail, bikes fill the gap**")
-
-            # Delay rates cluster tightly (17.7%-33.8%) rather than spanning
-            # 0-100%, so buckets are sized to where the real data lives
-            # rather than generic 10-point deciles.
-            bucket_edges = [0.15, 0.20, 0.25, 0.30, 0.35]
-            bucket_labels = ["15-20%", "20-25%", "25-30%", "30-35%"]
-            n_stations = len(mta_opportunity)
-            bucket_counts = (
-                pd.cut(
-                    mta_opportunity["mta_delay_rate"],
-                    bins=bucket_edges,
-                    labels=bucket_labels,
-                    include_lowest=True,
-                )
-                .value_counts()
-                .reindex(bucket_labels)
-                .fillna(0)
-                .astype(int)
-            )
-            bucket_pct = bucket_counts / n_stations * 100
-
-            hist_chart = go.Figure(go.Bar(
-                x=bucket_labels,
-                y=bucket_counts.to_numpy(),
-                marker_color="#1E40AF",
-                text=[f"{c} stations" for c in bucket_counts.to_numpy()],
-                textposition="outside",
-                cliponaxis=False,
-            ))
-            hist_chart.update_layout(
-                height=380,
-                margin=dict(l=10, r=10, t=40, b=10),
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="white",
-                xaxis_title="MTA delay rate",
-                yaxis_title="Number of stations",
-                yaxis=dict(
-                    gridcolor="#F1F5F9",
-                    range=[0, float(bucket_counts.max()) * 1.25],
-                ),
-                xaxis=dict(categoryorder="array", categoryarray=bucket_labels),
-            )
-            st.plotly_chart(hist_chart, use_container_width=True)
-        else:
-            st.info("MTA opportunity data not available.")
-
-    if not mta_opportunity.empty:
-        # Matches the top bucket ("30-35%") of the histogram above.
-        n_stations = len(mta_opportunity)
-        very_high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] >= 0.30]
-        very_high_pct = len(very_high_delay) / n_stations * 100
-
-        high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] > 0.05]
-        broader_context = ""
-        if not high_delay.empty:
-            avg_delay = high_delay["mta_delay_rate"].mean()
-            total_affected_riders = high_delay["mta_daily_riders"].sum()
-            broader_context = (
-                f" More broadly, <strong>{len(high_delay)} neighborhoods</strong> have "
-                f"subway delay rates above 5% — <strong>{total_affected_riders:,.0f} daily "
-                f"MTA riders</strong> stuck waiting for trains that are late "
-                f"{avg_delay:.0%} of the time. Every one of them is a potential CitiBike rider."
-            )
-
+        proof_cols = st.columns(2)
+        with proof_cols[0]:
+            st.markdown("**Infrastructure expansion**")
+            st.markdown(bay_wheels_story["stats"]["Infrastructure expansion"])
+        with proof_cols[1]:
+            st.markdown("**Financial sustainability**")
+            st.markdown(bay_wheels_story["stats"]["Financial sustainability"])
         st.markdown(
             '<div class="tab-takeaway"><p>'
-            f"<strong>{very_high_pct:.0f}%</strong> of stations "
-            f"(<strong>{len(very_high_delay)} of {n_stations}</strong>) have an MTA "
-            f"delay rate of <strong>30% or higher</strong>. Delay rate reflects the "
-            "subway line(s) serving each station (MTA publishes reliability by "
-            "line, not by individual station), so nearby stations on the same "
-            f"line share an identical rate.{broader_context}"
+            "Bay Wheels is one of three external case studies; see the <strong>Success "
+            "stories</strong> tab for the full evidence base (also Washington D.C. "
+            "and Chicago), each showing what sustained public investment or a formal "
+            "public-private partnership does for ridership, infrastructure, and financial "
+            "sustainability. <strong>Imagine what NYC could do with the same backing.</strong>"
             "</p></div>",
             unsafe_allow_html=True,
         )
 
     # ===================================================================
-    # ARGUMENT 3: Green energy, saves money, healthier city
+    # ARGUMENT 2: NYC is broken — MTA failing, people need alternatives
     # ===================================================================
-    st.markdown("### 3. The value: green energy, lower cost, healthier city")
-    st.markdown(
-        "CitiBike isn't just a backup for broken trains — it's a better option for "
-        "millions of short urban trips. The target rider: anyone traveling 0.5-3 miles "
-        "who currently waits underground or sits in traffic."
-    )
+    with st.expander("2. The problem: 8.3M New Yorkers deserve better than a broken subway", expanded=False):
+        st.markdown(
+            "MTA ridership is massive; millions rely on it daily. But delays are chronic, "
+            "service is unreliable, and fares keep rising. **People are already switching to "
+            "CitiBike when trains fail.** We can see it in the data."
+        )
 
-    nyc_trips_total = nyc_filtered["trips"].sum()
-    nyc_electric = nyc_filtered["electric_trips"].sum()
-    nyc_ebike_pct = nyc_electric / nyc_trips_total if nyc_trips_total > 0 else 0
-
-    with st.container(key="kpi-value"):
-        # [1, 2] split: "Zero emissions" is one card-width; the money group
-        # is two card-widths so its centered header/description span the
-        # combined width of both money cards, and both card rows start
-        # right after a single header line, keeping all three cards' top
-        # edges aligned.
-        value_cols = st.columns([1, 2])
-        with value_cols[0]:
-            st.metric("Electric share in NYC", f"{nyc_ebike_pct:.0%}")
-            st.markdown(
-                f"**{nyc_electric:,.0f} electric trips** in our dataset alone. "
-                "Every Electric trip replaces a car ride or rideshare — "
-                "zero tailpipe emissions, zero congestion contribution."
+        mta_nyc_cols = st.columns(2)
+        with mta_nyc_cols[0]:
+            # External markdown title (not the Plotly figure's own title=), so
+            # both columns' titles sit on the same baseline and both charts'
+            # top edges align — matches the right column's title pattern.
+            st.markdown("**Ridership scale: NYC dwarfs every other bike-share**")
+            monthly_trend = demand_service.monthly_demand(filtered)
+            monthly_chart = px.line(
+                monthly_trend,
+                x="month",
+                y="trips",
+                color="city",
+                # Page-scoped override of the app-wide CITY_META colors: pink for
+                # NYC, Citi Bike blue for SF, on this chart only.
+                color_discrete_map={
+                    "New York City": "#FF00BF",
+                    "San Francisco": CITY_META["New York City"]["color"],
+                },
+                labels={"trips": "Monthly trips", "month": "", "city": "System"},
             )
+            monthly_chart.update_layout(
+                height=380,
+                margin=dict(l=10, r=10, t=40, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="white",
+                legend_title_text="",
+                # Horizontal legend above the plot instead of Plotly's default
+                # right-side column — in this narrow half-width chart, the
+                # right-side legend was eating into the plot area itself.
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            )
+            st.plotly_chart(monthly_chart, use_container_width=True)
 
-        with value_cols[1]:
-            money_cols = st.columns(2)
-            with money_cols[0]:
-                st.metric("CitiBike annual membership", "$239/yr")
-            with money_cols[1]:
-                st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
+        with mta_nyc_cols[1]:
+            if not mta_opportunity.empty:
+                st.markdown("**Where trains fail, bikes fill the gap**")
+
+                # Delay rates cluster tightly (17.7%-33.8%) rather than spanning
+                # 0-100%, so buckets are sized to where the real data lives
+                # rather than generic 10-point deciles.
+                bucket_edges = [0.15, 0.20, 0.25, 0.30, 0.35]
+                bucket_labels = ["15-20%", "20-25%", "25-30%", "30-35%"]
+                n_stations = len(mta_opportunity)
+                bucket_counts = (
+                    pd.cut(
+                        mta_opportunity["mta_delay_rate"],
+                        bins=bucket_edges,
+                        labels=bucket_labels,
+                        include_lowest=True,
+                    )
+                    .value_counts()
+                    .reindex(bucket_labels)
+                    .fillna(0)
+                    .astype(int)
+                )
+                bucket_pct = bucket_counts / n_stations * 100
+
+                hist_chart = go.Figure(go.Bar(
+                    x=bucket_labels,
+                    y=bucket_counts.to_numpy(),
+                    marker_color="#1E40AF",
+                    text=[f"{c} stations" for c in bucket_counts.to_numpy()],
+                    textposition="outside",
+                    cliponaxis=False,
+                ))
+                hist_chart.update_layout(
+                    height=380,
+                    margin=dict(l=10, r=10, t=40, b=10),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="white",
+                    xaxis_title="MTA delay rate",
+                    yaxis_title="Number of stations",
+                    yaxis=dict(
+                        gridcolor="#F1F5F9",
+                        range=[0, float(bucket_counts.max()) * 1.25],
+                    ),
+                    xaxis=dict(categoryorder="array", categoryarray=bucket_labels),
+                )
+                st.plotly_chart(hist_chart, use_container_width=True)
+            else:
+                st.info("MTA opportunity data not available.")
+
+        if not mta_opportunity.empty:
+            # Matches the top bucket ("30-35%") of the histogram above.
+            n_stations = len(mta_opportunity)
+            very_high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] >= 0.30]
+            very_high_pct = len(very_high_delay) / n_stations * 100
+
+            high_delay = mta_opportunity[mta_opportunity["mta_delay_rate"] > 0.05]
+            broader_context = ""
+            if not high_delay.empty:
+                avg_delay = high_delay["mta_delay_rate"].mean()
+                total_affected_riders = high_delay["mta_daily_riders"].sum()
+                broader_context = (
+                    f" More broadly, <strong>{len(high_delay)} neighborhoods</strong> have "
+                    f"subway delay rates above 5%; <strong>{total_affected_riders:,.0f} daily "
+                    f"MTA riders</strong> stuck waiting for trains that are late "
+                    f"{avg_delay:.0%} of the time. Every one of them is a potential CitiBike rider."
+                )
+
             st.markdown(
-                '<p style="text-align:center;">'
-                "A CitiBike member saves <strong>$1,345/year</strong> vs. an "
-                "unlimited MetroCard. For casual riders, single trips cost "
-                "$4.99 vs. $2.90 subway fare — but with zero wait time and "
-                "door-to-door service.</p>",
+                '<div class="tab-takeaway"><p>'
+                f"<strong>{very_high_pct:.0f}%</strong> of stations "
+                f"(<strong>{len(very_high_delay)} of {n_stations}</strong>) have an MTA "
+                f"delay rate of <strong>30% or higher</strong>. Delay rate reflects the "
+                "subway line(s) serving each station (MTA publishes reliability by "
+                "line, not by individual station), so nearby stations on the same "
+                f"line share an identical rate.{broader_context}"
+                "</p></div>",
                 unsafe_allow_html=True,
             )
 
     # ===================================================================
+    # ARGUMENT 3: Green energy, saves money, healthier city
+    # ===================================================================
+    with st.expander("3. The value: green energy, lower cost, healthier city", expanded=False):
+        st.markdown(
+            "CitiBike isn't just a backup for broken trains; it's a better option for "
+            "millions of short urban trips. The target rider: anyone traveling 0.5-3 miles "
+            "who currently waits underground or sits in traffic."
+        )
+
+        nyc_trips_total = nyc_filtered["trips"].sum()
+        nyc_electric = nyc_filtered["electric_trips"].sum()
+        nyc_ebike_pct = nyc_electric / nyc_trips_total if nyc_trips_total > 0 else 0
+
+        with st.container(key="kpi-value"):
+            # [1, 2] split: "Zero emissions" is one card-width; the money group
+            # is two card-widths so its centered header/description span the
+            # combined width of both money cards, and both card rows start
+            # right after a single header line, keeping all three cards' top
+            # edges aligned.
+            value_cols = st.columns([1, 2])
+            with value_cols[0]:
+                st.metric("Electric share in NYC", f"{nyc_ebike_pct:.0%}")
+                st.markdown(
+                    f"**{nyc_electric:,.0f} electric trips** in our dataset alone. "
+                    "Every Electric trip replaces a car ride or rideshare, "
+                    "zero tailpipe emissions, zero congestion contribution."
+                )
+
+            with value_cols[1]:
+                money_cols = st.columns(2)
+                with money_cols[0]:
+                    st.metric("CitiBike annual membership", "$239/yr")
+                with money_cols[1]:
+                    st.metric("MTA monthly unlimited", "\\$132/mo (\\$1,584/yr)")
+                st.markdown(
+                    '<p style="text-align:center;">'
+                    "A CitiBike member saves <strong>$1,345/year</strong> vs. an "
+                    "unlimited MetroCard. For casual riders, single trips cost "
+                    "$4.99 vs. $2.90 subway fare, but with zero wait time and "
+                    "door-to-door service.</p>",
+                    unsafe_allow_html=True,
+                )
+
+    # ===================================================================
     # ARGUMENT 4: Capacity is maxed — demand screaming for investment
     # ===================================================================
-    st.markdown("### 4. The urgency: stations are already at capacity")
+    with st.expander("4. The urgency: stations are already at capacity", expanded=False):
 
-    pressure_cols = st.columns(2)
-    with pressure_cols[0]:
-        pressure_dist = station_pressure["pressure_category"].value_counts().reset_index()
-        pressure_dist.columns = ["Category", "Stations"]
-        pressure_chart = px.pie(
-            pressure_dist,
-            values="Stations",
-            names="Category",
-            # color= is required for color_discrete_map to take effect on
-            # px.pie (silently ignored otherwise). Reuses HEATMAP_HEX (the
-            # "Trip demand by hour and day" heatmap's scale): light
-            # cyan-blue = low pressure, dark magenta = high.
-            color="Category",
-            color_discrete_map={
-                "Under-utilized (<0.5)": HEATMAP_HEX[2],
-                "Balanced (0.5-1.0)": HEATMAP_HEX[4],
-                "Strained (1.0-1.5)": HEATMAP_HEX[9],
-                "Critical (>1.5)": HEATMAP_HEX[13],
-            },
-            # Legend follows the severity ramp (light -> dark) instead of
-            # value_counts()'s frequency order.
-            category_orders={
-                "Category": [
-                    "Under-utilized (<0.5)",
-                    "Balanced (0.5-1.0)",
-                    "Strained (1.0-1.5)",
-                    "Critical (>1.5)",
-                ]
-            },
-            hole=0.45,
-            title="Station capacity pressure across NYC",
-        )
-        pressure_chart.update_layout(
-            height=350,
-            margin=dict(l=10, r=10, t=35, b=10),
-        )
-        st.plotly_chart(pressure_chart, use_container_width=True)
+        pressure_cols = st.columns(2)
+        with pressure_cols[0]:
+            pressure_dist = station_pressure["pressure_category"].value_counts().reset_index()
+            pressure_dist.columns = ["Category", "Stations"]
+            pressure_chart = px.pie(
+                pressure_dist,
+                values="Stations",
+                names="Category",
+                # color= is required for color_discrete_map to take effect on
+                # px.pie (silently ignored otherwise). Reuses HEATMAP_HEX (the
+                # "Trip demand by hour and day" heatmap's scale): light
+                # cyan-blue = low pressure, dark magenta = high.
+                color="Category",
+                color_discrete_map={
+                    "Under-utilized (<0.5)": HEATMAP_HEX[2],
+                    "Balanced (0.5-1.0)": HEATMAP_HEX[4],
+                    "Strained (1.0-1.5)": HEATMAP_HEX[9],
+                    "Critical (>1.5)": HEATMAP_HEX[13],
+                },
+                # Legend follows the severity ramp (light -> dark) instead of
+                # value_counts()'s frequency order.
+                category_orders={
+                    "Category": [
+                        "Under-utilized (<0.5)",
+                        "Balanced (0.5-1.0)",
+                        "Strained (1.0-1.5)",
+                        "Critical (>1.5)",
+                    ]
+                },
+                hole=0.45,
+                title="Station capacity pressure across NYC",
+            )
+            pressure_chart.update_layout(
+                height=350,
+                margin=dict(l=10, r=10, t=35, b=10),
+            )
+            st.plotly_chart(pressure_chart, use_container_width=True)
 
-    with pressure_cols[1]:
-        st.metric(
-            "Stations at or above capacity",
-            f"{len(strained):,} of {len(station_pressure):,}",
-            f"{len(strained)/len(station_pressure)*100:.0f}% of network" if len(station_pressure) > 0 else "",
-        )
-        st.metric("Critical stations (>1.5x capacity)", f"{len(critical):,}")
-        st.markdown(
-            "These stations run out of bikes (or docks) daily. "
-            "Every empty dock is a lost ride. Every full dock is a rider "
-            "who walks away. **This is revenue Lyft is leaving on the street.**"
-        )
+        with pressure_cols[1]:
+            st.metric(
+                "Stations at or above capacity",
+                f"{len(strained):,} of {len(station_pressure):,}",
+                f"{len(strained)/len(station_pressure)*100:.0f}% of network" if len(station_pressure) > 0 else "",
+            )
+            st.metric("Critical stations (>1.5x capacity)", f"{len(critical):,}")
+            st.markdown(
+                "These stations run out of bikes (or docks) daily. "
+                "Every empty dock is a lost ride. Every full dock is a rider "
+                "who walks away. **This is revenue Lyft is leaving on the street.**"
+            )
 
     # ===================================================================
     # ARGUMENT 5: The money — why Lyft should fund this
     # ===================================================================
-    st.markdown("### 5. The money: why Lyft should fund this and how much they'll make")
-    st.markdown(
-        "This isn't charity. CitiBike is already a **\\$200M/year revenue engine**. "
-        "Expansion doesn't cost Lyft money — it **makes** Lyft money. Here's the math."
-    )
+    with st.expander("5. The money: why Lyft should fund this and how much they'll make", expanded=False):
+        st.markdown(
+            "This isn't charity. CitiBike is already a **\\$200M/year revenue engine**. "
+            "Expansion doesn't cost Lyft money; it **makes** Lyft money. Here's the math."
+        )
 
-    # ---------- Revenue model from REAL data (via revenue_service) ----------
-    nyc_annual_trips = rev["annual_trips"]
-    annual_casual_trips = rev["annual_casual_trips"]
-    annual_ebike_trips = rev["annual_ebike_trips"]
-    real_member_pct = rev["member_pct"]
-    real_casual_pct = rev["casual_pct"]
-    active_members = rev["active_members"]
-    membership_revenue = rev["membership_revenue"]
-    casual_ride_revenue = rev["casual_ride_revenue"]
-    ebike_overage_revenue = rev["ebike_overage_revenue"]
-    sponsorship_revenue = rev["sponsorship_revenue"]
-    total_current_revenue = rev["total_estimated_revenue"]
+        # ---------- Revenue model from REAL data (via revenue_service) ----------
+        nyc_annual_trips = rev["annual_trips"]
+        annual_casual_trips = rev["annual_casual_trips"]
+        annual_ebike_trips = rev["annual_ebike_trips"]
+        real_member_pct = rev["member_pct"]
+        real_casual_pct = rev["casual_pct"]
+        active_members = rev["active_members"]
+        membership_revenue = rev["membership_revenue"]
+        casual_ride_revenue = rev["casual_ride_revenue"]
+        ebike_overage_revenue = rev["ebike_overage_revenue"]
+        sponsorship_revenue = rev["sponsorship_revenue"]
+        total_current_revenue = rev["total_estimated_revenue"]
 
-    st.markdown("#### Current CitiBike revenue (estimated from our data)")
+        st.markdown("#### Current CitiBike revenue (estimated from our data)")
 
-    with st.container(key="kpi-rev"):
-        rev_cols = st.columns(4)
-        with rev_cols[0]:
-            st.metric("Annual memberships", f"${membership_revenue:,.0f}")
-            st.caption(f"{active_members:,} members x $239/yr")
-        with rev_cols[1]:
-            st.metric("Casual ride fees", f"${casual_ride_revenue:,.0f}")
-            st.caption(
-                f"{annual_casual_trips:,.0f} casual trips x "
-                f"${rev['assumptions_used']['single_ride_price']:.2f}"
-            )
-        with rev_cols[2]:
-            st.metric("Electric overage fees", f"${ebike_overage_revenue:,.0f}")
-            st.caption(f"{annual_ebike_trips:,.0f} Electric trips x $3.24 avg")
-        with rev_cols[3]:
-            st.metric("Title sponsorship", f"${sponsorship_revenue:,.0f}")
-            st.caption("Citigroup naming deal")
+        with st.container(key="kpi-rev"):
+            rev_cols = st.columns(4)
+            with rev_cols[0]:
+                st.metric("Annual memberships", f"${membership_revenue:,.0f}")
+                st.caption(f"{active_members:,} members x $239/yr")
+            with rev_cols[1]:
+                st.metric("Casual ride fees", f"${casual_ride_revenue:,.0f}")
+                st.caption(
+                    f"{annual_casual_trips:,.0f} casual trips x "
+                    f"${rev['assumptions_used']['single_ride_price']:.2f}"
+                )
+            with rev_cols[2]:
+                st.metric("Electric overage fees", f"${ebike_overage_revenue:,.0f}")
+                st.caption(f"{annual_ebike_trips:,.0f} Electric trips x $3.24 avg")
+            with rev_cols[3]:
+                st.metric("Title sponsorship", f"${sponsorship_revenue:,.0f}")
+                st.caption("Citigroup naming deal")
 
-    st.markdown(
-        f"### Total estimated annual revenue: **${total_current_revenue:,.0f}**"
-    )
-    st.markdown(
-        f"That's from **{nyc_annual_trips:,.0f} trips/year** across **{active_stations:,} stations**. "
-        f"The biggest revenue driver? **Electric overage fees at "
-        f"\\${ebike_overage_revenue:,.0f}/yr** — "
-        f"with {nyc_ebike_pct:.0%} of rides now electric, every trip generates "
-        "\\$3.24 in usage fees on top of the membership or single-ride price."
-    )
+        st.markdown(
+            f"### Total estimated annual revenue: **${total_current_revenue:,.0f}**"
+        )
+        st.markdown(
+            f"That's from **{nyc_annual_trips:,.0f} trips/year** across **{active_stations:,} stations**. "
+            f"The biggest revenue driver? **Electric overage fees at "
+            f"\\${ebike_overage_revenue:,.0f}/yr**, "
+            f"with {nyc_ebike_pct:.0%} of rides now electric; every trip generates "
+            "\\$3.24 in usage fees on top of the membership or single-ride price."
+        )
 
-    # ---------- 250-station expansion math ----------
-    st.markdown("---")
-    st.markdown("#### What 250 new stations would make Lyft")
+        # ---------- 250-station expansion math ----------
+        st.markdown("---")
+        st.markdown("#### What 250 new stations would make Lyft")
 
-    trips_per_station_day = exp["trips_per_station_day"]
-    new_annual_trips = exp["new_annual_trips"]
-    new_member_revenue = exp["new_member_revenue"]
-    new_casual_revenue = exp["new_casual_revenue"]
-    new_ebike_revenue = exp["new_ebike_revenue"]
-    new_total_revenue = exp["new_total_revenue"]
-    total_install = exp["install_cost"]
-    total_annual_ops = exp["annual_operating_cost"]
-    net_annual_profit = exp["net_annual_profit"]
-    payback_months = exp["payback_months"]
+        trips_per_station_day = exp["trips_per_station_day"]
+        new_annual_trips = exp["new_annual_trips"]
+        new_member_revenue = exp["new_member_revenue"]
+        new_casual_revenue = exp["new_casual_revenue"]
+        new_ebike_revenue = exp["new_ebike_revenue"]
+        new_total_revenue = exp["new_total_revenue"]
+        total_install = exp["install_cost"]
+        total_annual_ops = exp["annual_operating_cost"]
+        net_annual_profit = exp["net_annual_profit"]
+        payback_months = exp["payback_months"]
 
-    with st.container(key="kpi-expand"):
-        expand_cols = st.columns(2)
-        with expand_cols[0]:
-            st.markdown("**New revenue (annual)**")
-            st.metric("New member subscriptions", f"${new_member_revenue:,.0f}")
-            st.metric("New casual ride fees", f"${new_casual_revenue:,.0f}")
-            st.metric("New Electric overage fees", f"${new_ebike_revenue:,.0f}")
-            st.metric("Total new revenue/year", f"${new_total_revenue:,.0f}", delta=f"+{new_total_revenue/total_current_revenue*100:.0f}% revenue growth")
+        with st.container(key="kpi-expand"):
+            expand_cols = st.columns(2)
+            with expand_cols[0]:
+                st.markdown("**New revenue (annual)**")
+                st.metric("New member subscriptions", f"${new_member_revenue:,.0f}")
+                st.metric("New casual ride fees", f"${new_casual_revenue:,.0f}")
+                st.metric("New Electric overage fees", f"${new_ebike_revenue:,.0f}")
+                st.metric("Total new revenue/year", f"${new_total_revenue:,.0f}", delta=f"+{new_total_revenue/total_current_revenue*100:.0f}% revenue growth")
 
-        with expand_cols[1]:
-            st.markdown("**Costs & payback**")
-            st.metric("One-time station install", f"${total_install:,.0f}")
-            st.metric("Annual operations", f"${total_annual_ops:,.0f}")
-            st.metric("Net profit/year (after ops)", f"${net_annual_profit:,.0f}")
-            st.metric("Payback period", f"{payback_months:.0f} months", delta="Investment recovered")
+            with expand_cols[1]:
+                st.markdown("**Costs & payback**")
+                st.metric("One-time station install", f"${total_install:,.0f}")
+                st.metric("Annual operations", f"${total_annual_ops:,.0f}")
+                st.metric("Net profit/year (after ops)", f"${net_annual_profit:,.0f}")
+                st.metric("Payback period", f"{payback_months:.0f} months", delta="Investment recovered")
 
-    st.markdown(
-        '<div class="tab-takeaway"><p>'
-        f"<strong>250 new stations = ${net_annual_profit:,.0f}/year in net profit.</strong> "
-        f"The ${total_install:,.0f} installation cost pays for itself in "
-        f"<strong>{payback_months:.0f} months</strong>. "
-        f"After that, it's pure margin. And with {len(strained)} of "
-        f"{len(station_pressure):,} current stations "
-        "already running above capacity, this demand isn't hypothetical — "
-        "it's riders who are already showing up and finding no bikes."
-        "</p></div>",
-        unsafe_allow_html=True,
-    )
+        st.markdown(
+            '<div class="tab-takeaway"><p>'
+            f"<strong>250 new stations = ${net_annual_profit:,.0f}/year in net profit.</strong> "
+            f"The ${total_install:,.0f} installation cost pays for itself in "
+            f"<strong>{payback_months:.0f} months</strong>. "
+            f"After that, it's pure margin. And with {len(strained)} of "
+            f"{len(station_pressure):,} current stations "
+            "already running above capacity, this demand isn't hypothetical; "
+            "it's riders who are already showing up and finding no bikes."
+            "</p></div>",
+            unsafe_allow_html=True,
+        )
 
-    # ---------- Revenue projection chart ----------
-    st.markdown("---")
-    st.markdown("#### 5-year revenue projection: invest vs. don't")
+        # ---------- Revenue projection chart ----------
+        st.markdown("---")
+        st.markdown("#### 5-year revenue projection: invest vs. don't")
 
-    years = list(range(2026, 2032))
+        years = list(range(2026, 2032))
 
-    proj_chart = px.line(
-        proj_df,
-        x="Year",
-        y="Annual Revenue",
-        color="Scenario",
-        # Reuses HEATMAP_HEX: light = lowest-investment scenario, dark
-        # magenta = highest-investment scenario.
-        color_discrete_map={
-            "Do nothing (3% organic growth)": HEATMAP_HEX[13],
-            "250 stations — Lyft self-funded": LYFT_PINK,
-            "500 stations + DOT partnership": HEATMAP_HEX[7]
-        },
-        # Legend order matches how the lines actually stack at the right
-        # edge (highest revenue on top) instead of dataframe insertion order.
-        category_orders={
-            "Scenario": [
-                "500 stations + DOT partnership",
-                "250 stations — Lyft self-funded",
-                "Do nothing (3% organic growth)",
-            ]
-        },
-        labels={"Annual Revenue": "Projected annual revenue ($)"},
-        title="The cost of doing nothing vs. the return on investing",
-    )
-    proj_chart.update_layout(
-        height=420,
-        margin=dict(l=10, r=10, t=35, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="white",
-        yaxis_tickprefix="$",
-        yaxis_tickformat=",.0f",
-        legend_title_text="",
-    )
-    st.plotly_chart(proj_chart, use_container_width=True)
+        proj_chart = px.line(
+            proj_df,
+            x="Year",
+            y="Annual Revenue",
+            color="Scenario",
+            # Reuses HEATMAP_HEX: light = lowest-investment scenario, dark
+            # magenta = highest-investment scenario.
+            color_discrete_map={
+                "Do nothing (3% organic growth)": HEATMAP_HEX[13],
+                "250 stations (Lyft self-funded)": LYFT_PINK,
+                "500 stations + DOT partnership": HEATMAP_HEX[7]
+            },
+            # Legend order matches how the lines actually stack at the right
+            # edge (highest revenue on top) instead of dataframe insertion order.
+            category_orders={
+                "Scenario": [
+                    "500 stations + DOT partnership",
+                    "250 stations (Lyft self-funded)",
+                    "Do nothing (3% organic growth)",
+                ]
+            },
+            labels={"Annual Revenue": "Projected annual revenue ($)"},
+            title="The cost of doing nothing vs. the return on investing",
+        )
+        proj_chart.update_layout(
+            height=420,
+            margin=dict(l=10, r=10, t=35, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="white",
+            yaxis_tickprefix="$",
+            yaxis_tickformat=",.0f",
+            legend_title_text="",
+        )
+        st.plotly_chart(proj_chart, use_container_width=True)
 
-    st.markdown(
-        '<div class="tab-takeaway"><p>'
-        f"<strong>By 2031, the gap between investing and doing nothing is "
-        f"${gap_2031:,.0f}/year.</strong> "
-        f"Over 5 years, the DOT partnership scenario generates "
-        f"<strong>${cumulative_gap:,.0f} more</strong> "
-        "than the status quo. That's not a projection — it's what happens "
-        "when you add supply to a market where 50% of stations are already at capacity."
-        "</p></div>",
-        unsafe_allow_html=True,
-    )
+        st.markdown(
+            '<div class="tab-takeaway"><p>'
+            f"<strong>By 2031, the gap between investing and doing nothing is "
+            f"${gap_2031:,.0f}/year.</strong> "
+            f"Over 5 years, the DOT partnership scenario generates "
+            f"<strong>${cumulative_gap:,.0f} more</strong> "
+            "than the status quo. That's not a projection; it's what happens "
+            "when you add supply to a market where 50% of stations are already at capacity."
+            "</p></div>",
+            unsafe_allow_html=True,
+        )
 
-    # ---------- Government side ----------
-    st.markdown("---")
-    st.markdown("#### Why government should co-invest")
+        # ---------- Government side ----------
+        st.markdown("---")
+        st.markdown("#### Why government should co-invest")
 
-    with st.container(key="kpi-govt"):
-        govt_cols = st.columns(3)
-        with govt_cols[0]:
-            st.markdown("**Public health**")
-            st.metric("Annual health benefit", f"${pub['health_benefit']:,.0f}")
-            st.markdown(
-                "Each bike trip reduces obesity, heart disease, and diabetes risk. "
-                "NYC DOH estimates cycling saves the city \\$0.50/trip in healthcare costs."
-            )
-        with govt_cols[1]:
-            st.markdown("**Congestion & emissions**")
-            st.metric("Congestion reduction", f"${pub['congestion_benefit']:,.0f}/yr")
-            st.metric("Emissions reduction", f"${pub['emissions_benefit']:,.0f}/yr")
-            st.markdown(
-                "Every bike trip replaces a car trip or rideshare. "
-                "Less traffic, less pollution, less road damage."
-            )
-        with govt_cols[2]:
-            st.markdown("**Tax revenue**")
-            st.metric("Additional tax revenue", f"${pub['tax_benefit']:,.0f}/yr")
-            st.metric("Total annual public benefit", f"${pub['total_public_benefit']:,.0f}")
-            st.markdown(
-                f"Government payback: **{pub['govt_payback_years']:.1f} years**. "
-                "Faster than any highway or subway project."
-            )
+        with st.container(key="kpi-govt"):
+            govt_cols = st.columns(3)
+            with govt_cols[0]:
+                st.markdown("**Public health**")
+                st.metric("Annual health benefit", f"${pub['health_benefit']:,.0f}")
+                st.markdown(
+                    "Each bike trip reduces obesity, heart disease, and diabetes risk. "
+                    "NYC DOH estimates cycling saves the city \\$0.50/trip in healthcare costs."
+                )
+            with govt_cols[1]:
+                st.markdown("**Congestion & emissions**")
+                st.metric("Congestion reduction", f"${pub['congestion_benefit']:,.0f}/yr")
+                st.metric("Emissions reduction", f"${pub['emissions_benefit']:,.0f}/yr")
+                st.markdown(
+                    "Every bike trip replaces a car trip or rideshare. "
+                    "Less traffic, less pollution, less road damage."
+                )
+            with govt_cols[2]:
+                st.markdown("**Tax revenue**")
+                st.metric("Additional tax revenue", f"${pub['tax_benefit']:,.0f}/yr")
+                st.metric("Total annual public benefit", f"${pub['total_public_benefit']:,.0f}")
+                st.markdown(
+                    f"Government payback: **{pub['govt_payback_years']:.1f} years**. "
+                    "Faster than any highway or subway project."
+                )
 
     # ===================================================================
     # ARGUMENT 6: Target market — MTA riders who need an alternative
     # ===================================================================
     if not mta_opportunity.empty:
-        st.markdown("### 6. The target market: MTA riders who need a reliable alternative")
-        mta_opportunity["resilience_need"] = (
-            mta_opportunity["mta_daily_riders"] * mta_opportunity["mta_delay_rate"]
-        )
-        resilience_chart = px.scatter(
-            mta_opportunity,
-            x="mta_delay_rate",
-            y="mta_daily_riders",
-            size="bike_daily_trips",
-            hover_name="neighborhood",
-            color="transit_opportunity_score",
-            # Same HEATMAP_SCALE as the "Trip demand by hour and day" heatmap.
-            color_continuous_scale=HEATMAP_SCALE,
-            labels={
-                "mta_delay_rate": "Subway delay rate (higher = worse service)",
-                "mta_daily_riders": "Daily MTA riders (market size)",
-                "transit_opportunity_score": "Investment priority",
-            },
-            title="Each dot is a neighborhood. Top-right = massive market with bad trains.",
-        )
-        resilience_chart.update_layout(
-            height=400,
-            margin=dict(l=10, r=10, t=35, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="white",
-            xaxis_tickformat=".0%",
-        )
-        st.plotly_chart(resilience_chart, use_container_width=True)
-        st.markdown(
-            "**Top-right quadrant** = neighborhoods where the most people ride the worst trains. "
-            "These are the places where CitiBike expansion will have the highest adoption rate. "
-            "Our XGBoost model predicts station-level demand with **32% better accuracy** than "
-            "seasonal baselines — Lyft can place new stations with confidence, not guesswork."
-        )
+        with st.expander("6. The target market: MTA riders who need a reliable alternative", expanded=False):
+            mta_opportunity["resilience_need"] = (
+                mta_opportunity["mta_daily_riders"] * mta_opportunity["mta_delay_rate"]
+            )
+            resilience_chart = px.scatter(
+                mta_opportunity,
+                x="mta_delay_rate",
+                y="mta_daily_riders",
+                size="bike_daily_trips",
+                hover_name="neighborhood",
+                color="transit_opportunity_score",
+                # Same HEATMAP_SCALE as the "Trip demand by hour and day" heatmap.
+                color_continuous_scale=HEATMAP_SCALE,
+                labels={
+                    "mta_delay_rate": "Subway delay rate (higher = worse service)",
+                    "mta_daily_riders": "Daily MTA riders (market size)",
+                    "transit_opportunity_score": "Investment priority",
+                },
+                title="Each dot is a neighborhood. Top-right = massive market with bad trains.",
+            )
+            resilience_chart.update_layout(
+                height=400,
+                margin=dict(l=10, r=10, t=35, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="white",
+                xaxis_tickformat=".0%",
+            )
+            st.plotly_chart(resilience_chart, use_container_width=True)
+            st.markdown(
+                "**Top-right quadrant** = neighborhoods where the most people ride the worst trains. "
+                "These are the places where CitiBike expansion will have the highest adoption rate. "
+                "Our XGBoost model predicts station-level demand with **32% better accuracy** than "
+                "seasonal baselines; Lyft can place new stations with confidence, not guesswork."
+            )
 
     # ===================================================================
     # THE ASK: What Lyft product should build
     # ===================================================================
     st.markdown("---")
-    st.markdown("### The pitch to Lyft product")
-    st.markdown(
-        """
+    with st.expander("The pitch to Lyft product", expanded=False):
+        st.markdown(
+            """
 | What we proved | The number | What Lyft should do |
 |---|---|---|
 | **SF model works** | Comparable per-station utilization with 1/10th NYC's population | Replicate SFMTA partnership model with NYC DOT |
-| **NYC demand is massive** | 60.9M trips in our dataset, 5.4M in peak month alone | Invest in capacity — this market is supply-constrained, not demand-constrained |
+| **NYC demand is massive** | 60.9M trips in our dataset, 5.4M in peak month alone | Invest in capacity; this market is supply-constrained, not demand-constrained |
 | **Trains are failing** | Chronic delays across dozens of neighborhoods | Position CitiBike as transit resilience infrastructure, not recreation |
-| **Electric bikes are winning** | 70% of NYC trips are now electric | Accelerate Electric fleet + charging infra — this is where the growth is |
+| **Electric bikes are winning** | 70% of NYC trips are now electric | Accelerate Electric fleet + charging infra; this is where the growth is |
 | **Green + cheap** | Zero emissions, \\$1,345/yr savings vs MetroCard | Market CitiBike as the smart commute, not a tourist product |
 | **We can predict demand** | XGBoost model: 32% better than baselines across 2,466 stations | Use our forecasting engine to optimize fleet placement and expansion |
-        """
-    )
+            """
+        )
 
-    st.markdown("#### The bottom line")
-    st.markdown(
-        '<div class="tab-takeaway"><p>'
-        "<strong>CitiBike is the largest bike-share system in the Americas, running at capacity, "
-        "in a city where 8.3 million people are stuck with unreliable trains.</strong> "
-        "San Francisco proved that government partnership unlocks bike-share growth. "
-        "NYC is 10x the market. Lyft has the infrastructure. The data says invest now — "
-        "every month of delay is millions of rides left on the table."
-        "</p></div>",
-        unsafe_allow_html=True,
-    )
+        st.markdown("#### The bottom line")
+        st.markdown(
+            '<div class="tab-takeaway"><p>'
+            "<strong>CitiBike is the largest bike-share system in the Americas, running at capacity, "
+            "in a city where 8.3 million people are stuck with unreliable trains.</strong> "
+            "San Francisco proved that government partnership unlocks bike-share growth. "
+            "NYC is 10x the market. Lyft has the infrastructure. The data says invest now; "
+            "every month of delay is millions of rides left on the table."
+            "</p></div>",
+            unsafe_allow_html=True,
+        )
 
-    st.markdown("#### What we need from Lyft")
-    st.markdown(
-        """
-1. **Internal rebalancing data** — close the loop between our demand predictions and fleet ops
-2. **Pilot program** — 50 stations, 30 days, measure ride completion improvement
-3. **NYC DOT partnership intro** — we have the analytics dashboard they need to justify expansion funding
-4. **Cross-city rollout** — same pipeline works for Chicago Divvy, DC Capital Bikeshare, and beyond
-        """
-    )
+        st.markdown("#### What we need from Lyft")
+        st.markdown(
+            """
+1. **Internal rebalancing data**: close the loop between our demand predictions and fleet ops
+2. **Pilot program**: 50 stations, 30 days, measure ride completion improvement
+3. **NYC DOT partnership intro**: we have the analytics dashboard they need to justify expansion funding
+4. **Cross-city rollout**: same pipeline works for Chicago Divvy, DC Capital Bikeshare, and beyond
+            """
+        )
 
 with sf_nyc_tab:
     from pages_pkg.sf_nyc_investment_comparison import render as render_sf_nyc_comparison
