@@ -1324,7 +1324,7 @@ with forecast_tab:
                 help="How many weeks into the future to project.",
             )
             new_stations = st.number_input(
-                "New stations added", min_value=0, max_value=300, value=0, step=25,
+                "New stations added", min_value=0, max_value=1000, value=0, step=25,
                 help="Each new station adds ~55 trips/day based on current averages.",
             )
             st.markdown("---")
