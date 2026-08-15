@@ -1796,55 +1796,63 @@ with investment_tab:
     def investment_planner():
         st.markdown(
             '<p class="section-note">Prioritize station expansions for public mobility impact, '
-            "budget efficiency, and long-term operating sustainability. Dollar values below "
-            "are editable planning assumptions, not official agency estimates.</p>",
+            "budget efficiency, and long-term operating sustainability.</p>",
             unsafe_allow_html=True,
         )
 
         # Reserved now, filled in below once the sliders (read further down)
-        # have produced a recommendation — keeps the summary a full-width
-        # banner above the two-column layout instead of confined to the
-        # narrower results column.
+        # have produced a recommendation, keeps the summary a full-width
+        # banner above the chart instead of confined to a narrower column.
         kpi_banner_slot = st.container(key="kpi-planner-summary")
 
-        assumption_col, results_col = st.columns([0.9, 2.1])
-        with assumption_col:
-            st.markdown("**Investment geography:** New York City")
-            public_budget = st.number_input(
-                "Available capital budget",
-                min_value=50_000, max_value=50_000_000, value=16_000_000,
-                step=50_000, format="%d",
-                help="Defaults to $16M, what MTC invested in Bay Wheels (SF) in Feb 2023.",
+        with st.expander("Want to customize the plan?", expanded=False):
+            st.caption(
+                "Dollar values are editable planning assumptions, not official agency estimates."
             )
-            docks_added = st.slider("Docks added per station", 4, 40, 16)
-            cost_per_dock = st.number_input(
-                "Installed cost per dock",
-                min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
-            )
-            demand_uplift = st.slider(
-                "Demand captured after expansion", 5, 60, 35, format="%d%%",
-                help=(
-                    "Defaults to 35%, modeled on Bay Wheels (SF): at the same "
-                    "$16M investment level, this produces an 11.1% membership "
-                    "price decrease, matching SF's actual $169->$150 cut (11.2%) "
-                    "after its Feb 2023 MTC investment."
-                ),
-            )
-            net_revenue_trip = st.number_input(
-                "Net operating revenue per new trip",
-                min_value=0.0, max_value=20.0, value=DEFAULT_NET_REVENUE_PER_TRIP, step=0.25,
-            )
-            public_value_trip = st.number_input(
-                "Estimated public value per new trip",
-                min_value=0.0, max_value=30.0, value=4.00, step=0.25,
-                help="Editable proxy for congestion, access, health, and emissions benefits.",
-            )
-            annual_station_cost = st.number_input(
-                "Annual added station operating cost",
-                min_value=0, max_value=250_000, value=28_000, step=2_000, format="%d",
-            )
-            analysis_years = st.slider("Analysis period", 3, 15, 5)
-            discount_rate = st.slider("Discount rate", 0, 15, 5, format="%d%%")
+            scope_col, revenue_col, analysis_col = st.columns(3, gap="large")
+            with scope_col:
+                st.markdown("**Investment scope**")
+                public_budget = st.number_input(
+                    "Available capital budget",
+                    min_value=50_000, max_value=50_000_000, value=16_000_000,
+                    step=50_000, format="%d",
+                    help="Defaults to $16M, what MTC invested in Bay Wheels (SF) in Feb 2023.",
+                )
+                cost_per_dock = st.number_input(
+                    "Installed cost per dock",
+                    min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
+                )
+                docks_added = st.slider("Docks added per station", 4, 40, 16)
+            with revenue_col:
+                st.markdown("**Revenue & value**")
+                net_revenue_trip = st.number_input(
+                    "Net operating revenue per new trip",
+                    min_value=0.0, max_value=20.0, value=DEFAULT_NET_REVENUE_PER_TRIP, step=0.25,
+                )
+                public_value_trip = st.number_input(
+                    "Estimated public value per new trip",
+                    min_value=0.0, max_value=30.0, value=4.00, step=0.25,
+                    help="Editable proxy for congestion, access, health, and emissions benefits.",
+                )
+                demand_uplift = st.slider(
+                    "Demand captured after expansion", 5, 60, 35, format="%d%%",
+                    help=(
+                        "Defaults to 35%, modeled on Bay Wheels (SF): at the same "
+                        "$16M investment level, this produces an 11.1% membership "
+                        "price decrease, matching SF's actual $169->$150 cut (11.2%) "
+                        "after its Feb 2023 MTC investment."
+                    ),
+                )
+            with analysis_col:
+                st.markdown("**Analysis settings**")
+                annual_station_cost = st.number_input(
+                    "Annual added station operating cost",
+                    min_value=0, max_value=250_000, value=28_000, step=2_000, format="%d",
+                )
+                analysis_years = st.number_input(
+                    "Analysis period", min_value=3, max_value=15, value=5, step=1, format="%d",
+                )
+                discount_rate = st.slider("Discount rate", 0, 15, 5, format="%d%%")
 
         investment_rank = _inv_base.copy()
         investment_rank["new_annual_trips"] = (
@@ -1911,27 +1919,28 @@ with investment_tab:
                 help="Above 1.0× creates modeled public value.",
             )
 
-        with results_col:
-            value_chart_data = investment_rank.head(10).copy()
-            value_chart = px.bar(
-                value_chart_data, x="public_npv", y="station_name",
-                orientation="h", color="public_npv",
-                color_continuous_scale=BLUE_SCALE_HEX,
-                labels={
-                    "public_npv": f"{analysis_years}-year public NPV ($)",
-                    "station_name": "",
-                },
-            )
-            value_chart.update_layout(
-                height=410, yaxis={"categoryorder": "total ascending"},
-                coloraxis_showscale=False, margin=dict(l=10, r=10, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-            )
-            st.plotly_chart(value_chart, use_container_width=True)
-            st.caption(
-                f"Selected projects are estimated to add {compact_number(new_trips)} "
-                "annual trips under the current assumptions."
-            )
+        st.markdown(f"#### Top 10 stations by {analysis_years}-year public value")
+        value_chart_data = investment_rank.head(10).copy()
+        value_chart = px.bar(
+            value_chart_data, x="public_npv", y="station_name",
+            orientation="h", color="public_npv",
+            color_continuous_scale=BLUE_SCALE_HEX,
+            labels={
+                "public_npv": f"{analysis_years}-year public NPV ($)",
+                "station_name": "",
+            },
+        )
+        value_chart.update_layout(
+            height=520, yaxis={"categoryorder": "total ascending"},
+            coloraxis_showscale=False, margin=dict(l=10, r=10, t=20, b=10),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+            font=dict(size=14),
+        )
+        st.plotly_chart(value_chart, use_container_width=True)
+        st.caption(
+            f"Selected projects are estimated to add {compact_number(new_trips)} "
+            "annual trips under the current assumptions."
+        )
 
         # ── Cash Flow & IRR ──
         with st.expander("Portfolio cash flow & IRR", expanded=False):
