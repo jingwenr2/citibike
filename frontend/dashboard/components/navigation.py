@@ -58,7 +58,7 @@ def render_sidebar(data_period: str = "") -> str:
                 if st.sidebar.button(
                     display_name,
                     key=f"nav_{key}",
-                    use_container_width=True,
+                    width="stretch",
                     type="tertiary" if not is_active else "primary",
                 ):
                     st.session_state.active_page = key

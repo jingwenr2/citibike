@@ -66,7 +66,7 @@ def render(nyc_filtered, mta_opportunity, station_summary_df, rev, delta, is_dem
                 },
                 height=460,
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
             st.caption("Station size = trip volume. Color = system.")
 
     with findings_col:

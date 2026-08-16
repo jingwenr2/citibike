@@ -47,7 +47,7 @@ def render(mta_opportunity, mta_signal, nyc_filtered, is_demo):
         mta_opportunity,
         title="Stations in the upper-left quadrant are underserved by Citi Bike",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # ── Top opportunities ──
     section_header("Highest-opportunity stations")
@@ -57,7 +57,7 @@ def render(mta_opportunity, mta_signal, nyc_filtered, is_demo):
              "mta_delay_rate", "bike_daily_trips", "transit_opportunity_score"]
         ].head(15),
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
         column_config={
             "neighborhood": "Neighborhood",
             "station_name": "Station",

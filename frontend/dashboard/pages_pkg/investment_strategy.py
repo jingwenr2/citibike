@@ -114,7 +114,7 @@ def render(nyc_filtered, mta_opportunity, is_demo):
             height=400,
         )
         fig.update_layout(yaxis={"categoryorder": "total ascending"})
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     # ── 3-phase roadmap ──
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
@@ -142,7 +142,7 @@ def render(nyc_filtered, mta_opportunity, is_demo):
                 "five_year_fiscal_npv", "public_npv", "public_benefit_cost_ratio",
                 "transit_opportunity_score",
             ]],
-            hide_index=True, use_container_width=True,
+            hide_index=True, width="stretch",
             column_config={
                 "recommended": st.column_config.CheckboxColumn("Fund"),
                 "station_name": "Station",
