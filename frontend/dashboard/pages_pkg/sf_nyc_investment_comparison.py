@@ -27,7 +27,12 @@ import streamlit as st
 
 from components.styles import apply_layout
 
-INVESTMENT_AMOUNT = 16_000_000
+# SF's MTC investment was $16M nominal in Feb 2023. Since this ROI estimate
+# divides by a modern (non-2023) net-revenue-per-trip assumption, the
+# investment side is inflation-adjusted to 2026 dollars (~9.4%, consistent
+# with the same adjustment used throughout the Government Investment tab)
+# rather than mixing 2023 dollars against a current-dollars revenue rate.
+INVESTMENT_AMOUNT = 17_500_000
 
 PRICE_HISTORY = [
     {
@@ -167,11 +172,13 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
 
     # ── ROI estimate ──
     st.markdown("---")
-    st.subheader("Estimated ROI on the $16M investment")
+    st.subheader("Estimated ROI on the $17.5M investment")
     st.markdown(
         '<p class="section-note">Applies the same net-operating-revenue-per-trip '
         "assumption used in the Government investment tab to the incremental "
-        "ridership observed since Feb 2023.</p>",
+        "ridership observed since Feb 2023. MTC's investment was $16M nominal "
+        "at the time; shown here inflation-adjusted to 2026 dollars so it isn't "
+        "mixed against a current-dollars revenue-per-trip rate.</p>",
         unsafe_allow_html=True,
     )
 

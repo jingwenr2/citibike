@@ -140,7 +140,7 @@ def build():
                  font_size=40, color=WHITE, bold=True)
     add_text_box(slide, Inches(1), Inches(3.0), Inches(10), Inches(0.8),
                  "Data-driven case for expanding NYC's bike-share network\n"
-                 "69.7M trips analyzed  |  2,466 stations  |  XGBoost demand forecast",
+                 "69.7M trips analyzed  |  2,476 stations  |  XGBoost demand forecast",
                  font_size=18, color=LIGHT_GRAY)
     add_text_box(slide, Inches(1), Inches(5.5), Inches(6), Inches(0.4),
                  "Jingwen Ruan", font_size=16, color=WHITE, bold=True)
@@ -160,17 +160,17 @@ def build():
                            RGBColor(0xF0, 0xF9, 0xFF))
     add_shape_fill(slide, Inches(0.8), Inches(1.3), Pt(4), Inches(1.0), BLUE)
     add_text_box(slide, Inches(1.0), Inches(1.4), Inches(11), Inches(0.8),
-                 "Citi Bike is a $196M/yr business running at capacity — 50.6% of stations are maxed out. "
-                 "Adding 250 stations nets $11.3M/yr profit with a 17-month payback. "
+                 "Citi Bike is a $212M/yr business running at capacity — 51.9% of stations are maxed out. "
+                 "Adding 250 stations nets $12.9M/yr profit with a 15-month payback. "
                  "SF proves government partnership works; NYC is the 10x opportunity.",
                  font_size=16, color=NAVY)
 
     # KPI cards
     kpis = [
         ("69.7M", "Total Trips Analyzed", BLUE),
-        ("$196M/yr", "Estimated Revenue", GREEN),
-        ("50.6%", "Stations at Capacity", AMBER),
-        ("17 months", "Expansion Payback", PINK),
+        ("$212M/yr", "Estimated Revenue", GREEN),
+        ("51.9%", "Stations at Capacity", AMBER),
+        ("15 months", "Expansion Payback", PINK),
         ("+42.5%", "Model vs Naive Baseline", PURPLE),
     ]
     card_w = Inches(2.1)
@@ -181,11 +181,11 @@ def build():
 
     # 5 key points
     bullets = [
-        "NYC Citi Bike is the largest bike-share in the Americas (2,466 stations, 69.7M trips)",
-        "Supply-constrained, not demand-constrained — 923 stations above 1.5x capacity",
+        "NYC Citi Bike is the largest bike-share in the Americas (2,476 stations, 69.7M trips)",
+        "Supply-constrained, not demand-constrained — 961 stations above 1.5x capacity",
         "E-bikes drive 70% of trips and ~$97M/yr in overage fees alone",
         "XGBoost demand forecast: MAE 11.24 trips/station/day (+42.5% vs naive baseline)",
-        "250-station expansion yields $11.3M/yr net profit; 5-year gap if not investing: ~$400M",
+        "250-station expansion yields $12.9M/yr net profit; 5-year gap if not investing: ~$377M",
     ]
     add_bullet_slide_content(slide, Inches(0.8), Inches(4.2), Inches(11.5), Inches(3),
                               bullets, font_size=15, color=NAVY)
@@ -203,10 +203,10 @@ def build():
                  "The Problem: Capacity Crisis", font_size=32, color=NAVY, bold=True)
 
     left_bullets = [
-        "50.6% of stations operating at or above capacity",
-        "923 stations (37.4%) in critical zone (>1.5x capacity)",
+        "51.9% of stations operating at or above capacity",
+        "961 stations (38.8%) in critical zone (>1.5x capacity)",
         "Peak month: 5.4M trips in June 2026",
-        "NYC averages 47.7 trips/station/day vs SF's 16.6",
+        "NYC averages 51.5 trips/station/day vs SF's 16.6",
         "Demand is being turned away, not just unmet",
     ]
     add_bullet_slide_content(slide, Inches(0.8), Inches(1.5), Inches(5.5), Inches(3),
@@ -409,8 +409,8 @@ def build():
                  "Revenue & E-Bike Economics", font_size=32, color=NAVY, bold=True)
 
     rev_kpis = [
-        ("$196M/yr", "Estimated Annual Revenue", GREEN),
-        ("$97.2M/yr", "E-Bike Overage Fees", PINK),
+        ("$212M/yr", "Estimated Annual Revenue", GREEN),
+        ("$105.2M/yr", "E-Bike Overage Fees", PINK),
         ("~70%", "E-Bike Trip Share", BLUE),
         ("$239/yr", "Annual Membership", NAVY),
     ]
@@ -438,9 +438,9 @@ def build():
                  "250-Station Expansion ROI", font_size=32, color=NAVY, bold=True)
 
     roi_kpis = [
-        ("$11.3M/yr", "Net Annual Profit", GREEN),
-        ("17 months", "Payback Period", BLUE),
-        ("~$400M", "5-Year Revenue Gap\n(invest vs. don't)", AMBER),
+        ("$12.9M/yr", "Net Annual Profit", GREEN),
+        ("15 months", "Payback Period", BLUE),
+        ("~$377M", "5-Year Revenue Gap\n(invest vs. don't)", AMBER),
         ("250", "New Stations\n(Bronx/Queens/Brooklyn)", PURPLE),
     ]
     card_w = Inches(2.6)
@@ -453,7 +453,7 @@ def build():
         "Our model identifies which neighborhoods the rollout should prioritize first",
         "Stations placed near high-delay MTA stops capture mode-shift demand",
         "Capital investment recovered in under 2 years from incremental revenue",
-        "Not investing has a cost: ~$400M in unrealized revenue over 5 years",
+        "Not investing has a cost: ~$377M in unrealized revenue over 5 years",
     ]
     add_bullet_slide_content(slide, Inches(0.8), Inches(3.3), Inches(11.5), Inches(3),
                               roi_bullets, font_size=16, color=NAVY)
@@ -637,7 +637,7 @@ def build():
 
     findings = [
         ("Supply, Not Demand",
-         "The system is supply-constrained. 50.6% of stations at capacity means demand is being turned away daily."),
+         "The system is supply-constrained. 51.9% of stations at capacity means demand is being turned away daily."),
         ("E-Bikes Are the Business",
          "70% e-bike share and $0.27/min overage generate ~$97M/yr. E-bike fleet expansion has outsized ROI."),
         ("MTA Failures Create Bike Demand",
@@ -646,7 +646,7 @@ def build():
          "XGBoost identifies which stations are under-serving demand (+42.5% accuracy vs naive). "
          "Lag features dominate, meaning demand is persistent and predictable."),
         ("Government Investment Works",
-         "SF Bay Wheels proves the model. NYC is 10x the market. 250 new stations pay back in 17 months."),
+         "SF Bay Wheels proves the model. NYC is 10x the market. 250 new stations pay back in 15 months."),
     ]
     for i, (title, body) in enumerate(findings):
         y = Inches(1.4) + i * Inches(1.1)

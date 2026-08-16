@@ -295,6 +295,77 @@ def estimate_public_benefits(
     }
 
 
+def estimate_fare_equity_fund(
+    expansion: dict[str, Any],
+    current_revenue: dict[str, Any],
+    equity_fund: float = 4_400_000.0,
+    assumptions: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Model a one-time fare-equity fund spread across the full membership base.
+
+    Mirrors Bay Wheels' Feb 2023 structure: a dedicated equity pool, separate
+    from the station-expansion budget, that discounts membership price for
+    every member, old and new, rather than folding affordability into
+    general operating surplus. Year one is covered by the one-time pool;
+    from year two on the expansion's own recurring net profit is checked
+    against the ongoing cost of sustaining the same discount permanently.
+    """
+    if assumptions is None:
+        assumptions = load_pricing_assumptions()
+
+    current_price = assumptions["annual_membership_price"]
+    new_members = expansion["new_stations"] * assumptions["new_members_per_new_station"]
+    total_members = current_revenue["active_members"] + new_members
+
+    discount_per_member = safe_divide(equity_fund, total_members, 0)
+    new_price = max(0.0, current_price - discount_per_member)
+    price_reduction_pct = safe_divide(discount_per_member, current_price, 0)
+
+    # Ongoing (year 2+) cost of sustaining this discount for every member,
+    # funded out of the expansion's own recurring profit instead of a
+    # second equity-fund ask. total_members * discount_per_member reduces
+    # to equity_fund by construction, computed explicitly for clarity.
+    ongoing_annual_cost = discount_per_member * total_members
+    net_profit_after_discount = expansion["net_annual_profit"] - ongoing_annual_cost
+    sustainable = net_profit_after_discount > 0
+    payback_years_with_discount = (
+        safe_divide(expansion["install_cost"], net_profit_after_discount, float("inf"))
+        if sustainable
+        else float("inf")
+    )
+
+    # Lyft vs. city split: the surplus above is Lyft's operating profit, not
+    # city money. The city's own cut is its revenue-share rate applied to
+    # total company revenue, before and after the discount is netted in.
+    city_share_rate = assumptions.get("city_revenue_share_rate", 0.025)
+    baseline_total_revenue = current_revenue["total_estimated_revenue"]
+    revenue_after_discount = (
+        baseline_total_revenue + expansion["new_total_revenue"] - ongoing_annual_cost
+    )
+    city_share_before = baseline_total_revenue * city_share_rate
+    city_share_after = revenue_after_discount * city_share_rate
+
+    return {
+        "is_estimate": True,
+        "equity_fund": equity_fund,
+        "total_members": total_members,
+        "new_members": new_members,
+        "current_price": current_price,
+        "discount_per_member": discount_per_member,
+        "new_price": new_price,
+        "price_reduction_pct": price_reduction_pct,
+        "ongoing_annual_cost": ongoing_annual_cost,
+        "expansion_net_profit": expansion["net_annual_profit"],
+        "net_profit_after_discount": net_profit_after_discount,
+        "sustainable": sustainable,
+        "payback_years_with_discount": payback_years_with_discount,
+        "city_share_rate": city_share_rate,
+        "city_share_before": city_share_before,
+        "city_share_after": city_share_after,
+        "city_share_gain": city_share_after - city_share_before,
+    }
+
+
 def revenue_projection(
     current_revenue: float,
     new_station_revenue: float,

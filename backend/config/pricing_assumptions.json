@@ -27,5 +27,8 @@
   "health_benefit_per_trip": 0.50,
   "congestion_benefit_per_trip": 0.30,
   "emissions_benefit_per_trip": 0.20,
-  "estimated_tax_rate": 0.08
+  "estimated_tax_rate": 0.08,
+
+  "_city_revenue_share_note": "Planning assumption from the team's own framing (~$5M city revenue share on ~$200M total revenue), not a verified figure from the actual NYC DOT/Lyft contract. Confirm before external use.",
+  "city_revenue_share_rate": 0.025
 }

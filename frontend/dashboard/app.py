@@ -44,8 +44,9 @@ SUCCESS_STORIES = [
         "stats": {
             "Investment model": "SFMTA and the Bay Area Air Quality Management District brought the system to San Francisco as a public partnership; Lyft now operates it under a contract managed by the Metropolitan Transportation Commission.",
             "Ridership growth": "Grew from a 350-bike, 35-station pilot in 2013 into a regional network that now reaches San Mateo County.",
-            "Infrastructure expansion": "A 2017 buildout funded by Ford's title sponsorship expanded the system to 320 stations and 4,500 bikes; MTC has since approved a further \\$16M expansion, and SFMTA struck a new deal for 4,000 shared Electric bikes.",
+            "Infrastructure expansion": "A 2017 buildout funded by Ford's title sponsorship expanded the system to 320 stations and 4,500 bikes; SFMTA struck a new deal for 4,000 shared Electric bikes.",
             "Financial sustainability": "The 2017 expansion was delivered \"at no capital or operational expense to taxpayers\", sponsorship and operator capital funded the buildout.",
+            "Staggered public investment (Feb 2023)": "MTC didn't fund one lump sum, it staggered two dedicated tranches: \\$16M for station expansion, plus a separate \\$4M fare-equity pilot that cut membership pricing for college students and other riders facing economic barriers. That two-track structure, capacity first, affordability funded separately and explicitly, is the model NYC's proposal mirrors.",
         },
     },
     {
@@ -502,6 +503,38 @@ mta_signal = load_mta_signal()
 nyc_station_daily = compute_station_daily(nyc_filtered)
 mta_opportunity = compute_mta_transit_scores(mta_signal, nyc_station_daily)
 
+active_stations = nyc_filtered["station_name"].nunique()
+
+# ---------------------------------------------------------------------
+# Shared investment-case figures — computed once here, before the hero
+# (which quotes them), so the hero, the Home landing tab, and the DOT
+# support case tab (deep-dive version of the same pitch) always show
+# identical, live numbers instead of hardcoded copy that drifts stale.
+# ---------------------------------------------------------------------
+station_pressure = demand_service.station_pressure_categories(nyc_filtered)
+strained = station_pressure[station_pressure["pressure"] >= 1.0]
+critical = station_pressure[station_pressure["pressure"] >= 1.5]
+pct_strained = len(strained) / len(station_pressure) * 100 if len(station_pressure) > 0 else 0
+
+rev = revenue_service.estimate_annual_revenue(nyc_filtered)
+rev["active_stations"] = active_stations
+new_stations = 250
+exp = revenue_service.estimate_expansion_revenue(rev, new_stations=new_stations)
+pub = revenue_service.estimate_public_benefits(
+    exp["new_annual_trips"], exp["new_total_revenue"], exp["install_cost"]
+)
+
+proj_df, scenarios = revenue_service.revenue_projection(
+    rev["total_estimated_revenue"], exp["new_total_revenue"]
+)
+gap_2031 = scenarios["500 stations + DOT partnership"][-1] - scenarios["Do nothing (3% organic growth)"][-1]
+cumulative_gap = sum(
+    b - a for a, b in zip(
+        scenarios["Do nothing (3% organic growth)"],
+        scenarios["500 stations + DOT partnership"],
+    )
+)
+
 _hero_bg = (
     f'background-image: url("data:image/jpeg;base64,{_sidebar_b64}");'
     if _sidebar_b64 else ""
@@ -514,8 +547,8 @@ st.markdown(
       </div>
       <div style="position:relative; z-index:1;">
         <div class="eyebrow">Capstone project · data-driven investment case</div>
-        <h1>CitiBike is a $200M/yr business running at capacity.</h1>
-        <p>50% of stations are maxed out. Trains are failing. 250 new stations pay back in 17 months.
+        <h1>CitiBike is a ${rev['total_estimated_revenue'] / 1e6:,.0f}M/yr business running at capacity.</h1>
+        <p>{pct_strained:.0f}% of stations are maxed out. Trains are failing. {new_stations} new stations pay back in {exp['payback_months']:.0f} months.
         This dashboard is the evidence, start with the Home tab, then follow the tabs left to right.</p>
       </div>
     </div>
@@ -531,7 +564,6 @@ if is_demo:
         unsafe_allow_html=True,
     )
 
-active_stations = nyc_filtered["station_name"].nunique()
 electric_share = demand_service.electric_bike_share(nyc_filtered)
 avg_daily = demand_service.average_daily_trips(nyc_filtered)
 avg_annual_trips = avg_daily * 365
@@ -556,34 +588,6 @@ with st.container(key="kpi-banner"):
             "figure, it doesn't respond to the date range filter."
         ),
     )
-
-# ---------------------------------------------------------------------
-# Shared investment-case figures — computed once here so the Home landing
-# tab and the DOT support case tab (deep-dive version of the same pitch)
-# always show identical numbers.
-# ---------------------------------------------------------------------
-station_pressure = demand_service.station_pressure_categories(nyc_filtered)
-strained = station_pressure[station_pressure["pressure"] >= 1.0]
-critical = station_pressure[station_pressure["pressure"] >= 1.5]
-
-rev = revenue_service.estimate_annual_revenue(nyc_filtered)
-rev["active_stations"] = active_stations
-new_stations = 250
-exp = revenue_service.estimate_expansion_revenue(rev, new_stations=new_stations)
-pub = revenue_service.estimate_public_benefits(
-    exp["new_annual_trips"], exp["new_total_revenue"], exp["install_cost"]
-)
-
-proj_df, scenarios = revenue_service.revenue_projection(
-    rev["total_estimated_revenue"], exp["new_total_revenue"]
-)
-gap_2031 = scenarios["500 stations + DOT partnership"][-1] - scenarios["Do nothing (3% organic growth)"][-1]
-cumulative_gap = sum(
-    b - a for a, b in zip(
-        scenarios["Do nothing (3% organic growth)"],
-        scenarios["500 stations + DOT partnership"],
-    )
-)
 
 (
     home_tab,
@@ -678,7 +682,6 @@ with home_tab:
     )
     st.subheader("Riders are paying more for a system that's out of room")
 
-    pct_strained = len(strained) / len(station_pressure) * 100 if len(station_pressure) > 0 else 0
     avg_ride_by_bike = revenue_service.estimate_average_single_ride_by_bike_type()
     with st.container(key="kpi-problem"):
         problem_cols = st.columns(4)
@@ -1790,8 +1793,9 @@ with success_tab:
   or sponsorship contract (Vélib' Métropole, Santander Cycles, Bay Wheels), not a
   purely private, self-funded venture.
 - **Sustained, multi-year capital commitments**: buildouts and fleet upgrades are
-  funded in dedicated tranches (Bay Wheels' \\$16M expansion, Divvy's \\$50M citywide
-  investment, Santander Cycles' new £220M contract), not one-off grants.
+  funded in dedicated tranches (Bay Wheels' staggered \\$16M expansion + \\$4M
+  fare-equity pilot in Feb 2023, Divvy's \\$50M citywide investment, Santander
+  Cycles' new £220M contract), not one-off grants.
 - **Investment shows up directly in ridership and infrastructure**: every system
   posted double-digit ridership growth and station or fleet expansion in its most
   recent reporting period.
@@ -1831,6 +1835,12 @@ with investment_tab:
     _inv_observed_days = max(1, nyc_filtered["date"].nunique())
     _inv_base["daily_trips"] = _inv_base["period_trips"] / _inv_observed_days
 
+    st.markdown(
+        '<span class="section-label">Phase One</span>',
+        unsafe_allow_html=True,
+    )
+    st.subheader("Station expansion")
+
     @st.fragment
     def investment_planner():
         st.markdown(
@@ -1853,9 +1863,15 @@ with investment_tab:
                 st.markdown("**Investment scope**")
                 public_budget = st.number_input(
                     "Available capital budget",
-                    min_value=50_000, max_value=50_000_000, value=16_000_000,
+                    min_value=50_000, max_value=50_000_000, value=17_500_000,
                     step=50_000, format="%d",
-                    help="Defaults to $16M, what MTC invested in Bay Wheels (SF) in Feb 2023.",
+                    help=(
+                        "Defaults to $17.5M — the station-expansion portion of what MTC "
+                        "invested in Bay Wheels (SF) in Feb 2023 ($16M nominal, adjusted "
+                        "to 2026 dollars). SF's investment was staggered into two tranches; "
+                        "the other $4.4M (fare-equity pilot) is modeled separately in the "
+                        "\"Fare equity fund\" expander below, not included in this budget."
+                    ),
                 )
                 cost_per_dock = st.number_input(
                     "Installed cost per dock",
@@ -1877,7 +1893,8 @@ with investment_tab:
                     "Demand captured after expansion", 5, 60, 35, format="%d%%",
                     help=(
                         "Defaults to 35%, modeled on Bay Wheels (SF): at the same "
-                        "$16M investment level, this produces an 11.1% membership "
+                        "$17.5M investment level (SF's $16M Feb 2023 figure, "
+                        "inflation-adjusted), this produces an 11.1% membership "
                         "price decrease, matching SF's actual $169->$150 cut (11.2%) "
                         "after its Feb 2023 MTC investment."
                     ),
@@ -2130,81 +2147,6 @@ with investment_tab:
                     },
                 )
 
-        # ── Effect on membership affordability ──
-        with st.expander("Effect on membership affordability", expanded=False):
-            st.markdown(
-                '<p class="section-note">If the recommended portfolio\'s net fiscal surplus were '
-                "redirected into lower membership pricing instead of pure profit, here's how far "
-                "it could stretch across today's active membership base.</p>",
-                unsafe_allow_html=True,
-            )
-
-            pricing_assumptions = revenue_service.load_pricing_assumptions()
-            current_price = pricing_assumptions["annual_membership_price"]
-            active_members_count = pricing_assumptions["estimated_active_annual_members"]
-            price_relief_per_member = (
-                max(0.0, net_annual_fiscal) / active_members_count if active_members_count else 0.0
-            )
-            potential_price = max(0.0, current_price - price_relief_per_member)
-            price_reduction_pct = price_relief_per_member / current_price if current_price else 0.0
-
-            with st.container(key="kpi-afford"):
-                afford_cols = st.columns(3)
-                afford_cols[0].metric("Current annual membership", f"${current_price:,.0f}")
-                afford_cols[1].metric(
-                    "Potential new price",
-                    f"${potential_price:,.0f}",
-                    f"-{price_reduction_pct:.1%}" if price_relief_per_member > 0 else "No surplus to redirect",
-                )
-                afford_cols[2].metric(
-                    "Annual fiscal surplus", f"${compact_number(net_annual_fiscal)}",
-                    help=(
-                        "The recommended portfolio's net fiscal cash flow (revenue minus "
-                        "operating cost); excludes public-benefit externalities, since "
-                        "those aren't cash available to subsidize pricing."
-                    ),
-                )
-
-            st.markdown(
-                '<div class="tab-takeaway"><p>'
-                f"<strong>New membership price: a flat ${potential_price:,.0f}/year.</strong> "
-                f"Redirecting the portfolio's fiscal surplus into pricing instead of profit "
-                f"cuts the ${current_price:,.0f} membership by {price_reduction_pct:.1%}, "
-                "a clean, round number under the current assumptions. No surcharges for "
-                "Electric bikes or rides over 45 minutes: one flat rate, no fine print."
-                "</p></div>",
-                unsafe_allow_html=True,
-            )
-
-            price_fig = go.Figure(go.Bar(
-                x=[current_price, potential_price],
-                y=["Current price", "With investment"],
-                orientation="h",
-                marker_color=["#358DC3", "#48C4E4"],
-                text=[f"${current_price:,.0f}", f"${potential_price:,.0f}"],
-                textposition="outside",
-            ))
-            price_fig.update_layout(
-                height=200,
-                margin=dict(l=10, r=60, t=10, b=10),
-                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
-                xaxis_title="Annual membership price ($)",
-                xaxis_range=[0, current_price * 1.15],
-                showlegend=False,
-            )
-            st.plotly_chart(price_fig, use_container_width=True)
-            st.caption(
-                f"Spreading \\${compact_number(max(0.0, net_annual_fiscal))}/yr in modeled surplus "
-                f"across {compact_number(active_members_count)} active members works out to "
-                f"\\${price_relief_per_member:,.2f} per member per year"
-                + (
-                    f", a {price_reduction_pct:.1%} price cut, from \\${current_price:,.0f} to "
-                    f"\\${potential_price:,.0f}/yr."
-                    if price_relief_per_member > 0
-                    else ", not enough to lower pricing at this budget and assumption level."
-                )
-            )
-
         with st.expander("Project-level recommendation table", expanded=False):
             planner_table = investment_rank[
                 [
@@ -2245,12 +2187,143 @@ with investment_tab:
 
     investment_planner()
 
+    st.markdown("---")
+    st.markdown(
+        '<span class="section-label">Phase Two</span>',
+        unsafe_allow_html=True,
+    )
+    st.subheader("Fare equity fund")
+
+    # ── Fare equity fund (SF-style dual investment) ──
+    # Deliberately a separate phase, not nested inside Phase One's "customize
+    # the plan" settings: mirrors SF's actual staggered structure (a dedicated
+    # affordability tranche funded apart from the expansion capital), and
+    # keeps this from reading as just another expansion-planner option.
+    # Supersedes an earlier "redirect the portfolio's fiscal surplus into
+    # pricing" expander: that model spread a budget-dependent surplus across
+    # only the 200K existing members and produced a different, confusing
+    # price ($212) next to this SF-precedent-grounded one ($218).
+    @st.fragment
+    def fare_equity_planner():
+        st.markdown(
+            '<p class="section-note">San Francisco\'s Feb 2023 MTC investment wasn\'t one lump '
+            "sum: $16M for station expansion (Phase One, above), plus a separate, dedicated "
+            "$4M fare-equity pilot that cut membership pricing for college students and other "
+            "riders facing economic barriers. This models that same second tranche for the "
+            f"{new_stations}-station NYC plan: a one-time equity fund that discounts membership "
+            "for every member, old and new, in year one, then checks whether the expansion's "
+            "own recurring profit can sustain that same discount permanently from year two on."
+            "</p>",
+            unsafe_allow_html=True,
+        )
+
+        equity_fund = st.number_input(
+            "One-time equity fund",
+            min_value=0, max_value=10_000_000, value=4_400_000, step=100_000, format="%d",
+            help=(
+                "Defaults to $4.4M — SF's actual $4M Feb 2023 fare-equity pilot, "
+                "adjusted to 2026 dollars using the same ~9.4% inflation factor applied "
+                "to the $16M Phase One expansion figure."
+            ),
+        )
+
+        fund = revenue_service.estimate_fare_equity_fund(
+            exp, rev, equity_fund=float(equity_fund),
+        )
+
+        with st.container(key="kpi-equity-fund"):
+            eq_cols = st.columns(4)
+            eq_cols[0].metric("Equity fund investment", f"${compact_number(equity_fund)}")
+            eq_cols[1].metric(
+                "New membership price",
+                f"${fund['new_price']:,.0f}",
+                f"-{fund['price_reduction_pct']:.1%}" if fund["discount_per_member"] > 0 else None,
+            )
+            eq_cols[2].metric(
+                "Members covered",
+                compact_number(fund["total_members"]),
+                help=f"{compact_number(rev['active_members'])} existing + {compact_number(fund['new_members'])} new from the {new_stations}-station expansion.",
+            )
+            eq_cols[3].metric(
+                "Payback with discount funded",
+                f"{fund['payback_years_with_discount']:.1f} yrs"
+                if fund["sustainable"] else "Not sustainable",
+                help="Capital payback once the expansion's own profit is also covering the ongoing discount cost, instead of just the capital install cost.",
+            )
+
+        with st.container(key="kpi-equity-split"):
+            split_cols = st.columns(2)
+            split_cols[0].metric(
+                "Lyft's annual profit, after funding the discount",
+                f"${compact_number(fund['net_profit_after_discount'])}",
+                help="Expansion net profit minus the ongoing cost of sustaining the discount for every member. This is Lyft's operating margin, not city money.",
+            )
+            split_cols[1].metric(
+                "City's revenue-share gain",
+                f"+${compact_number(fund['city_share_gain'])}/yr",
+                help=(
+                    f"At a {fund['city_share_rate']:.1%} revenue-share rate on total company "
+                    "revenue (a planning assumption — confirm against the actual DOT contract), "
+                    "before vs. after the expansion and discount are both netted in."
+                ),
+            )
+
+        if fund["sustainable"]:
+            st.markdown(
+                '<div class="tab-takeaway"><p>'
+                f"<strong>Year one:</strong> the ${compact_number(equity_fund)} equity fund "
+                f"cuts membership from ${fund['current_price']:,.0f} to "
+                f"${fund['new_price']:,.0f} ({fund['price_reduction_pct']:.1%}) for all "
+                f"{compact_number(fund['total_members'])} members, old and new. "
+                f"<strong>Year two on:</strong> the expansion's own "
+                f"${compact_number(fund['expansion_net_profit'])}/yr profit covers the "
+                f"${compact_number(fund['ongoing_annual_cost'])}/yr it costs to keep that price "
+                f"permanent, no second ask required, leaving "
+                f"${compact_number(fund['net_profit_after_discount'])}/yr for Lyft and an "
+                f"extra ${compact_number(fund['city_share_gain'])}/yr in city revenue share. "
+                "Don't confuse the two: the profit is Lyft's, the revenue-share line is the city's."
+                "</p></div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                '<div class="tab-takeaway"><p>'
+                "<strong>Not sustainable at this depth.</strong> The expansion's own profit "
+                "doesn't cover the ongoing cost of this discount for every member. Either "
+                "shrink the equity fund, narrow it to a smaller target population, or accept "
+                "that it needs to be refunded rather than self-sustaining."
+                "</p></div>",
+                unsafe_allow_html=True,
+            )
+
+        eq_price_fig = go.Figure(go.Bar(
+            x=[fund["current_price"], fund["new_price"]],
+            y=["Current price", "With equity fund"],
+            orientation="h",
+            marker_color=["#358DC3", "#48C4E4"],
+            text=[f"${fund['current_price']:,.0f}", f"${fund['new_price']:,.0f}"],
+            textposition="outside",
+        ))
+        eq_price_fig.update_layout(
+            height=200,
+            margin=dict(l=10, r=60, t=10, b=10),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
+            xaxis_title="Annual membership price ($)",
+            xaxis_range=[0, fund["current_price"] * 1.15],
+            showlegend=False,
+        )
+        st.plotly_chart(eq_price_fig, use_container_width=True)
+
+    fare_equity_planner()
+
 with dot_tab:
     st.markdown(
         '<div class="tab-takeaway"><p>'
-        '<strong>The bottom line:</strong> CitiBike is a $200M/yr business running at capacity '
-        'in a city where 8.3M people are stuck with unreliable trains. 250 new stations = '
-        '$11.3M/yr net profit, 17-month payback. This tab walks through the 6 arguments why.'
+        f"<strong>The bottom line:</strong> CitiBike is a ${rev['total_estimated_revenue'] / 1e6:,.0f}M/yr "
+        f"business running at capacity in a city where 8.3M people are stuck with unreliable "
+        f"trains. {new_stations} new stations = ${exp['net_annual_profit'] / 1e6:,.1f}M/yr net "
+        f"profit, {exp['payback_months']:.0f}-month payback. This tab walks through the 6 "
+        "arguments why."
         '</p></div>',
         unsafe_allow_html=True,
     )
@@ -2518,7 +2591,8 @@ with dot_tab:
     # ===================================================================
     with st.expander("5. The money: why Lyft should fund this and how much they'll make", expanded=False):
         st.markdown(
-            "This isn't charity. CitiBike is already a **\\$200M/year revenue engine**. "
+            f"This isn't charity. CitiBike is already a "
+            f"**\\${rev['total_estimated_revenue'] / 1e6:,.0f}M/year revenue engine**. "
             "Expansion doesn't cost Lyft money; it **makes** Lyft money. Here's the math."
         )
 
@@ -2738,7 +2812,7 @@ with dot_tab:
     st.markdown("---")
     with st.expander("The pitch to Lyft product", expanded=False):
         st.markdown(
-            """
+            f"""
 | What we proved | The number | What Lyft should do |
 |---|---|---|
 | **SF model works** | Comparable per-station utilization with 1/10th NYC's population | Replicate SFMTA partnership model with NYC DOT |
@@ -2746,7 +2820,7 @@ with dot_tab:
 | **Trains are failing** | Chronic delays across dozens of neighborhoods | Position CitiBike as transit resilience infrastructure, not recreation |
 | **Electric bikes are winning** | 70% of NYC trips are now electric | Accelerate Electric fleet + charging infra; this is where the growth is |
 | **Green + cheap** | Zero emissions, \\$1,345/yr savings vs MetroCard | Market CitiBike as the smart commute, not a tourist product |
-| **We can predict demand** | XGBoost model: 32% better than baselines across 2,466 stations | Use our forecasting engine to optimize fleet placement and expansion |
+| **We can predict demand** | XGBoost model: 32% better than baselines across {active_stations:,} stations | Use our forecasting engine to optimize fleet placement and expansion |
             """
         )
 

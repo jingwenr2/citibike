@@ -4,7 +4,7 @@
 
 ## The headline
 
-**Citi Bike generates ~$196M/year. We built the data engine that shows Lyft how to turn it into $300M+.**
+**Citi Bike generates ~$212M/year. We built the data engine that shows Lyft how to turn it into $360M+.**
 
 ---
 
@@ -16,17 +16,17 @@ We analyzed **69.7 million real bike-share trips** across NYC and San Francisco 
 
 ---
 
-## The 5 facts Lyft needs to hear
+## The 6 facts Lyft needs to hear
 
-### 1. Your NYC bike-share is a $196M/year business — and most of that is e-bike fees.
+### 1. Your NYC bike-share is a $212M/year business — and most of that is e-bike fees.
 
 | Revenue stream | Annual estimate | Source |
 |---|---|---|
-| E-bike overage fees ($0.27/min) | **$97.2M** | 30M e-bike trips x $3.24 avg |
+| E-bike overage fees ($0.27/min) | **$105.2M** | 32.5M e-bike trips x $3.24 avg |
 | Annual memberships ($239/yr) | $47.8M | ~200K active members |
-| Casual single rides ($4.49) | $33.4M | 7.4M casual trips |
+| Casual single rides ($4.99) | $41.9M | 8.4M casual trips |
 | Citigroup title sponsorship | $17.5M | Public contract |
-| **Total** | **~$196M/yr** | |
+| **Total** | **~$212M/yr** | |
 
 The e-bike overage line alone is half your revenue — and it scales directly with every new station you build.
 
@@ -34,8 +34,8 @@ The e-bike overage line alone is half your revenue — and it scales directly wi
 
 ### 2. You are supply-constrained, not demand-constrained.
 
-- **1,247 of 2,466 stations** (50.6%) run at or above capacity daily
-- **923 stations** (37.4%) are critical — demand exceeds 1.5x dock capacity
+- **1,286 of 2,476 stations** (51.9%) run at or above capacity daily
+- **961 stations** (38.8%) are critical — demand exceeds 1.5x dock capacity
 - Peak month: **5.4 million trips** in June 2026 alone
 - **70% of all NYC trips are now e-bike** — riders want electric, and they're paying $3.24/ride for it
 
@@ -48,11 +48,13 @@ Every empty dock is a lost ride. Every full station is a customer who walks away
 | Metric | San Francisco (Bay Wheels) | New York City (Citi Bike) |
 |---|---|---|
 | Population | ~900K | **8.3M** |
-| Stations | 699 | **2,466** |
-| Trips/station/day | 16.6 | **47.7** |
+| Stations | 699 | **2,476** |
+| Trips/station/day | 16.6 | **51.5** |
 | Government support | SFMTA full integration | Minimal DOT involvement |
 
 SFMTA treats Bay Wheels as public transit infrastructure — subsidized buildouts, protected lanes, route integration. Result: strong per-station usage in a city 1/10th the size. **NYC has 3x the per-station demand with almost no government support.** Imagine what happens when DOT comes to the table.
+
+MTC's Feb 2023 investment wasn't one lump sum, either — it was staggered into two dedicated tranches: **$16M for station expansion** plus a separate **$4M fare-equity pilot** that cut membership pricing for college students and other riders facing economic barriers. That two-track structure (capacity funded separately from affordability, both explicit) is the model for the NYC ask below — see "The fare-equity option."
 
 ---
 
@@ -67,35 +69,43 @@ SFMTA treats Bay Wheels as public transit infrastructure — subsidized buildout
 
 ---
 
-### 5. 250 new stations = $11.3M/year in net profit. Payback: 17 months.
+### 5. 250 new stations = $12.9M/year in net profit. Payback: 15 months.
 
 | | Amount |
 |---|---|
-| New annual revenue | **$15.0M** |
+| New annual revenue | **$16.6M** |
 | One-time station install (250 x $65K) | $16.25M |
 | Annual operations (250 x $15K) | $3.75M |
-| **Net annual profit** | **$11.3M/yr** |
-| **Payback period** | **17 months** |
+| **Net annual profit** | **$12.9M/yr** |
+| **Payback period** | **15 months** |
 
-After 17 months, every dollar is margin. And our XGBoost demand model — validated on 69.7M trips with **32% better accuracy** than seasonal baselines — tells you exactly **which** 250 locations to build first for maximum return.
+After 15 months, every dollar is margin. And our XGBoost demand model — validated on 69.7M trips with **32% better accuracy** than seasonal baselines — tells you exactly **which** 250 locations to build first for maximum return.
 
 ---
 
-## The 5-year revenue gap
+### 6. The fare-equity option: a permanent price cut that pays for itself.
 
-| Scenario | 2026 | 2031 | 5-year total |
+Mirroring SF's staggered structure (fact #3), a separate **one-time $4.4M fare-equity fund** — SF's actual $4M Feb 2023 pilot, adjusted to 2026 dollars — spread across all 207,500 members (200K existing + 7,500 new) cuts membership from **$239 to $218 (8.9%)** in year one. From year two on, the expansion's own $12.9M/yr profit covers the $4.4M/yr cost of keeping that price permanent, no second ask required, leaving **$8.5M/yr for Lyft** and an incremental **~$306K/yr in city revenue share** (at a 2.5% share rate — a planning assumption, confirm against the actual DOT contract).
+
+Don't conflate the two numbers: the $8.5M/yr is Lyft's operating margin, not city money. The city's own gain is the $306K/yr revenue-share line plus the broader public-benefit figure in fact #5's payback math. This is modeled live in the dashboard's Government Investment tab ("Fare equity fund" — the discount depth is an adjustable slider), and detailed in `report/fare_equity_analysis.md`.
+
+---
+
+## The 2026-2031 revenue gap
+
+| Scenario | 2026 | 2031 | 6-year total |
 |---|---|---|---|
-| Do nothing (3% growth) | $196M | $227M | ~$1.1B |
-| 250 stations (self-funded) | $196M | $281M | ~$1.3B |
-| 500 stations + DOT partnership | $196M | $352M | ~$1.5B |
+| Do nothing (3% growth) | $212M | $246M | ~$1.37B |
+| 250 stations (self-funded) | $212M | $292M | ~$1.53B |
+| 500 stations + DOT partnership | $212M | $361M | ~$1.75B |
 
-**The difference between doing nothing and investing with DOT is ~$400M over 5 years.**
+**The difference between doing nothing and investing with DOT is ~$377M over the 2026-2031 window ($114.8M/year more by 2031 alone).**
 
 ---
 
 ## What we built (it's not a deck — it's a working product)
 
-1. **Demand forecasting engine** — XGBoost model predicts daily trips for each of 2,466 NYC stations. 32% more accurate than baselines. Tells ops where bikes will be needed tomorrow.
+1. **Demand forecasting engine** — XGBoost model predicts daily trips for each of 2,476 NYC stations. 32% more accurate than baselines. Tells ops where bikes will be needed tomorrow.
 
 2. **Transit gap detector** — Joins MTA subway delay data to bike demand. Identifies which stations absorb transit failures and by how much.
 
@@ -103,7 +113,7 @@ After 17 months, every dollar is margin. And our XGBoost demand model — valida
 
 4. **Live analytics dashboard** — 7-tab Streamlit app with real data, interactive charts, and the complete pitch for DOT partnership.
 
-5. **Cross-city proof** — Same pipeline validated on both NYC (2,466 stations) and SF (699 stations). Deployable to Chicago, DC, London — anywhere with GBFS data.
+5. **Cross-city proof** — Same pipeline validated on both NYC (2,476 stations) and SF (699 stations). Deployable to Chicago, DC, London — anywhere with GBFS data.
 
 ---
 
@@ -124,7 +134,7 @@ After 17 months, every dollar is margin. And our XGBoost demand model — valida
 
 **Every month Lyft waits, that's ~450,000 rides left on the table — rides people are trying to take but can't because stations are full or don't exist yet.**
 
-**The data says invest. The math says it pays back in 17 months. The question isn't whether to expand — it's how fast.**
+**The data says invest. The math says it pays back in 15 months. The question isn't whether to expand — it's how fast.**
 
 ---
 

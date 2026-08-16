@@ -298,7 +298,7 @@ def fill():
                 _s(s, "The Problem", size=14, bold=True, color=PINK)
             elif "What challenge exists" in t:
                 _clear_and_write(s, [
-                    ("Citi Bike is a $196M/yr business — but 50% of stations are at capacity.", {"size": 12, "bold": True}),
+                    ("Citi Bike is a $212M/yr business — but 50% of stations are at capacity.", {"size": 12, "bold": True}),
                     ("", {"size": 4}),
                     ("MTA subway delays push commuters toward alternatives. No data-driven expansion plan exists.", {"size": 10, "color": GRAY}),
                 ])
@@ -307,7 +307,7 @@ def fill():
                     ("▸  8.3M residents depend on aging transit", {"size": 10}),
                     ("▸  Lyft leaves revenue on the table", {"size": 10}),
                     ("▸  City planners lack demand forecasts", {"size": 10}),
-                    ("▸  $11.3M/yr unrealized net profit", {"size": 10, "bold": True, "color": PINK}),
+                    ("▸  $12.9M/yr unrealized net profit", {"size": 10, "bold": True, "color": PINK}),
                 ])
             elif "Real-World" in t:
                 _s(s, "Global Context", size=14, bold=True, color=WHITE)
@@ -334,7 +334,7 @@ def fill():
                 _s(s, "By the Numbers", size=12, bold=True, color=PINK)
             elif "Use 1" in t:
                 _clear_and_write(s, [
-                    ("$196M/yr", {"size": 20, "bold": True, "color": PINK}),
+                    ("$212M/yr", {"size": 20, "bold": True, "color": PINK}),
                     ("annual revenue", {"size": 9, "color": LGRAY, "space_after": 6}),
                     ("60.9M trips", {"size": 20, "bold": True, "color": BLUE}),
                     ("in our dataset", {"size": 9, "color": LGRAY, "space_after": 6}),
@@ -347,7 +347,7 @@ def fill():
                 _clear_and_write(s, [
                     ("Without expansion:", {"size": 10, "bold": True, "color": WHITE}),
                     ("▸  Riders lost to competitors", {"size": 9, "color": LGRAY}),
-                    ("▸  $11.3M/yr unrealized profit", {"size": 9, "color": LGRAY}),
+                    ("▸  $12.9M/yr unrealized profit", {"size": 9, "color": LGRAY}),
                     ("▸  Underserved neighborhoods", {"size": 9, "color": LGRAY}),
                 ])
 
@@ -383,8 +383,8 @@ def fill():
                 _clear_and_write(s, [
                     ("Break-Even Analysis", {"size": 12, "bold": True, "color": WHITE}),
                     ("250 stations × $128K = $32M", {"size": 11, "color": WHITE, "space_after": 3}),
-                    ("Net profit: $11.3M/yr", {"size": 14, "bold": True, "color": PINK}),
-                    ("Payback: 17 months", {"size": 14, "bold": True, "color": GREEN}),
+                    ("Net profit: $12.9M/yr", {"size": 14, "bold": True, "color": PINK}),
+                    ("Payback: 15 months", {"size": 14, "bold": True, "color": GREEN}),
                 ])
 
         # ═══ SLIDE 6: Data Sources ════════════════════════════════════
@@ -478,7 +478,7 @@ def fill():
             elif "Use heatmaps" in t: _hide(s)
             elif t == "5%": _s(s, "50%+", size=28, bold=True, color=PINK)
             elif "Missing" in t: _s(s, "stations at capacity", size=9, color=WHITE)
-            elif t == "45": _s(s, "$196M", size=28, bold=True, color=BLUE)
+            elif t == "45": _s(s, "$212M", size=28, bold=True, color=BLUE)
             elif "AVG" in t: _s(s, "annual revenue", size=9, color=WHITE)
             elif "Don" in t:
                 _clear_and_write(s, [
@@ -554,10 +554,10 @@ def fill():
                 _s(s, "The investment case in three numbers:", size=12, color=LGRAY)
             elif "AGAIN" in t:
                 _clear_and_write(s, [
-                    ("$11.3M/yr", {"size": 24, "bold": True, "color": PINK}),
+                    ("$12.9M/yr", {"size": 24, "bold": True, "color": PINK}),
                     ("net operating profit from 250 new stations", {"size": 11, "color": WHITE, "space_after": 8}),
                     ("$32M total investment", {"size": 18, "bold": True, "color": WHITE}),
-                    ("17-month payback", {"size": 18, "bold": True, "color": GREEN, "space_after": 8}),
+                    ("15-month payback", {"size": 18, "bold": True, "color": GREEN, "space_after": 8}),
                     ("Reduced congestion + lower emissions for 8.3M residents", {"size": 10, "color": BLUE}),
                 ])
 
@@ -600,8 +600,8 @@ def fill():
                 ])
             elif "State the" in t:
                 _clear_and_write(s, [
-                    ("250 stations → $11.3M/yr", {"size": 13, "bold": True, "color": PINK}),
-                    ("17-month payback. The data says invest now.", {"size": 10, "color": WHITE}),
+                    ("250 stations → $12.9M/yr", {"size": 13, "bold": True, "color": PINK}),
+                    ("15-month payback. The data says invest now.", {"size": 10, "color": WHITE}),
                 ])
 
         # ═══ SLIDE 17: Thank You ══════════════════════════════════════
