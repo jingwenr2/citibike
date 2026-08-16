@@ -1,12 +1,3 @@
----
-title: CityCycle Intelligence
-emoji: 🚲
-colorFrom: pink
-colorTo: blue
-sdk: docker
-app_port: 7860
----
-
 # NYC Citi Bike Public Investment Intelligence 🚲
 
 **A New York City bike-share forecasting and public-investment web app, with San Francisco as a comparison benchmark.**
