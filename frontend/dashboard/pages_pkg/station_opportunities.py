@@ -48,7 +48,7 @@ def render(nyc_filtered, mta_opportunity, station_summary_df, demand_service):
             },
             height=500,
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
     with rec_col:
         section_header("Top recommendations")
@@ -94,7 +94,7 @@ def render(nyc_filtered, mta_opportunity, station_summary_df, demand_service):
         color_discrete_sequence=["#2D7FF9"],
     )
     apply_layout(fig_s, height=300)
-    st.plotly_chart(fig_s, use_container_width=True)
+    st.plotly_chart(fig_s, width="stretch")
 
     insight_panel(
         "<strong>Investment priority:</strong> Focus on stations where pressure exceeds 1.0x "

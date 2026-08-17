@@ -134,7 +134,7 @@ def render(nyc_filtered, is_demo):
             xaxis_title="Importance",
             yaxis_title="",
         )
-        st.plotly_chart(fig_imp, use_container_width=True)
+        st.plotly_chart(fig_imp, width="stretch")
 
     # ── Actual vs Predicted chart ──
     if predictions_df is not None and not predictions_df.empty:
@@ -165,7 +165,7 @@ def render(nyc_filtered, is_demo):
                 title="Daily total: actual vs predicted trips (test set)",
                 xaxis_title="", yaxis_title="Trips",
             )
-            st.plotly_chart(fig_avp, use_container_width=True)
+            st.plotly_chart(fig_avp, width="stretch")
 
             corr = daily_agg["actual"].corr(daily_agg["predicted"])
             st.caption(f"Daily correlation: **{corr:.3f}**")
@@ -178,7 +178,7 @@ def render(nyc_filtered, is_demo):
                 color_discrete_sequence=[FORECAST_PURPLE],
             )
             fig_res = apply_layout(fig_res, height=380, title="Residual distribution (actual - predicted)")
-            st.plotly_chart(fig_res, use_container_width=True)
+            st.plotly_chart(fig_res, width="stretch")
 
             mean_res = predictions_df["residual"].mean()
             std_res = predictions_df["residual"].std()
@@ -283,7 +283,7 @@ def render(nyc_filtered, is_demo):
             city_history.tail(60), forecast_frame,
             title="Historical demand with scenario projection",
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
 
         projected = forecast_frame["forecast"].sum()
         base_projected = baseline * horizon

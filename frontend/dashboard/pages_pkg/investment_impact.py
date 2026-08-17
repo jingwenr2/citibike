@@ -51,7 +51,7 @@ def render(nyc_filtered, rev, active_stations, is_demo):
             subtitle = name.split("—")[1].strip()
             is_active = (i == 1)  # default to moderate
             scenario_card(subtitle, amount, is_active=is_active, label=cfg["label"])
-            if st.button(f"Select {subtitle}", key=f"sc_{i}", use_container_width=True):
+            if st.button(f"Select {subtitle}", key=f"sc_{i}", width="stretch"):
                 selected_scenario = name
 
     if selected_scenario is None:
@@ -99,7 +99,7 @@ def render(nyc_filtered, rev, active_stations, is_demo):
             labels={"Revenue": "Annual revenue ($)", "Stream": ""},
         )
         apply_layout(fig_rev, height=250)
-        st.plotly_chart(fig_rev, use_container_width=True)
+        st.plotly_chart(fig_rev, width="stretch")
 
     with cost_col:
         section_header("Costs & payback")
@@ -128,7 +128,7 @@ def render(nyc_filtered, rev, active_stations, is_demo):
         height=420,
     )
     fig_proj.update_layout(yaxis_tickprefix="$", yaxis_tickformat=",.0f")
-    st.plotly_chart(fig_proj, use_container_width=True)
+    st.plotly_chart(fig_proj, width="stretch")
 
     gap_2031 = proj_scenarios["500 stations + DOT partnership"][-1] - proj_scenarios["Do nothing (3% organic growth)"][-1]
     cumulative_gap = sum(

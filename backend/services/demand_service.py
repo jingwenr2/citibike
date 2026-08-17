@@ -37,7 +37,7 @@ def electric_bike_share(df: pd.DataFrame) -> float:
 def member_casual_split(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame(columns=["rider_type", "trips"])
-    return df.groupby("rider_type", as_index=False)["trips"].sum()
+    return df.groupby("rider_type", as_index=False, observed=True)["trips"].sum()
 
 
 def bike_type_split(df: pd.DataFrame) -> pd.DataFrame:
@@ -54,7 +54,7 @@ def monthly_demand(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame(columns=["month", "city", "trips"])
     out = df.assign(month=df["date"].dt.to_period("M").dt.to_timestamp())
     return (
-        out.groupby(["month", "city"], as_index=False)["trips"]
+        out.groupby(["month", "city"], as_index=False, observed=True)["trips"]
         .sum()
         .sort_values("month")
     )
@@ -66,11 +66,11 @@ def daily_demand_trend(
     if df.empty:
         return pd.DataFrame(columns=["date", "rider_type", "trips", "smoothed_trips"])
     trend = (
-        df.groupby(["date", "rider_type"], as_index=False)["trips"]
+        df.groupby(["date", "rider_type"], as_index=False, observed=True)["trips"]
         .sum()
         .sort_values("date")
     )
-    trend["smoothed_trips"] = trend.groupby("rider_type")["trips"].transform(
+    trend["smoothed_trips"] = trend.groupby("rider_type", observed=True)["trips"].transform(
         lambda v: v.rolling(smoothing, min_periods=1).mean()
     )
     return trend
@@ -143,6 +143,7 @@ def station_summary(df: pd.DataFrame) -> pd.DataFrame:
         df.groupby(
             ["city", "system", "station_name", "capacity"],
             as_index=False,
+            observed=True,
         )
         .agg(
             trips=("trips", "sum"),
@@ -169,7 +170,7 @@ def station_pressure_categories(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame()
     pressure = (
-        df.groupby(["station_name", "capacity"], as_index=False)
+        df.groupby(["station_name", "capacity"], as_index=False, observed=True)
         .agg(total_trips=("trips", "sum"), days=("date", "nunique"))
     )
     pressure["daily_demand"] = pressure["total_trips"] / pressure["days"]

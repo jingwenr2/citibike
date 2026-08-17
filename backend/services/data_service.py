@@ -30,13 +30,16 @@ MTA_REQUIRED = {
 def _clean_daily(df: pd.DataFrame) -> pd.DataFrame:
     df["date"] = pd.to_datetime(df["date"])
     df["capacity"] = pd.to_numeric(df["capacity"], errors="coerce").fillna(0)
-    df["capacity"] = df["capacity"].replace([float("inf"), float("-inf")], 0)
-    df["trips"] = pd.to_numeric(df["trips"], errors="coerce").fillna(0).astype(int)
+    df["capacity"] = df["capacity"].replace([float("inf"), float("-inf")], 0).astype("int16")
+    df["trips"] = pd.to_numeric(df["trips"], errors="coerce").fillna(0).astype("int32")
     df["electric_trips"] = (
-        pd.to_numeric(df["electric_trips"], errors="coerce").fillna(0).astype(int)
+        pd.to_numeric(df["electric_trips"], errors="coerce").fillna(0).astype("int32")
     )
-    df["lat"] = pd.to_numeric(df["lat"], errors="coerce")
-    df["lon"] = pd.to_numeric(df["lon"], errors="coerce")
+    df["lat"] = pd.to_numeric(df["lat"], errors="coerce").astype("float32")
+    df["lon"] = pd.to_numeric(df["lon"], errors="coerce").astype("float32")
+    for col in ("city", "system", "station_name", "rider_type"):
+        if col in df.columns:
+            df[col] = df[col].astype("category")
     return df
 
 

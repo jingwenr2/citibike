@@ -441,7 +441,7 @@ def filter_data(
 @st.cache_data
 def compute_station_daily(_nyc: pd.DataFrame) -> pd.DataFrame:
     n_days = _nyc["date"].nunique()
-    agg = _nyc.groupby("station_name", as_index=False)["trips"].sum()
+    agg = _nyc.groupby("station_name", as_index=False, observed=True)["trips"].sum()
     agg["observed_days"] = n_days
     agg["bike_daily_trips"] = agg["trips"] / max(1, n_days)
     return agg
@@ -833,7 +833,7 @@ with overview_tab:
         yaxis_gridcolor="#EEF2F6",
         xaxis_gridcolor="#EEF2F6",
     )
-    st.plotly_chart(price_chart, use_container_width=True)
+    st.plotly_chart(price_chart, width="stretch")
     first_price = price_history["price_nominal"].iloc[0]
     last_price = price_history["price_nominal"].iloc[-1]
     nominal_increase = (last_price / first_price - 1) * 100
@@ -888,9 +888,9 @@ with overview_tab:
 
     trend_col, rider_col = st.columns([7, 3])
     with trend_col:
-        st.plotly_chart(trend_chart, use_container_width=True)
+        st.plotly_chart(trend_chart, width="stretch")
     with rider_col:
-        st.plotly_chart(rider_donut, use_container_width=True)
+        st.plotly_chart(rider_donut, width="stretch")
 
     st.subheader("Weekly rhythm by bike type")
     st.caption("Average NYC daily trips by weekday, Electric vs. Classic bikes.")
@@ -931,9 +931,9 @@ with overview_tab:
 
     weekday_col, bike_col = st.columns([7, 3])
     with weekday_col:
-        st.plotly_chart(weekday_chart, use_container_width=True)
+        st.plotly_chart(weekday_chart, width="stretch")
     with bike_col:
-        st.plotly_chart(bike_donut, use_container_width=True)
+        st.plotly_chart(bike_donut, width="stretch")
 
     st.subheader("The physical fleet: Electric vs. Classic bikes")
     classic_fleet_count = CITIBIKE_FLEET_SIZE - CITIBIKE_EBIKE_FLEET_COUNT
@@ -969,7 +969,7 @@ with overview_tab:
         yaxis=dict(title=""),
         bargap=0.3,
     )
-    st.plotly_chart(fleet_bar, use_container_width=True)
+    st.plotly_chart(fleet_bar, width="stretch")
     electric_ride_share = (
         bike_mix.loc[bike_mix["bike_type"] == "Electric", "trips"].sum()
         / bike_mix["trips"].sum()
@@ -1117,7 +1117,7 @@ with overview_tab:
         showlegend=True,
         legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1, font=dict(color=NAVY)),
     )
-    st.plotly_chart(heatmap_chart, use_container_width=True)
+    st.plotly_chart(heatmap_chart, width="stretch")
 
     st.caption(
         "NYC trips by hour of day and day of week, averaged across the full "
@@ -1214,7 +1214,7 @@ with stations_tab:
         )
         map_chart.update_layout(showlegend=True)
 
-    st.plotly_chart(map_chart, use_container_width=True)
+    st.plotly_chart(map_chart, width="stretch")
 
     ranking_col, detail_col = st.columns([1.05, 1])
     ranked = station_summary_df.sort_values("pressure", ascending=False)
@@ -1236,7 +1236,7 @@ with stations_tab:
         st.dataframe(
             styled_ranked,
             hide_index=True,
-            use_container_width=True,
+            width="stretch",
             column_config={
                 "city": "City",
                 "station_name": "Station",
@@ -1273,7 +1273,7 @@ with stations_tab:
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="white",
             )
-            st.plotly_chart(station_chart, use_container_width=True)
+            st.plotly_chart(station_chart, width="stretch")
         _station_detail()
 
 with forecast_tab:
@@ -1459,7 +1459,7 @@ with forecast_tab:
                     tickformat=",",
                 ),
             )
-            st.plotly_chart(figure, use_container_width=True)
+            st.plotly_chart(figure, width="stretch")
 
             # Metrics
             projected = sum(forecast_values)
@@ -1607,7 +1607,7 @@ with mta_tab:
             legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="center", x=0.5),
             coloraxis_colorbar=dict(y=0.4, len=0.8),
         )
-        st.plotly_chart(signal_chart, use_container_width=True)
+        st.plotly_chart(signal_chart, width="stretch")
 
         # ── Top opportunity bar chart ──
         st.markdown("#### Top 10 expansion opportunities")
@@ -1643,7 +1643,7 @@ with mta_tab:
             yaxis_title="",
             xaxis=dict(gridcolor="#F1F5F9"),
         )
-        st.plotly_chart(fig_top10, use_container_width=True)
+        st.plotly_chart(fig_top10, width="stretch")
 
         opportunity_table = mta_opportunity.sort_values(
             "transit_opportunity_score", ascending=False
@@ -1779,7 +1779,7 @@ with success_tab:
                     for ext in (".jpg", ".jpeg", ".png", ".webp"):
                         img_path = CITY_IMAGE_DIR / f"{slug}{ext}"
                         if img_path.exists():
-                            st.image(str(img_path), use_container_width=True)
+                            st.image(str(img_path), width="stretch")
                             break
                     else:
                         st.caption(f"Add {slug}.jpg to assets/cities/")
@@ -1820,7 +1820,7 @@ with investment_tab:
 
     # Pre-compute the base investment data (doesn't depend on sliders)
     _inv_base = (
-        nyc_filtered.groupby(["station_name", "capacity"], as_index=False)["trips"]
+        nyc_filtered.groupby(["station_name", "capacity"], as_index=False, observed=True)["trips"]
         .sum()
         .rename(columns={"trips": "period_trips"})
     )
@@ -1992,7 +1992,7 @@ with investment_tab:
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
             font=dict(size=14),
         )
-        st.plotly_chart(value_chart, use_container_width=True)
+        st.plotly_chart(value_chart, width="stretch")
         st.caption(
             f"Selected projects are estimated to add {compact_number(new_trips)} "
             "annual trips under the current assumptions."
@@ -2130,10 +2130,10 @@ with investment_tab:
                     xaxis_title="Year", yaxis_title="Cash flow ($)",
                     yaxis_tickformat="$,.0f",
                 )
-                st.plotly_chart(fig_cf, use_container_width=True)
+                st.plotly_chart(fig_cf, width="stretch")
             else:
                 st.dataframe(
-                    cf_df, hide_index=True, use_container_width=True,
+                    cf_df, hide_index=True, width="stretch",
                     column_config={
                         "Year": st.column_config.NumberColumn("Year", format="%d"),
                         "Capital": st.column_config.NumberColumn("Capital", format="$%.0f"),
@@ -2158,7 +2158,7 @@ with investment_tab:
                 ]
             ].copy()
             st.dataframe(
-                planner_table, hide_index=True, use_container_width=True,
+                planner_table, hide_index=True, width="stretch",
                 column_config={
                     "recommended": st.column_config.CheckboxColumn("Fund"),
                     "station_name": "Station",
@@ -2312,7 +2312,7 @@ with investment_tab:
             xaxis_range=[0, fund["current_price"] * 1.15],
             showlegend=False,
         )
-        st.plotly_chart(eq_price_fig, use_container_width=True)
+        st.plotly_chart(eq_price_fig, width="stretch")
 
     fare_equity_planner()
 
@@ -2405,7 +2405,7 @@ with dot_tab:
                 # right-side legend was eating into the plot area itself.
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
             )
-            st.plotly_chart(monthly_chart, use_container_width=True)
+            st.plotly_chart(monthly_chart, width="stretch")
 
         with mta_nyc_cols[1]:
             if not mta_opportunity.empty:
@@ -2452,7 +2452,7 @@ with dot_tab:
                     ),
                     xaxis=dict(categoryorder="array", categoryarray=bucket_labels),
                 )
-                st.plotly_chart(hist_chart, use_container_width=True)
+                st.plotly_chart(hist_chart, width="stretch")
             else:
                 st.info("MTA opportunity data not available.")
 
@@ -2571,7 +2571,7 @@ with dot_tab:
                 height=350,
                 margin=dict(l=10, r=10, t=35, b=10),
             )
-            st.plotly_chart(pressure_chart, use_container_width=True)
+            st.plotly_chart(pressure_chart, width="stretch")
 
         with pressure_cols[1]:
             st.metric(
@@ -2723,7 +2723,7 @@ with dot_tab:
             yaxis_tickformat=",.0f",
             legend_title_text="",
         )
-        st.plotly_chart(proj_chart, use_container_width=True)
+        st.plotly_chart(proj_chart, width="stretch")
 
         st.markdown(
             '<div class="tab-takeaway"><p>'
@@ -2798,7 +2798,7 @@ with dot_tab:
                 plot_bgcolor="white",
                 xaxis_tickformat=".0%",
             )
-            st.plotly_chart(resilience_chart, use_container_width=True)
+            st.plotly_chart(resilience_chart, width="stretch")
             st.markdown(
                 "**Top-right quadrant** = neighborhoods where the most people ride the worst trains. "
                 "These are the places where CitiBike expansion will have the highest adoption rate. "

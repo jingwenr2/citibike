@@ -281,7 +281,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         plot_bgcolor="white",
     )
     fig.update_layout(title_font_color="#0F172A")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width="stretch")
 
     # ── Per-station before/after ──
     st.markdown("---")
@@ -293,7 +293,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         "story.</p>",
         unsafe_allow_html=True,
     )
-    st.dataframe(_display_labels(headline), use_container_width=True)
+    st.dataframe(_display_labels(headline), width="stretch")
 
     # ── Station network size + Findings (side by side) ──
     st.markdown("---")
@@ -394,7 +394,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
             .agg(["min", "max", "count"])
             .rename_axis(index={"ebike_per_min_price": "Electric per-min price"})
         )
-        st.dataframe(price_check, use_container_width=True)
+        st.dataframe(price_check, width="stretch")
 
         st.markdown("**Ridership before vs after the Nov 2023 price drop**")
         st.markdown(
@@ -424,10 +424,10 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         price_col, control_col = st.columns(2)
         with price_col:
             st.markdown("**2023 price-drop window**")
-            st.dataframe(_display_labels(price_change_comparison), use_container_width=True)
+            st.dataframe(_display_labels(price_change_comparison), width="stretch")
         with control_col:
             st.markdown("**2025 seasonality control**")
-            st.dataframe(_display_labels(seasonal_control_comparison), use_container_width=True)
+            st.dataframe(_display_labels(seasonal_control_comparison), width="stretch")
 
         price_2023_before = price_change_comparison.iloc[0]["avg_daily_trips_per_station"]
         price_2023_after = price_change_comparison.iloc[1]["avg_daily_trips_per_station"]

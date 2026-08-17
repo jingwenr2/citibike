@@ -78,7 +78,7 @@ def render(nyc_filtered, active_stations, is_demo):
                 is_active=(name == st.session_state.opportunity_tier),
                 label=f"{cfg['new_stations']:,} stations",
             )
-            if st.button(f"Select {name}", key=f"opp_tier_{i}", use_container_width=True):
+            if st.button(f"Select {name}", key=f"opp_tier_{i}", width="stretch"):
                 st.session_state.opportunity_tier = name
                 st.rerun()
 
@@ -244,7 +244,7 @@ def render(nyc_filtered, active_stations, is_demo):
             height=320,
         )
         fig_sim.update_layout(yaxis_tickprefix="$", yaxis_tickformat=",.0f")
-        st.plotly_chart(fig_sim, use_container_width=True)
+        st.plotly_chart(fig_sim, width="stretch")
 
     st.caption(
         "This simulator uses transparent, editable financial assumptions — not a "

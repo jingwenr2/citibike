@@ -44,7 +44,7 @@ def render(nyc_filtered, filtered, hourly, smoothing, is_demo, demand_service):
         title="Member ridership dominates but casual is growing",
         height=380,
     )
-    st.plotly_chart(fig_trend, use_container_width=True)
+    st.plotly_chart(fig_trend, width="stretch")
 
     # ── Rider + bike mix ──
     mix_col1, mix_col2 = st.columns(2)
@@ -62,7 +62,7 @@ def render(nyc_filtered, filtered, hourly, smoothing, is_demo, demand_service):
             "Electric vs. Classic",
             height=340,
         )
-        st.plotly_chart(fig_mix, use_container_width=True)
+        st.plotly_chart(fig_mix, width="stretch")
 
     with mix_col2:
         section_header("Weekly rhythm by bike type")
@@ -75,7 +75,7 @@ def render(nyc_filtered, filtered, hourly, smoothing, is_demo, demand_service):
                 title="Weekday commuters prefer e-bikes",
                 height=340,
             )
-            st.plotly_chart(fig_wd, use_container_width=True)
+            st.plotly_chart(fig_wd, width="stretch")
 
     # ── Heatmap ──
     section_header(
@@ -97,7 +97,7 @@ def render(nyc_filtered, filtered, hourly, smoothing, is_demo, demand_service):
         hourly_wide.index.tolist(),
         height=480,
     )
-    st.plotly_chart(fig_hm, use_container_width=True)
+    st.plotly_chart(fig_hm, width="stretch")
 
     sample_dates = pd.to_datetime(hourly["date"])
     st.caption(

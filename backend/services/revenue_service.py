@@ -437,13 +437,13 @@ def revenue_by_station(
     if df.empty:
         return pd.DataFrame()
 
-    station = df.groupby("station_name", as_index=False).agg(
+    station = df.groupby("station_name", as_index=False, observed=True).agg(
         trips=("trips", "sum"),
         electric_trips=("electric_trips", "sum"),
     )
     casual_station = (
         df[df["rider_type"] == "Casual"]
-        .groupby("station_name", as_index=False)["trips"]
+        .groupby("station_name", as_index=False, observed=True)["trips"]
         .sum()
         .rename(columns={"trips": "casual_trips"})
     )
