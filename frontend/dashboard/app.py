@@ -1862,15 +1862,19 @@ with investment_tab:
             with scope_col:
                 st.markdown("**Investment scope**")
                 public_budget = st.number_input(
-                    "Available capital budget",
+                    "Available capital budget (editable)",
                     min_value=50_000, max_value=50_000_000, value=17_500_000,
                     step=50_000, format="%d",
                     help=(
-                        "Defaults to $17.5M — the station-expansion portion of what MTC "
-                        "invested in Bay Wheels (SF) in Feb 2023 ($16M nominal, adjusted "
-                        "to 2026 dollars). SF's investment was staggered into two tranches; "
-                        "the other $4.4M (fare-equity pilot) is modeled separately in the "
-                        "\"Fare equity fund\" expander below, not included in this budget."
+                        "Editable — not an actual NYC DOT allocation. Defaults to "
+                        "$17.5M, the station-expansion portion of what MTC invested "
+                        "in Bay Wheels (SF) in Feb 2023 ($16M nominal, adjusted to "
+                        "2026 dollars), so this scenario starts from a real-world "
+                        "benchmark instead of an arbitrary number. SF's investment "
+                        "was staggered into two tranches; the other $4.4M "
+                        "(fare-equity pilot) is modeled separately in the \"Fare "
+                        "equity fund\" section below, not included in this budget. "
+                        "Change it to model any budget from $50K to $50M."
                     ),
                 )
                 cost_per_dock = st.number_input(
@@ -2129,6 +2133,8 @@ with investment_tab:
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
                     xaxis_title="Year", yaxis_title="Cash flow ($)",
                     yaxis_tickformat="$,.0f",
+                    xaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black")),
+                    yaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black")),
                 )
                 st.plotly_chart(fig_cf, width="stretch")
             else:
