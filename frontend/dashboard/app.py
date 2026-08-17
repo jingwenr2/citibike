@@ -1852,10 +1852,16 @@ with investment_tab:
             with scope_col:
                 st.markdown("**Investment scope**")
                 public_budget = st.number_input(
-                    "Available capital budget",
+                    "Available capital budget (editable)",
                     min_value=50_000, max_value=50_000_000, value=16_000_000,
                     step=50_000, format="%d",
-                    help="Defaults to $16M, what MTC invested in Bay Wheels (SF) in Feb 2023.",
+                    help=(
+                        "Editable — not an actual NYC DOT allocation. Defaults to "
+                        "$16M, what MTC invested in Bay Wheels (SF) in Feb 2023, "
+                        "so this scenario starts from a real-world benchmark "
+                        "instead of an arbitrary number. Change it to model any "
+                        "budget from $50K to $50M."
+                    ),
                 )
                 cost_per_dock = st.number_input(
                     "Installed cost per dock",
