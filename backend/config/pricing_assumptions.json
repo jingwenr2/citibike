@@ -20,7 +20,8 @@
   "sponsorship_revenue_annual": 17500000,
   "sponsorship_source": "Citigroup title sponsorship (public contract)",
 
-  "station_install_cost": 65000,
+  "_station_install_cost_note": "$70,000/station x 250 stations = $17.5M, pegged to match SF's Feb 2023 MTC investment ($16M nominal) adjusted to 2026 dollars, so the 250-station ask is the same $17.5M figure everywhere in the app.",
+  "station_install_cost": 70000,
   "station_annual_operating_cost": 15000,
   "new_members_per_new_station": 30,
 

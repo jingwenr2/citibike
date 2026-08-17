@@ -187,8 +187,8 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         - headline.loc[headline.index[0], "avg_daily_total_trips"]
     )
     annualized_incremental_revenue = incremental_daily_trips * 365 * net_revenue_per_trip
-    payback_years = (
-        INVESTMENT_AMOUNT / annualized_incremental_revenue
+    payback_months = (
+        INVESTMENT_AMOUNT / (annualized_incremental_revenue / 12)
         if annualized_incremental_revenue > 0
         else float("inf")
     )
@@ -202,7 +202,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         roi_cols[1].metric("Investment amount", f"${INVESTMENT_AMOUNT:,.0f}")
         roi_cols[2].metric(
             "Estimated payback period",
-            f"{payback_years:.1f} years" if payback_years != float("inf") else "N/A",
+            f"{payback_months:.0f} months" if payback_months != float("inf") else "N/A",
         )
 
     st.markdown(

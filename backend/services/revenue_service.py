@@ -282,7 +282,7 @@ def estimate_public_benefits(
     emissions = new_annual_trips * assumptions["emissions_benefit_per_trip"]
     tax = new_total_revenue * assumptions["estimated_tax_rate"]
     total = health + congestion + emissions + tax
-    govt_payback = safe_divide(install_cost, total, 0)
+    govt_payback_months = safe_divide(install_cost, total / 12, 0)
 
     return {
         "is_estimate": True,
@@ -291,7 +291,7 @@ def estimate_public_benefits(
         "emissions_benefit": emissions,
         "tax_benefit": tax,
         "total_public_benefit": total,
-        "govt_payback_years": govt_payback,
+        "govt_payback_months": govt_payback_months,
     }
 
 
@@ -328,8 +328,8 @@ def estimate_fare_equity_fund(
     ongoing_annual_cost = discount_per_member * total_members
     net_profit_after_discount = expansion["net_annual_profit"] - ongoing_annual_cost
     sustainable = net_profit_after_discount > 0
-    payback_years_with_discount = (
-        safe_divide(expansion["install_cost"], net_profit_after_discount, float("inf"))
+    payback_months_with_discount = (
+        safe_divide(expansion["install_cost"], net_profit_after_discount / 12, float("inf"))
         if sustainable
         else float("inf")
     )
@@ -358,7 +358,7 @@ def estimate_fare_equity_fund(
         "expansion_net_profit": expansion["net_annual_profit"],
         "net_profit_after_discount": net_profit_after_discount,
         "sustainable": sustainable,
-        "payback_years_with_discount": payback_years_with_discount,
+        "payback_months_with_discount": payback_months_with_discount,
         "city_share_rate": city_share_rate,
         "city_share_before": city_share_before,
         "city_share_after": city_share_after,
@@ -379,12 +379,8 @@ def revenue_projection(
         "Do nothing (3% organic growth)": [
             current_revenue * (1.03 ** i) for i in range(len(years))
         ],
-        "250 stations (Lyft self-funded)": [
-            (current_revenue + new_station_revenue * min(i / 2, 1)) * (1.05 ** i)
-            for i in range(len(years))
-        ],
-        "500 stations + DOT partnership": [
-            (current_revenue + new_station_revenue * 2 * min(i / 2, 1)) * (1.08 ** i)
+        "250 stations + DOT partnership": [
+            (current_revenue + new_station_revenue * min(i / 2, 1)) * (1.08 ** i)
             for i in range(len(years))
         ],
     }

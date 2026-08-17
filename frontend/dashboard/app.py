@@ -422,6 +422,42 @@ def compact_number(value: float) -> str:
     return f"{value:,.0f}"
 
 
+def _parse_comma_int(raw: str, default: int, min_value: int, max_value: int) -> int:
+    try:
+        value = int(round(float(raw.replace(",", "").replace("$", "").strip())))
+    except (ValueError, AttributeError):
+        value = default
+    return max(min_value, min(max_value, value))
+
+
+def comma_number_input(
+    label: str,
+    key: str,
+    min_value: int,
+    max_value: int,
+    default: int,
+    help: str | None = None,
+) -> int:
+    """A dollar-amount input that displays with thousands separators.
+
+    st.number_input can't do this — its format param is validated against
+    Python's %-style formatting, which has no comma-grouping flag, so a
+    real text_input is used instead. Reformats to "1,234,567" once the
+    field loses focus (via on_change), not on every keystroke — Streamlit
+    reruns the whole script per interaction, not per keypress, so true
+    live-as-you-type masking would need a custom JS component.
+    """
+    if key not in st.session_state:
+        st.session_state[key] = f"{default:,}"
+
+    def _reformat():
+        value = _parse_comma_int(st.session_state[key], default, min_value, max_value)
+        st.session_state[key] = f"{value:,}"
+
+    st.text_input(label, key=key, help=help, on_change=_reformat)
+    return _parse_comma_int(st.session_state[key], default, min_value, max_value)
+
+
 @st.cache_data
 def filter_data(
     _data: pd.DataFrame,
@@ -527,11 +563,11 @@ pub = revenue_service.estimate_public_benefits(
 proj_df, scenarios = revenue_service.revenue_projection(
     rev["total_estimated_revenue"], exp["new_total_revenue"]
 )
-gap_2031 = scenarios["500 stations + DOT partnership"][-1] - scenarios["Do nothing (3% organic growth)"][-1]
+gap_2031 = scenarios["250 stations + DOT partnership"][-1] - scenarios["Do nothing (3% organic growth)"][-1]
 cumulative_gap = sum(
     b - a for a, b in zip(
         scenarios["Do nothing (3% organic growth)"],
-        scenarios["500 stations + DOT partnership"],
+        scenarios["250 stations + DOT partnership"],
     )
 )
 
@@ -774,7 +810,7 @@ with home_tab:
             st.metric("Public benefit / yr", f"${pub['total_public_benefit']:,.0f}")
             st.caption("Health + congestion + emissions + tax revenue")
         with payoff_cols[1]:
-            st.metric("DOT payback period", f"{pub['govt_payback_years']:.1f} yrs")
+            st.metric("DOT payback period", f"{pub['govt_payback_months']:.0f} months")
             st.caption("Public benefit vs. install cost")
         with payoff_cols[2]:
             st.metric("5-yr upside vs. status quo", f"${cumulative_gap:,.0f}")
@@ -783,7 +819,7 @@ with home_tab:
         f"By 2031, investing rather than standing still is worth "
         f"**\\${gap_2031:,.0f}/year more**. DOT's own share of that, in health, "
         f"congestion, emissions, and tax benefits, pays back the public cost of "
-        f"expansion in **{pub['govt_payback_years']:.1f} years**. That's the case "
+        f"expansion in **{pub['govt_payback_months']:.0f} months**. That's the case "
         "for negotiating the 2029 contract from a position of evidence, not "
         "guesswork."
     )
@@ -1861,25 +1897,34 @@ with investment_tab:
             scope_col, revenue_col, analysis_col = st.columns(3, gap="large")
             with scope_col:
                 st.markdown("**Investment scope**")
-                public_budget = st.number_input(
+                comma_number_input(
                     "Available capital budget (editable)",
-                    min_value=50_000, max_value=50_000_000, value=17_500_000,
-                    step=50_000, format="%d",
+                    key="cap_budget_input",
+                    min_value=50_000, max_value=50_000_000, default=17_500_000,
                     help=(
                         "Editable — not an actual NYC DOT allocation. Defaults to "
                         "$17.5M, the station-expansion portion of what MTC invested "
                         "in Bay Wheels (SF) in Feb 2023 ($16M nominal, adjusted to "
-                        "2026 dollars), so this scenario starts from a real-world "
-                        "benchmark instead of an arbitrary number. SF's investment "
-                        "was staggered into two tranches; the other $4.4M "
-                        "(fare-equity pilot) is modeled separately in the \"Fare "
-                        "equity fund\" section below, not included in this budget. "
-                        "Change it to model any budget from $50K to $50M."
+                        "2026 dollars) — the same figure the 250-station cost below "
+                        "is pegged to. Doesn't change how many stations are "
+                        "recommended (fixed at 250, see below). SF's investment was "
+                        "staggered into two tranches; the other $4.4M (fare-equity "
+                        "pilot) is modeled separately in the \"Fare equity fund\" "
+                        "section below, not included in this budget."
                     ),
                 )
-                cost_per_dock = st.number_input(
+                cost_per_dock = comma_number_input(
                     "Installed cost per dock",
-                    min_value=1_000, max_value=50_000, value=8_000, step=500, format="%d",
+                    key="cost_per_dock_input",
+                    min_value=1_000, max_value=50_000, default=4_375,
+                    help=(
+                        "Defaults to $4,375/dock so that, at the default 16 docks per "
+                        "station, this planner's per-station cost ($70,000) puts "
+                        "\"Capital deployed\" below at $17.5M for 250 stations — SF's "
+                        "Feb 2023 MTC investment ($16M nominal) adjusted to 2026 "
+                        "dollars, the same $17.5M figure quoted everywhere else in "
+                        "this app."
+                    ),
                 )
                 docks_added = st.slider("Docks added per station", 4, 40, 16)
             with revenue_col:
@@ -1905,9 +1950,10 @@ with investment_tab:
                 )
             with analysis_col:
                 st.markdown("**Analysis settings**")
-                annual_station_cost = st.number_input(
+                annual_station_cost = comma_number_input(
                     "Annual added station operating cost",
-                    min_value=0, max_value=250_000, value=28_000, step=2_000, format="%d",
+                    key="annual_station_cost_input",
+                    min_value=0, max_value=250_000, default=28_000,
                 )
                 analysis_years = st.number_input(
                     "Analysis period", min_value=3, max_value=15, value=5, step=1, format="%d",
@@ -1946,19 +1992,26 @@ with investment_tab:
         investment_rank["annual_operating_support_needed"] = (
             -investment_rank["annual_operating_return"].clip(upper=0)
         )
-        investment_rank["fiscal_payback_years"] = np.where(
+        investment_rank["fiscal_payback_months"] = np.where(
             investment_rank["annual_operating_return"] > 0,
-            investment_rank["capital_cost"] / investment_rank["annual_operating_return"],
+            investment_rank["capital_cost"] / (investment_rank["annual_operating_return"] / 12),
             np.nan,
         )
         investment_rank = investment_rank.sort_values(
             ["public_npv", "transit_opportunity_score"], ascending=[False, False],
         )
-        maximum_projects = int(public_budget // (docks_added * cost_per_dock))
+        # Fixed at 250 to match the "250 new stations" figure used throughout
+        # the rest of the app (hero, DOT tab, fare equity fund, lyft_pitch.md)
+        # — capped only by how many candidates actually have positive public
+        # NPV, not by the capital budget input below. The budget is compared
+        # against the resulting cost, not used to derive the station count,
+        # so dragging the budget/cost sliders can no longer silently change
+        # how many stations get recommended out from under that "250" figure.
+        target_projects = min(new_stations, int((investment_rank["public_npv"] > 0).sum()))
         investment_rank["recommended"] = False
         recommended_index = investment_rank[
             investment_rank["public_npv"] > 0
-        ].head(maximum_projects).index
+        ].head(target_projects).index
         investment_rank.loc[recommended_index, "recommended"] = True
 
         recommended = investment_rank[investment_rank["recommended"]]
@@ -1972,7 +2025,15 @@ with investment_tab:
         with kpi_banner_slot:
             summary_columns = st.columns(4)
             summary_columns[0].metric("Recommended projects", f"{len(recommended)}")
-            summary_columns[1].metric("Capital deployed", f"${compact_number(total_capital)}")
+            summary_columns[1].metric(
+                "Capital deployed",
+                f"${compact_number(total_capital)}",
+                help=(
+                    f"Actual cost of the {len(recommended)} recommended stations. "
+                    "The capital budget set below no longer caps the station count "
+                    "(fixed at 250 to match the rest of the app)."
+                ),
+            )
             summary_columns[2].metric("New annual trips", compact_number(new_trips))
             summary_columns[3].metric(
                 "Public benefit-cost ratio", f"{portfolio_bcr:.2f}×",
@@ -2158,7 +2219,7 @@ with investment_tab:
                 [
                     "recommended", "station_name", "daily_trips", "new_annual_trips",
                     "capital_cost", "annual_operating_return", "annual_operating_support_needed",
-                    "fiscal_payback_years", "five_year_fiscal_npv", "public_npv",
+                    "fiscal_payback_months", "five_year_fiscal_npv", "public_npv",
                     "public_benefit_cost_ratio", "capital_cost_per_new_trip",
                     "transit_opportunity_score",
                 ]
@@ -2173,7 +2234,7 @@ with investment_tab:
                     "capital_cost": st.column_config.NumberColumn("Capital cost", format="$%.0f"),
                     "annual_operating_return": st.column_config.NumberColumn("Annual operating return", format="$%.0f"),
                     "annual_operating_support_needed": st.column_config.NumberColumn("Annual support needed", format="$%.0f"),
-                    "fiscal_payback_years": st.column_config.NumberColumn("Fiscal payback", format="%.1f years"),
+                    "fiscal_payback_months": st.column_config.NumberColumn("Fiscal payback", format="%.0f months"),
                     "five_year_fiscal_npv": st.column_config.NumberColumn(f"{analysis_years}-yr fiscal NPV", format="$%.0f"),
                     "public_npv": st.column_config.NumberColumn(f"{analysis_years}-yr public NPV", format="$%.0f"),
                     "public_benefit_cost_ratio": st.column_config.NumberColumn("Public BCR", format="%.2f×"),
@@ -2223,9 +2284,10 @@ with investment_tab:
             unsafe_allow_html=True,
         )
 
-        equity_fund = st.number_input(
+        equity_fund = comma_number_input(
             "One-time equity fund",
-            min_value=0, max_value=10_000_000, value=4_400_000, step=100_000, format="%d",
+            key="equity_fund_input",
+            min_value=0, max_value=10_000_000, default=4_400_000,
             help=(
                 "Defaults to $4.4M — SF's actual $4M Feb 2023 fare-equity pilot, "
                 "adjusted to 2026 dollars using the same ~9.4% inflation factor applied "
@@ -2252,7 +2314,7 @@ with investment_tab:
             )
             eq_cols[3].metric(
                 "Payback with discount funded",
-                f"{fund['payback_years_with_discount']:.1f} yrs"
+                f"{fund['payback_months_with_discount']:.0f} months"
                 if fund["sustainable"] else "Not sustainable",
                 help="Capital payback once the expansion's own profit is also covering the ongoing discount cost, instead of just the capital install cost.",
             )
@@ -2705,15 +2767,13 @@ with dot_tab:
             # magenta = highest-investment scenario.
             color_discrete_map={
                 "Do nothing (3% organic growth)": HEATMAP_HEX[13],
-                "250 stations (Lyft self-funded)": LYFT_PINK,
-                "500 stations + DOT partnership": HEATMAP_HEX[7]
+                "250 stations + DOT partnership": LYFT_PINK,
             },
             # Legend order matches how the lines actually stack at the right
             # edge (highest revenue on top) instead of dataframe insertion order.
             category_orders={
                 "Scenario": [
-                    "500 stations + DOT partnership",
-                    "250 stations (Lyft self-funded)",
+                    "250 stations + DOT partnership",
                     "Do nothing (3% organic growth)",
                 ]
             },
@@ -2769,7 +2829,7 @@ with dot_tab:
                 st.metric("Additional tax revenue", f"${pub['tax_benefit']:,.0f}/yr")
                 st.metric("Total annual public benefit", f"${pub['total_public_benefit']:,.0f}")
                 st.markdown(
-                    f"Government payback: **{pub['govt_payback_years']:.1f} years**. "
+                    f"Government payback: **{pub['govt_payback_months']:.0f} months**. "
                     "Faster than any highway or subway project."
                 )
 

@@ -4,7 +4,7 @@
 
 ## The headline
 
-**Citi Bike generates ~$212M/year. We built the data engine that shows Lyft how to turn it into $360M+.**
+**Citi Bike generates ~$212M/year. We built the data engine that shows Lyft how to turn it into $335M+.**
 
 ---
 
@@ -69,17 +69,17 @@ MTC's Feb 2023 investment wasn't one lump sum, either — it was staggered into 
 
 ---
 
-### 5. 250 new stations = $12.9M/year in net profit. Payback: 15 months.
+### 5. 250 new stations = $12.9M/year in net profit. Payback: 16 months.
 
 | | Amount |
 |---|---|
 | New annual revenue | **$16.6M** |
-| One-time station install (250 x $65K) | $16.25M |
+| One-time station install (250 x $70K) | $17.5M |
 | Annual operations (250 x $15K) | $3.75M |
 | **Net annual profit** | **$12.9M/yr** |
-| **Payback period** | **15 months** |
+| **Payback period** | **16 months** |
 
-After 15 months, every dollar is margin. And our XGBoost demand model — validated on 69.7M trips with **32% better accuracy** than seasonal baselines — tells you exactly **which** 250 locations to build first for maximum return.
+After 16 months, every dollar is margin. And our XGBoost demand model — validated on 69.7M trips with **32% better accuracy** than seasonal baselines — tells you exactly **which** 250 locations to build first for maximum return.
 
 ---
 
@@ -96,10 +96,9 @@ Don't conflate the two numbers: the $8.5M/yr is Lyft's operating margin, not cit
 | Scenario | 2026 | 2031 | 6-year total |
 |---|---|---|---|
 | Do nothing (3% growth) | $212M | $246M | ~$1.37B |
-| 250 stations (self-funded) | $212M | $292M | ~$1.53B |
-| 500 stations + DOT partnership | $212M | $361M | ~$1.75B |
+| 250 stations + DOT partnership | $212M | $337M | ~$1.65B |
 
-**The difference between doing nothing and investing with DOT is ~$377M over the 2026-2031 window ($114.8M/year more by 2031 alone).**
+**The difference between doing nothing and investing is ~$281M over the 2026-2031 window ($90.3M/year more by 2031 alone).**
 
 ---
 
@@ -134,7 +133,7 @@ Don't conflate the two numbers: the $8.5M/yr is Lyft's operating margin, not cit
 
 **Every month Lyft waits, that's ~450,000 rides left on the table — rides people are trying to take but can't because stations are full or don't exist yet.**
 
-**The data says invest. The math says it pays back in 15 months. The question isn't whether to expand — it's how fast.**
+**The data says invest. The math says it pays back in 16 months. The question isn't whether to expand — it's how fast.**
 
 ---
 

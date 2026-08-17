@@ -17,7 +17,7 @@ San Francisco's Bay Wheels didn't just get a station-expansion investment from M
 \* Inflation adjustment: ~9.375%, derived from the $16M → $17.5M relationship already used elsewhere in the deck. Applied consistently to both line items. This is a back-of-envelope CPI estimate, not a sourced BLS figure — flag if anyone wants it tightened before it's quoted publicly.
 
 **Proposal:** mirror that same two-track structure for NYC, instead of asking for one undifferentiated pool:
-- **~$16.25M–$17.5M** — the 250-station buildout (unchanged from the existing pitch)
+- **$17.5M** — the 250-station buildout ($70K/station, pegged so the total matches SF's inflation-adjusted figure exactly)
 - **~$4.4M** — a dedicated, ring-fenced fare-equity fund, spent on reducing membership price for members broadly (not folded into general surplus)
 
 ---
@@ -46,10 +46,10 @@ The dashboard computes the discount cost as one pool spread across all 207,500 m
 | Expansion net profit, full $239 pricing (250 stations, current live data) | **$12.9M/yr** |
 | Ongoing cost of the $218 discount, all 207,500 members | **−$4.4M/yr** |
 | **Net profit after funding the discount** | **$8.5M/yr** |
-| **Payback period** on $16.25M capital cost | **~1.9 years (23 months)**, up from 15 months undiscounted |
+| **Payback period** on $17.5M capital cost | **~25 months**, up from 16 months undiscounted |
 | **Ongoing annual surplus after payback** | **$8.5M/yr** |
 
-**Bottom line:** the expansion fully self-funds a *permanent* citywide 8.9% membership discount, with capital payback still under two years. From year two on there's $8.5M/year of surplus on top of a system that's structurally cheaper to ride.
+**Bottom line:** the expansion fully self-funds a *permanent* citywide 8.9% membership discount, with capital payback still under 25 months. From year two on there's $8.5M/year of surplus on top of a system that's structurally cheaper to ride.
 
 ---
 
@@ -77,7 +77,7 @@ That $6.34M-to-city vs. $8.5M-to-Lyft split is a fine story — both sides win, 
 3. **"GDP multiplier effect"** language in the reframed city-benefit section is not backed by any number in this analysis or the model. Either keep it qualitative (as drafted) or find a real citation — don't let it be the one unsourced statistic in an otherwise data-backed pitch.
 1
 5. ~~None of this lives in the dashboard model yet.~~ **Resolved:** `revenue_service.estimate_fare_equity_fund()` implements this, wired into the Government Investment tab as an adjustable slider ($0–$10M range, defaults to $4.4M). `pricing_assumptions.json` now carries `city_revenue_share_rate` (0.025) as a documented, flagged planning assumption.
-6. **The underlying trip data has grown since this doc was first drafted** — live revenue is now ~$212M (not $196M) and the 250-station payback is 15 months (not 17). The $218 target price and 8.9% cut are unchanged (they only depend on membership counts and price, not revenue), but the payback and profit-split figures above have been refreshed to match. Re-check this doc against the dashboard before quoting exact dollars, since the underlying data will keep moving as new trip months are added.
+6. **The underlying trip data has grown since this doc was first drafted** — live revenue is now ~$212M (not $196M) and the 250-station payback is 16 months (not 17). The $218 target price and 8.9% cut are unchanged (they only depend on membership counts and price, not revenue), but the payback and profit-split figures above have been refreshed to match. Note the station install cost itself was also repegged from $65K to $70K/station specifically so the 250-station total ($17.5M) matches SF's inflation-adjusted figure exactly, rather than being a separate, coincidentally-close number. Re-check this doc against the dashboard before quoting exact dollars, since the underlying data will keep moving as new trip months are added.
 
 ---
 
