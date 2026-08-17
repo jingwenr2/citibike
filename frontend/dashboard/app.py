@@ -2118,6 +2118,8 @@ with investment_tab:
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="white",
                     xaxis_title="Year", yaxis_title="Cash flow ($)",
                     yaxis_tickformat="$,.0f",
+                    xaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black")),
+                    yaxis=dict(tickfont=dict(color="black"), title_font=dict(color="black")),
                 )
                 st.plotly_chart(fig_cf, width="stretch")
             else:
