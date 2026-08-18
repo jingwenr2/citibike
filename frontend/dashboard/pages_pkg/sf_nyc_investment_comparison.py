@@ -33,6 +33,11 @@ from components.styles import apply_layout
 # into NYC's ask (Government Investment tab / Fare equity fund), not here.
 INVESTMENT_AMOUNT = 16_000_000
 
+# SF's separate, dedicated fare-equity pilot fund (also nominal 2023
+# dollars) — the Nov 2023 membership price cut below (169 -> 150) funded by
+# that pilot, distinct from the $16M station-expansion fund above.
+FARE_EQUITY_AMOUNT = 4_000_000
+
 PRICE_HISTORY = [
     {
         "effective_from": pd.Timestamp.min,
@@ -112,8 +117,8 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         '<p class="section-note">How San Francisco\'s Bay Wheels network grew '
         "after MTC's Feb 2023 investment, used here as supporting evidence, not "
         "a direct NYC comparison. That investment was staggered into two "
-        "tranches, both nominal 2023 dollars: $16M for station expansion and "
-        "$4M for a fare-equity pilot. NYC's plan mirrors that same two-tranche "
+        "parts, both nominal 2023 dollars: $16M for station expansion and "
+        "$4M for a fare-equity pilot. NYC's plan mirrors that same two-part "
         "structure, inflation-adjusted to 2026 dollars — see the Government "
         "Investment tab.</p>",
         unsafe_allow_html=True,
@@ -175,13 +180,14 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
 
     # ── ROI estimate ──
     st.markdown("---")
+    st.markdown('<span class="section-label">Phase One</span>', unsafe_allow_html=True)
     st.subheader("Estimated ROI on the $16M expansion investment")
     st.markdown(
         '<p class="section-note">Applies the same net-operating-revenue-per-trip '
         "assumption used in the Government investment tab to the incremental "
         "ridership observed since Feb 2023. Covers the station-expansion "
-        "tranche only, nominal 2023 dollars — the separate $4M fare-equity "
-        "tranche drove affordability, not ridership growth, so it isn't part "
+        "part only, nominal 2023 dollars — the separate $4M fare-equity "
+        "fund drove affordability, not ridership growth, so it isn't part "
         "of this ROI calculation.</p>",
         unsafe_allow_html=True,
     )
@@ -199,11 +205,11 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
 
     with st.container(key="kpi-sf-roi"):
         roi_cols = st.columns(3)
-        roi_cols[0].metric(
+        roi_cols[0].metric("Investment amount", f"${INVESTMENT_AMOUNT:,.0f}")
+        roi_cols[1].metric(
             "Estimated annual incremental revenue",
             f"${annualized_incremental_revenue:,.0f}",
         )
-        roi_cols[1].metric("Investment amount", f"${INVESTMENT_AMOUNT:,.0f}")
         roi_cols[2].metric(
             "Estimated payback period",
             f"{payback_months:.0f} months" if payback_months != float("inf") else "N/A",
@@ -218,6 +224,23 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
         "</p></div>",
         unsafe_allow_html=True,
     )
+
+    # ── Fare equity pilot ──
+    st.markdown("---")
+    st.markdown('<span class="section-label">Phase Two</span>', unsafe_allow_html=True)
+    st.subheader("Fare equity pilot")
+    st.markdown(
+        '<p class="section-note">SF\'s second, separate fund: a $4M fare-equity '
+        "pilot, funded apart from the $16M expansion above, that cut Bay Wheels "
+        "membership pricing on 2023-11-02.</p>",
+        unsafe_allow_html=True,
+    )
+
+    with st.container(key="kpi-sf-equity"):
+        equity_cols = st.columns(3)
+        equity_cols[0].metric("Investment amount", f"${FARE_EQUITY_AMOUNT:,.0f}")
+        equity_cols[1].metric("Original membership price", f"${PRICE_HISTORY[0]['membership_price']}")
+        equity_cols[2].metric("Reduced membership price", f"${PRICE_HISTORY[1]['membership_price']}")
 
     # ── Monthly trend chart ──
     st.markdown("---")

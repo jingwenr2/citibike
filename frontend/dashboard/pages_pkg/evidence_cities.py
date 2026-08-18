@@ -47,7 +47,7 @@ def render():
         )
         st.markdown(
             "**Sustained, multi-year capital commitments** — buildouts are funded in "
-            "dedicated tranches, not one-off grants."
+            "dedicated installments, not one-off grants."
         )
     with pattern_cols[1]:
         st.markdown(

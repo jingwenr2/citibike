@@ -46,7 +46,7 @@ SUCCESS_STORIES = [
             "Ridership growth": "Grew from a 350-bike, 35-station pilot in 2013 into a regional network that now reaches San Mateo County.",
             "Infrastructure expansion": "A 2017 buildout funded by Ford's title sponsorship expanded the system to 320 stations and 4,500 bikes; SFMTA struck a new deal for 4,000 shared Electric bikes.",
             "Financial sustainability": "The 2017 expansion was delivered \"at no capital or operational expense to taxpayers\", sponsorship and operator capital funded the buildout.",
-            "Staggered public investment (Feb 2023)": "MTC didn't fund one lump sum, it staggered two dedicated tranches: \\$16M for station expansion, plus a separate \\$4M fare-equity pilot that cut membership pricing for college students and other riders facing economic barriers. That two-track structure, capacity first, affordability funded separately and explicitly, is the model NYC's proposal mirrors.",
+            "Staggered public investment (Feb 2023)": "MTC didn't fund one lump sum, it staggered two dedicated funds: \\$16M for station expansion, plus a separate \\$4M fare-equity pilot that cut membership pricing for college students and other riders facing economic barriers. That two-track structure, capacity first, affordability funded separately and explicitly, is the model NYC's proposal mirrors.",
         },
     },
     {
@@ -1829,7 +1829,7 @@ with success_tab:
   or sponsorship contract (Vélib' Métropole, Santander Cycles, Bay Wheels), not a
   purely private, self-funded venture.
 - **Sustained, multi-year capital commitments**: buildouts and fleet upgrades are
-  funded in dedicated tranches (Bay Wheels' staggered \\$16M expansion + \\$4M
+  funded in dedicated installments (Bay Wheels' staggered \\$16M expansion + \\$4M
   fare-equity pilot in Feb 2023, Divvy's \\$50M citywide investment, Santander
   Cycles' new £220M contract), not one-off grants.
 - **Investment shows up directly in ridership and infrastructure**: every system
@@ -1880,7 +1880,7 @@ with investment_tab:
     # ── Fare equity fund (SF-style dual investment) ──
     # Deliberately a separate phase, not nested inside Phase One's "customize
     # the plan" settings: mirrors SF's actual staggered structure (a dedicated
-    # affordability tranche funded apart from the expansion capital), and
+    # affordability fund kept apart from the expansion capital), and
     # keeps this from reading as just another expansion-planner option.
     # Supersedes an earlier "redirect the portfolio's fiscal surplus into
     # pricing" expander: that model spread a budget-dependent surplus across
@@ -1892,7 +1892,7 @@ with investment_tab:
             '<p class="section-note">San Francisco\'s Feb 2023 MTC investment wasn\'t one lump '
             "sum: $16M for station expansion (Phase One, above), plus a separate, dedicated "
             "$4M fare-equity pilot that cut membership pricing for college students and other "
-            "riders facing economic barriers. This models that same second tranche for the "
+            "riders facing economic barriers. This models that same second fund for the "
             f"{new_stations}-station NYC plan: a one-time equity fund that discounts membership "
             "for every member, old and new, in year one, then checks whether the expansion's "
             "own recurring profit can sustain that same discount permanently from year two on."
@@ -2030,7 +2030,7 @@ with investment_tab:
                         "2026 dollars) — the same figure the 250-station cost below "
                         "is pegged to. Doesn't change how many stations are "
                         "recommended (fixed at 250, see below). SF's investment was "
-                        "staggered into two tranches; the other $4.4M (fare-equity "
+                        "staggered into two parts; the other $4.4M (fare-equity "
                         "pilot) is modeled separately in the \"Fare equity fund\" "
                         "section below, not included in this budget."
                     ),
@@ -2184,44 +2184,6 @@ with investment_tab:
             f"Selected projects are estimated to add {compact_number(new_trips)} "
             "annual trips under the current assumptions."
         )
-
-        with st.expander("Project-level recommendation table", expanded=False):
-            planner_table = investment_rank[
-                [
-                    "recommended", "station_name", "daily_trips", "new_annual_trips",
-                    "capital_cost", "annual_operating_return", "annual_operating_support_needed",
-                    "fiscal_payback_months", "five_year_fiscal_npv", "public_npv",
-                    "public_benefit_cost_ratio", "capital_cost_per_new_trip",
-                    "transit_opportunity_score",
-                ]
-            ].copy()
-            st.dataframe(
-                planner_table, hide_index=True, width="stretch",
-                column_config={
-                    "recommended": st.column_config.CheckboxColumn("Fund"),
-                    "station_name": "Station",
-                    "daily_trips": st.column_config.NumberColumn("Daily demand", format="%.0f"),
-                    "new_annual_trips": st.column_config.NumberColumn("New trips/year", format="%.0f"),
-                    "capital_cost": st.column_config.NumberColumn("Capital cost", format="$%.0f"),
-                    "annual_operating_return": st.column_config.NumberColumn("Annual operating return", format="$%.0f"),
-                    "annual_operating_support_needed": st.column_config.NumberColumn("Annual support needed", format="$%.0f"),
-                    "fiscal_payback_months": st.column_config.NumberColumn("Fiscal payback", format="%.0f months"),
-                    "five_year_fiscal_npv": st.column_config.NumberColumn(f"{analysis_years}-yr fiscal NPV", format="$%.0f"),
-                    "public_npv": st.column_config.NumberColumn(f"{analysis_years}-yr public NPV", format="$%.0f"),
-                    "public_benefit_cost_ratio": st.column_config.NumberColumn("Public BCR", format="%.2f×"),
-                    "capital_cost_per_new_trip": st.column_config.NumberColumn("Capital/new trip", format="$%.2f"),
-                    "transit_opportunity_score": st.column_config.ProgressColumn("MTA opportunity", min_value=0, max_value=100, format="%.1f"),
-                },
-            )
-            st.markdown(
-                '<div class="tab-takeaway"><p>'
-                "<strong>Public-sector decision rule:</strong> prioritize positive public NPV and a "
-                "benefit-cost ratio above 1.0, then confirm the annual operating support fits the "
-                "agency budget. Fiscal return remains visible as a sustainability constraint, not "
-                "the sole goal."
-                "</p></div>",
-                unsafe_allow_html=True,
-            )
 
         st.markdown("---")
         st.markdown(
@@ -2381,6 +2343,44 @@ with investment_tab:
                         "Cumulative Total": st.column_config.NumberColumn("Cumulative Total", format="$%.0f"),
                     },
                 )
+
+        with st.expander("Project-level recommendation table", expanded=False):
+            planner_table = investment_rank[
+                [
+                    "recommended", "station_name", "daily_trips", "new_annual_trips",
+                    "capital_cost", "annual_operating_return", "annual_operating_support_needed",
+                    "fiscal_payback_months", "five_year_fiscal_npv", "public_npv",
+                    "public_benefit_cost_ratio", "capital_cost_per_new_trip",
+                    "transit_opportunity_score",
+                ]
+            ].copy()
+            st.dataframe(
+                planner_table, hide_index=True, width="stretch",
+                column_config={
+                    "recommended": st.column_config.CheckboxColumn("Fund"),
+                    "station_name": "Station",
+                    "daily_trips": st.column_config.NumberColumn("Daily demand", format="%.0f"),
+                    "new_annual_trips": st.column_config.NumberColumn("New trips/year", format="%.0f"),
+                    "capital_cost": st.column_config.NumberColumn("Capital cost", format="$%.0f"),
+                    "annual_operating_return": st.column_config.NumberColumn("Annual operating return", format="$%.0f"),
+                    "annual_operating_support_needed": st.column_config.NumberColumn("Annual support needed", format="$%.0f"),
+                    "fiscal_payback_months": st.column_config.NumberColumn("Fiscal payback", format="%.0f months"),
+                    "five_year_fiscal_npv": st.column_config.NumberColumn(f"{analysis_years}-yr fiscal NPV", format="$%.0f"),
+                    "public_npv": st.column_config.NumberColumn(f"{analysis_years}-yr public NPV", format="$%.0f"),
+                    "public_benefit_cost_ratio": st.column_config.NumberColumn("Public BCR", format="%.2f×"),
+                    "capital_cost_per_new_trip": st.column_config.NumberColumn("Capital/new trip", format="$%.2f"),
+                    "transit_opportunity_score": st.column_config.ProgressColumn("MTA opportunity", min_value=0, max_value=100, format="%.1f"),
+                },
+            )
+            st.markdown(
+                '<div class="tab-takeaway"><p>'
+                "<strong>Public-sector decision rule:</strong> prioritize positive public NPV and a "
+                "benefit-cost ratio above 1.0, then confirm the annual operating support fits the "
+                "agency budget. Fiscal return remains visible as a sustainability constraint, not "
+                "the sole goal."
+                "</p></div>",
+                unsafe_allow_html=True,
+            )
 
 
     investment_planner()
