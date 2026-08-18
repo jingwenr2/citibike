@@ -1,7 +1,7 @@
 """San Francisco Case Study — Investment Outcome, ported from
 notebooks/SF_NYC_Investment_Comparison.ipynb.
 
-San Francisco (Bay Wheels) growth analysis around the Feb 2023 MTC
+San Francisco (Lyft Bike) growth analysis around the Feb 2023 MTC
 investment and the Nov 2023 price change. NYC/Citi Bike is not used here —
 this is a standalone external case study, used as supporting evidence for
 the NYC investment case, not a direct cross-city comparison.
@@ -114,7 +114,7 @@ def _display_labels(df: pd.DataFrame) -> pd.DataFrame:
 def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     st.subheader("San Francisco Case Study: Investment Outcome")
     st.markdown(
-        '<p class="section-note">How San Francisco\'s Bay Wheels network grew '
+        '<p class="section-note">How San Francisco\'s Lyft Bike network grew '
         "after MTC's Feb 2023 investment, used here as supporting evidence, not "
         "a direct NYC comparison. That investment was staggered into two "
         "parts, both nominal 2023 dollars: $16M for station expansion and "
@@ -231,7 +231,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     st.subheader("Fare equity pilot")
     st.markdown(
         '<p class="section-note">SF\'s second, separate fund: a $4M fare-equity '
-        "pilot, funded apart from the $16M expansion above, that cut Bay Wheels "
+        "pilot, funded apart from the $16M expansion above, that cut Lyft Bike "
         "membership pricing on 2023-11-02.</p>",
         unsafe_allow_html=True,
     )
@@ -303,7 +303,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     fig.update_yaxes(tickangle=0)
     apply_layout(
         fig, height=440,
-        title="San Francisco (Bay Wheels): total trips per month",
+        title="San Francisco (Lyft Bike): total trips per month",
         margin=dict(l=10, r=10, t=70, b=10),
         plot_bgcolor="white",
     )
@@ -409,7 +409,7 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     ):
         st.markdown("**Price history: the Nov 2023 fare change**")
         st.markdown(
-            '<p class="section-note">Bay Wheels changed pricing on 2023-11-02: '
+            '<p class="section-note">Lyft Bike changed pricing on 2023-11-02: '
             "annual membership $169 -> $150, Electric per-minute rate $0.20 -> "
             "$0.15. Published pricing, mapped onto each row by date via an "
             "explicit lookup table.</p>",

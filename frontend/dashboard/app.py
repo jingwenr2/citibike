@@ -39,7 +39,7 @@ SUCCESS_STORIES = [
     {
         "flag": "🚲",
         "city": "San Francisco",
-        "system": "Bay Wheels",
+        "system": "Lyft Bike",
         "tagline": "A regional public-private buildout funded by sponsorship and operator capital, not tax dollars.",
         "stats": {
             "Investment model": "SFMTA and the Bay Area Air Quality Management District brought the system to San Francisco as a public partnership; Lyft now operates it under a contract managed by the Metropolitan Transportation Commission.",
@@ -91,7 +91,7 @@ CITY_META = {
         ],
     },
     "San Francisco": {
-        "system": "Bay Wheels",
+        "system": "Lyft Bike",
         "color": "#F26B4A",
         "center": (37.7749, -122.4194),
         "base": 560,
@@ -665,7 +665,7 @@ with home_tab:
           </div>
           <div class="guide-step">
             <div class="guide-number">2</div>
-            <div class="guide-text"><strong>Case Study.</strong> San Francisco's Bay Wheels investment outcome, used as supporting evidence for the NYC case.</div>
+            <div class="guide-text"><strong>Case Study.</strong> San Francisco's Lyft Bike investment outcome, used as supporting evidence for the NYC case.</div>
           </div>
           <div class="guide-step">
             <div class="guide-number">3</div>
@@ -1177,7 +1177,7 @@ with stations_tab:
         unsafe_allow_html=True,
     )
     st.subheader("NYC station demand map")
-    st.caption("Bay Wheels is excluded from station-level investment decisions.")
+    st.caption("Lyft Bike is excluded from station-level investment decisions.")
     station_summary_df = demand_service.station_summary(nyc_filtered)
 
     # Cyan-to-magenta pressure scale: light/low pressure to dark/high pressure.
@@ -1826,10 +1826,10 @@ with success_tab:
         """
 - **Public ownership or a formal public-private partnership**: every system here is
   either government-owned (Capital Bikeshare, Divvy) or built on a long-term public
-  or sponsorship contract (Vélib' Métropole, Santander Cycles, Bay Wheels), not a
+  or sponsorship contract (Vélib' Métropole, Santander Cycles, Lyft Bike), not a
   purely private, self-funded venture.
 - **Sustained, multi-year capital commitments**: buildouts and fleet upgrades are
-  funded in dedicated installments (Bay Wheels' staggered \\$16M expansion + \\$4M
+  funded in dedicated installments (Lyft Bike's staggered \\$16M expansion + \\$4M
   fare-equity pilot in Feb 2023, Divvy's \\$50M citywide investment, Santander
   Cycles' new £220M contract), not one-off grants.
 - **Investment shows up directly in ridership and infrastructure**: every system
@@ -2026,7 +2026,7 @@ with investment_tab:
                     help=(
                         "Editable — not an actual NYC DOT allocation. Defaults to "
                         "$17.5M, the station-expansion portion of what MTC invested "
-                        "in Bay Wheels (SF) in Feb 2023 ($16M nominal, adjusted to "
+                        "in Lyft Bike (SF) in Feb 2023 ($16M nominal, adjusted to "
                         "2026 dollars) — the same figure the 250-station cost below "
                         "is pegged to. Doesn't change how many stations are "
                         "recommended (fixed at 250, see below). SF's investment was "
@@ -2063,7 +2063,7 @@ with investment_tab:
                 demand_uplift = st.slider(
                     "Demand captured after expansion", 5, 60, 35, format="%d%%",
                     help=(
-                        "Defaults to 35%, modeled on Bay Wheels (SF): at the same "
+                        "Defaults to 35%, modeled on Lyft Bike (SF): at the same "
                         "$17.5M investment level (SF's $16M Feb 2023 figure, "
                         "inflation-adjusted), this produces an 11.1% membership "
                         "price decrease, matching SF's actual $169->$150 cut (11.2%) "
@@ -2409,9 +2409,9 @@ with dot_tab:
     # see the Success stories tab; deliberately not benchmarked against NYC here)
     # ===================================================================
     with st.expander("1. The proof: government investment works elsewhere", expanded=False):
-        bay_wheels_story = next(s for s in SUCCESS_STORIES if s["system"] == "Bay Wheels")
+        bay_wheels_story = next(s for s in SUCCESS_STORIES if s["system"] == "Lyft Bike")
         st.markdown(
-            f"{bay_wheels_story['tagline']} SFMTA treats Bay Wheels as public transit "
+            f"{bay_wheels_story['tagline']} SFMTA treats Lyft Bike as public transit "
             "infrastructure, integrated into route planning, subsidized station buildouts, "
             "and protected bike lanes."
         )
@@ -2424,7 +2424,7 @@ with dot_tab:
             st.markdown(bay_wheels_story["stats"]["Financial sustainability"])
         st.markdown(
             '<div class="tab-takeaway"><p>'
-            "Bay Wheels is one of three external case studies; see the <strong>Success "
+            "Lyft Bike is one of three external case studies; see the <strong>Success "
             "stories</strong> tab for the full evidence base (also Washington D.C. "
             "and Chicago), each showing what sustained public investment or a formal "
             "public-private partnership does for ridership, infrastructure, and financial "
@@ -2922,7 +2922,7 @@ with methods_tab:
     st.subheader("How to read this dashboard")
     st.markdown(
         """
-        - **Benchmark role:** Bay Wheels appears only in the high-level comparison.
+        - **Benchmark role:** Lyft Bike appears only in the high-level comparison.
           Forecasting, station rankings, and funding recommendations are NYC-only.
         - **Demand pressure:** average daily trips divided by current dock capacity. It is
           a prioritization signal, not proof that a station should be expanded.
@@ -2936,7 +2936,7 @@ with methods_tab:
           ratio, new trips, operating support, and fiscal sustainability. Inputs are
           assumptions and should be replaced with agency-validated capital, operating,
           revenue, equity, and benefit estimates before a real funding decision.
-        - **Scope:** Bay Wheels serves the wider Bay Area. Its benchmark is labeled
+        - **Scope:** Lyft Bike serves the wider Bay Area. Its benchmark is labeled
           separately and does not enter NYC funding recommendations.
         - **Peak demand heatmap:** hour-of-day x day-of-week trip counts, NYC only.
           Built from a separate hourly aggregation since the daily dataset above
