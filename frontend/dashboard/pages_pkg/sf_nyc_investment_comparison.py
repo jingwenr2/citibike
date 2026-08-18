@@ -27,12 +27,11 @@ import streamlit as st
 
 from components.styles import apply_layout
 
-# SF's MTC investment was $16M nominal in Feb 2023. Since this ROI estimate
-# divides by a modern (non-2023) net-revenue-per-trip assumption, the
-# investment side is inflation-adjusted to 2026 dollars (~9.4%, consistent
-# with the same adjustment used throughout the Government Investment tab)
-# rather than mixing 2023 dollars against a current-dollars revenue rate.
-INVESTMENT_AMOUNT = 17_500_000
+# SF's actual MTC investment, nominal Feb 2023 dollars — not inflation-
+# adjusted. This case study reports what SF actually spent and got; the
+# inflation adjustment to 2026 dollars only applies when translating this
+# into NYC's ask (Government Investment tab / Fare equity fund), not here.
+INVESTMENT_AMOUNT = 16_000_000
 
 PRICE_HISTORY = [
     {
@@ -111,8 +110,12 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
     st.subheader("San Francisco Case Study: Investment Outcome")
     st.markdown(
         '<p class="section-note">How San Francisco\'s Bay Wheels network grew '
-        "after a $16M public investment from MTC in Feb 2023, used here as "
-        "supporting evidence, not a direct NYC comparison.</p>",
+        "after MTC's Feb 2023 investment, used here as supporting evidence, not "
+        "a direct NYC comparison. That investment was staggered into two "
+        "tranches, both nominal 2023 dollars: $16M for station expansion and "
+        "$4M for a fare-equity pilot. NYC's plan mirrors that same two-tranche "
+        "structure, inflation-adjusted to 2026 dollars — see the Government "
+        "Investment tab.</p>",
         unsafe_allow_html=True,
     )
 
@@ -172,13 +175,14 @@ def render(data: pd.DataFrame, net_revenue_per_trip: float) -> None:
 
     # ── ROI estimate ──
     st.markdown("---")
-    st.subheader("Estimated ROI on the $17.5M investment")
+    st.subheader("Estimated ROI on the $16M expansion investment")
     st.markdown(
         '<p class="section-note">Applies the same net-operating-revenue-per-trip '
         "assumption used in the Government investment tab to the incremental "
-        "ridership observed since Feb 2023. MTC's investment was $16M nominal "
-        "at the time; shown here inflation-adjusted to 2026 dollars so it isn't "
-        "mixed against a current-dollars revenue-per-trip rate.</p>",
+        "ridership observed since Feb 2023. Covers the station-expansion "
+        "tranche only, nominal 2023 dollars — the separate $4M fare-equity "
+        "tranche drove affordability, not ridership growth, so it isn't part "
+        "of this ROI calculation.</p>",
         unsafe_allow_html=True,
     )
 
