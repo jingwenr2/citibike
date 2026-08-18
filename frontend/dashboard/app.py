@@ -160,7 +160,10 @@ st.markdown(
 st.markdown(
     """
     <style>
-    .stApp {background: #F5F7FA;}
+    .stApp {
+        background: #F5F7FA;
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M16 2C10.5 2 6 6.4 6 11.8C6 19 16 30 16 30S26 19 26 11.8C26 6.4 21.5 2 16 2Z' fill='%23FF00BF' stroke='white' stroke-width='1.6'/%3E%3Ccircle cx='16' cy='12' r='4' fill='white'/%3E%3C/svg%3E") 16 29, auto;
+    }
     [data-testid="stSidebar"] * {color: #F9FAFB;}
     [data-testid="stSidebar"] input {color: #111827;}
     .hero {
