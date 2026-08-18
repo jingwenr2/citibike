@@ -559,6 +559,12 @@ exp = revenue_service.estimate_expansion_revenue(rev, new_stations=new_stations)
 pub = revenue_service.estimate_public_benefits(
     exp["new_annual_trips"], exp["new_total_revenue"], exp["install_cost"]
 )
+# Combined-stages payback for the hero line: Phase One's station-expansion
+# capital plus Phase Two's fare-equity fund, at the fund's default size.
+# Mathematically this equals fare-equity fund's own "payback with discount
+# funded" figure (the fund's one-time cost equals its own ongoing annual
+# cost by construction), so no separate two-stage cash-flow model is needed.
+_hero_fund = revenue_service.estimate_fare_equity_fund(exp, rev, equity_fund=4_400_000.0)
 
 proj_df, scenarios = revenue_service.revenue_projection(
     rev["total_estimated_revenue"], exp["new_total_revenue"]
@@ -584,7 +590,7 @@ st.markdown(
       <div style="position:relative; z-index:1;">
         <div class="eyebrow">Capstone project · data-driven investment case</div>
         <h1>CitiBike is a ${rev['total_estimated_revenue'] / 1e6:,.0f}M/yr business running at capacity.</h1>
-        <p>{pct_strained:.0f}% of stations are maxed out. Trains are failing. {new_stations} new stations pay back in {exp['payback_months']:.0f} months.
+        <p>{pct_strained:.0f}% of stations are maxed out. Trains are failing. {new_stations} new stations plus the fare-equity fund pay back in {_hero_fund['payback_months_with_discount']:.0f} months.
         This dashboard is the evidence, start with the Home tab, then follow the tabs left to right.</p>
       </div>
     </div>
