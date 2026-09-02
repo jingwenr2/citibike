@@ -563,11 +563,11 @@ pub = revenue_service.estimate_public_benefits(
 proj_df, scenarios = revenue_service.revenue_projection(
     rev["total_estimated_revenue"], exp["new_total_revenue"]
 )
-gap_2031 = scenarios["250 stations + DOT partnership"][-1] - scenarios["Do nothing (3% organic growth)"][-1]
+gap_2031 = scenarios["250 stations (public investment)"][-1] - scenarios["Do nothing (3% organic growth)"][-1]
 cumulative_gap = sum(
     b - a for a, b in zip(
         scenarios["Do nothing (3% organic growth)"],
-        scenarios["250 stations + DOT partnership"],
+        scenarios["250 stations (public investment)"],
     )
 )
 
@@ -2014,13 +2014,14 @@ with investment_tab:
 
         with st.expander("Want to customize the plan?", expanded=False):
             st.caption(
-                "Dollar values are editable planning assumptions, not official agency estimates."
+                "All fields below are editable. Dollar values are editable planning "
+                "assumptions, not official agency estimates."
             )
             scope_col, revenue_col, analysis_col = st.columns(3, gap="large")
             with scope_col:
                 st.markdown("**Investment scope**")
                 comma_number_input(
-                    "Available capital budget (editable)",
+                    "Available capital budget",
                     key="cap_budget_input",
                     min_value=50_000, max_value=50_000_000, default=17_500_000,
                     help=(
@@ -2768,13 +2769,13 @@ with dot_tab:
             # magenta = highest-investment scenario.
             color_discrete_map={
                 "Do nothing (3% organic growth)": HEATMAP_HEX[13],
-                "250 stations + DOT partnership": LYFT_PINK,
+                "250 stations (public investment)": LYFT_PINK,
             },
             # Legend order matches how the lines actually stack at the right
             # edge (highest revenue on top) instead of dataframe insertion order.
             category_orders={
                 "Scenario": [
-                    "250 stations + DOT partnership",
+                    "250 stations (public investment)",
                     "Do nothing (3% organic growth)",
                 ]
             },

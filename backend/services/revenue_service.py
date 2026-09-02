@@ -379,7 +379,7 @@ def revenue_projection(
         "Do nothing (3% organic growth)": [
             current_revenue * (1.03 ** i) for i in range(len(years))
         ],
-        "250 stations + DOT partnership": [
+        "250 stations (public investment)": [
             (current_revenue + new_station_revenue * min(i / 2, 1)) * (1.08 ** i)
             for i in range(len(years))
         ],
